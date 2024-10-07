@@ -1,9 +1,12 @@
 Types
-LG290P
-NmeaPacket
-RtmcPacket
+
+    // Types
+    LG290P
+    NmeaPacket
+    RtmcPacket
 
 Functions
+
     // Client interface
     bool begin(HardwareSerial &serialPort, Print *parserDebug = nullptr, Print *parserError = &Serial);
     bool isConnected();
@@ -31,7 +34,6 @@ Functions
     void dumpBuffer(const uint8_t *buffer, uint16_t length);
 
     // Mode
-#if true
     bool setModeBase();
     bool setModeRover();
     bool setPortBaudrate(int port, uint32_t newBaud);
