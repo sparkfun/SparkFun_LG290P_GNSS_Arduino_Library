@@ -1,5 +1,5 @@
 /*
-  Reading Position and Time via Serial
+  Set device "Fix" speed
   By: Nathan Seidle + Mikal Hart
   SparkFun Electronics
   Date: 29 September 2024

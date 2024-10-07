@@ -1,5 +1,5 @@
 /*
-  Reading Position and Time via Serial
+  Enabling and disabling NMEA and RTCM messages
   By: Nathan Seidle + Mikal Hart
   SparkFun Electronics
   Date: 29 September 2024

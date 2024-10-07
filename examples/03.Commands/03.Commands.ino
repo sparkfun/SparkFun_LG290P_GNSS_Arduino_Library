@@ -1,5 +1,5 @@
 /*
-  Reading Position and Time via Serial
+  Sending user-specified $PMTK to device
   By: Nathan Seidle + Mikal Hart
   SparkFun Electronics
   Date: 29 September 2024
