@@ -1,5 +1,5 @@
 /*
-  Subscribing and unsubscribing to NMEA and RTCM messages
+  Playing with the LG290P Odometer feature
   By: Nathan Seidle + Mikal Hart
   SparkFun Electronics
   Date: 29 September 2024
@@ -44,7 +44,7 @@ void setup()
   SerialGNSS.setRxBufferSize(1024);
   SerialGNSS.begin(gnss_baud, SERIAL_8N1, pin_UART1_RX, pin_UART1_TX);
   
-  // myGNSS.enableDebugging(Serial); // Print all debug to Serial
+  myGNSS.enableDebugging(Serial); // Print all debug to Serial
   // if (!myGNSS.begin(SerialGNSS, &Serial, &Serial)) //Give the serial port over to the library
   if (!myGNSS.begin(SerialGNSS)) //Give the serial port over to the library
   {
@@ -53,47 +53,22 @@ void setup()
   }
   Serial.println("LG290P detected!");
   Serial.println();
-  Serial.println("*** Normal mode ***");
-}
 
-void busy_wait(int secs)
-{
-  while (secs)
-  {
-    static unsigned long last = 0;
-    if (millis() - last >= 1000)
-    {
-      Serial.printf("Lat/Long/Alt: %.8f/%.8f/%.2f\r\n", myGNSS.getLatitude(), myGNSS.getLongitude(), myGNSS.getAltitude());
-      last = millis();
-      --secs;
-    }
-    myGNSS.update(); // Regularly call to parse any new data
-  }
+  Serial.println();
+  Serial.println("*** Enable and subscribe to ODO sentences ***");
+  myGNSS.nmeaSubscribe("PQTMODO", MyCallback);  
+  myGNSS.setMessageRate("PQTMODO", 1, 1);
+  myGNSS.sendCommand("$PQTMCFGODO", ",W,1,0"); // enable odo
 }
 
 void MyCallback(NmeaPacket &nmea)
 {
-  Serial.printf("Found! '%s'\r\n", nmea.ToString().c_str());
+    bool odoEnabled = nmea[3] == "1";
+    Serial.printf("This device's odometer is %senabled and it has traveled %s meters\r\n", odoEnabled ? "" : "NOT ", nmea[4].c_str());
 }
 
 void loop()
 {
-  busy_wait(10);
-  Serial.println();
-  Serial.println("*** Enable and subscribe to PVT and ODO sentences ***");
-  myGNSS.nmeaSubscribe("PQTMPVT", MyCallback);
-  myGNSS.setMessageRate("PQTMPVT", 1, 1);
-  myGNSS.nmeaSubscribe("PQTMODO", MyCallback);
-  myGNSS.setMessageRate("PQTMODO", 1, 1);
-  busy_wait(10);
-  Serial.println();
-  Serial.println("*** Disable PVT and ODO sentences but continue subscribing ***");
-  myGNSS.setMessageRate("PQTMPVT", 0, 1);
-  myGNSS.setMessageRate("PQTMODO", 0, 1);
-  busy_wait(10);
-  Serial.println();
-  Serial.println("*** Unsubscribe from PVT and ODO sentences too ***");
-  myGNSS.nmeaUnsubscribe("PQTMPVT");
-  myGNSS.nmeaUnsubscribe("PQTMODO");
+    myGNSS.update(); // Regularly call to parse any new data
 }
 
