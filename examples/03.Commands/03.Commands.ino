@@ -1,0 +1,126 @@
+/*
+  Reading Position and Time via Serial
+  By: Nathan Seidle + Mikal Hart
+  SparkFun Electronics
+  Date: 29 September 2024
+  License: MIT. Please see LICENSE.md for more information.
+
+  This example shows how to query a LG290P GNSS module for its position and time data.
+  These examples are targeted for an ESP32 platform but any platform that has multiple
+  serial UARTs should be compatible.
+
+  Note: Lat/Lon are doubles and the LG290P outputs 8 digits after the decimal.
+
+  Feel like supporting open source hardware?
+  Buy a board from SparkFun!
+  SparkFun Quadband GNSS RTK Breakout - LG290P (GPS-XXXXX) https://www.sparkfun.com/products/XXXX
+
+  Hardware Connections:
+  Connect RX3 (green wire) of the LG290P to pin 14 on the ESP32
+  Connect TX3 (orange wire) of the LG290P to pin 13 on the ESP32
+  To make this easier, a 4-pin locking JST cable can be purchased here: https://www.sparkfun.com/products/17240
+  Note: Almost any ESP32 pins can be used for serial.
+  Connect a multi-band GNSS antenna: https://www.sparkfun.com/products/21801
+*/
+
+#include <SparkFun_LG290P_GNSS.h>
+
+// Adjust these values according to your configuration
+int pin_UART1_TX = 14;
+int pin_UART1_RX = 13;
+int gnss_baud = 460800;
+
+LG290P myGNSS;
+HardwareSerial SerialGNSS(1); // Use UART1 on the ESP32
+
+void setup()
+{
+  Serial.begin(115200);
+  delay(250);
+  Serial.println();
+  Serial.println("SparkFun LG290P PQTM Commands Example");
+
+  // We must start the serial port before using it in the library
+  // Increase buffer size to handle high baud rate streams
+  SerialGNSS.setRxBufferSize(1024);
+  SerialGNSS.begin(gnss_baud, SERIAL_8N1, pin_UART1_RX, pin_UART1_TX);
+  
+  myGNSS.enableDebugging(Serial); // Print all debug to Serial
+  if (!myGNSS.begin(SerialGNSS, &Serial, &Serial)) //Give the serial port over to the library
+//  if (!myGNSS.begin(SerialGNSS)) //Give the serial port over to the library
+  {
+    Serial.println("LG290P failed to respond. Check ports and baud rates. Freezing...");
+    while (true);
+  }
+  Serial.println("LG290P detected!");
+  prompt();
+}
+
+void prompt()
+{
+  Serial.println("Enter a command like PQTMUNIQID");
+  Serial.println("(The software will add checksums)");
+}
+
+static std::string userInput;
+
+void loop()
+{
+#if false
+static unsigned long last;
+if (SerialGNSS.available())
+{
+    char ch = SerialGNSS.read();
+    static int count = 0;
+
+    Serial.printf("%02X ", ch);
+    if (millis() - last > 100)
+        Serial.println();
+    if (++count == 40 || millis() - last > 100)
+    {
+        Serial.println();
+        last = millis();
+        count = 0;
+    }
+}
+return;
+#endif
+
+  myGNSS.update(); // Regularly call to parse any new data
+
+  if (Serial.available())
+    processSerial();
+
+  if (myGNSS.isNewSnapshotAvailable())
+  {
+    Serial.printf("Lat/Long/Alt: %.8f/%.8f/%.2f\r\n", myGNSS.getLatitude(), myGNSS.getLongitude(), myGNSS.getAltitude());
+  }
+}
+
+void processSerial()
+{
+    char ch = Serial.read();
+    if (ch == '\r' || ch == '\n')
+    {
+        if (!userInput.empty())
+        {
+            Serial.println();
+            if (myGNSS.sendCommandLine(userInput.c_str()))
+            {
+                NmeaPacket &response = myGNSS.getCommandResponse();
+                Serial.printf("Response is '%s'\r\n", response.ToString().c_str());
+            }
+            else
+            {
+                Serial.println("Command failed");
+            }
+            userInput.clear();
+            Serial.println();
+            prompt();
+        }
+    }
+    else
+    {
+        userInput += ch;
+    }
+}
