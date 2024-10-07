@@ -612,6 +612,16 @@ bool LG290P::configureConstellation(bool enableGPS, bool enableGLONASS, bool ena
     return sendOkCommand("PQTMCFGCNST", parms);
 }
 
+bool LG290P::disableEngine()
+{
+    return sendOkCommand("PQTMGNSSSTOP");
+}
+
+bool LG290P::enableEngine()
+{
+    return sendOkCommand("PQTMGNSSSTART");
+}
+
 #else
 
 // Directly set a mode: setMode("ROVER");
@@ -803,7 +813,6 @@ bool LG290P::disableFrequency(const char *frequencyName)
 
     return (disableSystem(command));
 }
-#endif
 
 // Called mask (disable) and unmask (enable), this is how to ignore certain constellations, or signal/frequencies,
 // or satellite elevations Returns true if successful
@@ -822,6 +831,7 @@ bool LG290P::disableSystem(const char *systemName)
 
     return (sendOkCommand(command));
 }
+#endif
 
 // Data Output commands
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-

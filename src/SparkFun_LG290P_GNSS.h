@@ -232,6 +232,9 @@ class LG290P
     bool setMessageRate(const char *msgName, int rate, int msgver = -1);
     bool nmeaSubscribe(const char *msgName, nmeaCallback callback);
     bool nmeaUnsubscribe(const char *msgName);
+    bool disableEngine();
+    bool enableEngine();
+
 #else
     bool setMode(const char *modeType);
     bool setModeBase(const char *baseType);
@@ -261,9 +264,9 @@ class LG290P
     bool setMinCNO(uint8_t dBHz);
     bool enableFrequency(const char *frequencyName);
     bool disableFrequency(const char *frequencyName);
-#endif
     bool enableSystem(const char *systemName);
     bool disableSystem(const char *systemName);
+#endif
 
     // Data output
     bool setNMEAPortMessage(const char *sentenceType, const char *comName, float outputRate);
