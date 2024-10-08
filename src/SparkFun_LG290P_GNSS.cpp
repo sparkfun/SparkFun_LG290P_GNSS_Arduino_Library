@@ -180,7 +180,6 @@ bool LG290P::isConnected()
     {
 #if false // ***
         disableOutput(); // Tell unit to stop transmitting
-#endif
         // Wait until serial stops coming in
         uint16_t maxTime = 500;
         unsigned long startTime = millis();
@@ -196,6 +195,7 @@ bool LG290P::isConnected()
             if (millis() - startTime > maxTime)
                 return false;
         }
+#endif
         if (sendOkCommand("PQTMUNIQID"))
             return true;
         debugPrintf("LG290P failed to connect. Trying again.");
@@ -861,6 +861,7 @@ bool LG290P::disableSystem(const char *systemName)
 // Data Output commands
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+#if false
 // Set the output rate of a given message on a given COM port/Use
 // 1, 0.5, 0.2, 0.1 corresponds to 1Hz, 2Hz, 5Hz, 10Hz respectively.
 // Ex: GPGGA 0.5 <- 2 times per second
@@ -946,7 +947,6 @@ bool LG290P::disableOutput()
 #endif
 }
 
-#if false
 // Disable all messages on a given port
 bool LG290P::disableOutputPort(const char *comName)
 {
@@ -958,7 +958,6 @@ bool LG290P::disableOutputPort(const char *comName)
 
     return (sendOkCommand(command));
 }
-#endif
 
 // We've issued an unlog, so the binary messages will no longer be coming in automatically
 // Turn off pointers so the next time a getLatitude() is issued, the associated messsage is reinit'd
@@ -988,7 +987,6 @@ void LG290P::stopAutoReports()
 #endif
 }
 
-#if false
 // Resetting the receiver will clear the satellite ephemerides, position information, satellite
 // almanacs, ionosphere parameters and UTC parameters saved in the receiver.
 bool LG290P::reset()
@@ -1061,6 +1059,7 @@ uint8_t LG290P::serialRead()
     return (0);
 }
 
+#if false
 void LG290P::serialPrintln(const char *command)
 {
     if (_hwSerialPort != nullptr)
@@ -1068,6 +1067,7 @@ void LG290P::serialPrintln(const char *command)
         _hwSerialPort->println(command);
     }
 }
+#endif
 
 // Correctly format command $PQTM with $ and checksum,
 // then send it!
@@ -1111,7 +1111,7 @@ bool LG290P::sendCommand(const char *command, const char *parms, uint16_t maxWai
         return false;
 
     bool success = false;
-    clearBuffer(); // Not necessary?
+    // clearBuffer(); // Not necessary?
 
     debugPrintf("sendCommand(\"%s\", \"%s\")", command, parms);
     commandName = command[0] == '$' ? command + 1 : command;
@@ -1325,14 +1325,18 @@ void LG290P::rtcmHandler(SEMP_PARSE_STATE *parse)
     RtcmPacket packet;
     if (good)
     {
-        packet.len = (parse->buffer[1] << 8) | parse->buffer[2];
-        packet.type = (parse->buffer[3] << 4) | (parse->buffer[4] >> 4);
-        good = packet.len + 6 == parse->length;
+        packet.payloadLen = (parse->buffer[1] << 8) | parse->buffer[2];
+        good = packet.payloadLen + 6 == parse->length;
     }
 
     if (good)
     {
+        packet.type = (parse->buffer[3] << 4) | (parse->buffer[4] >> 4);
+        packet.buffer = parse->buffer;
+        packet.bufferlen = parse->length;
         rtcmCounters[packet.type]++;
+
+        // If user is subscribed for this packet, call the callback
         if (rtcmSubscriptions.count(packet.type) > 0)
             rtcmSubscriptions[packet.type](packet);
     }

@@ -92,7 +92,9 @@ public:
 
 struct RtcmPacket
 {
-    uint16_t len;
+    uint8_t *buffer;
+    uint16_t bufferlen;
+    uint16_t payloadLen;
     uint16_t type;
 };
 

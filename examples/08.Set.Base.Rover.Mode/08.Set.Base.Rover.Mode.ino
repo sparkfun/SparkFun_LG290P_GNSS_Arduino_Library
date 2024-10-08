@@ -35,18 +35,15 @@ HardwareSerial SerialGNSS(1); // Use UART1 on the ESP32
 
 void myNmeaCallback(NmeaPacket &packet)
 {
-  auto &nmeacount = myGNSS.getNmeaCounters();
-  auto &rtcmcount = myGNSS.getRtcmCounters();
-  Serial.printf("Received an NMEA $%s%s packet: RMC=%d GGA=%d RTCM.1005=%d RTCM.1124=%d RTCM.1074=%d\r\n", 
-    packet.TalkerId().c_str(), packet.SentenceId().c_str(), nmeacount["RMC"], nmeacount["GGA"], rtcmcount[1005], rtcmcount[1124], rtcmcount[1074]);
+  Serial.printf("Received an NMEA $%s%s packet: %s ...\r\n", packet.TalkerId().c_str(), packet.SentenceId().c_str(), packet[1].c_str());
 }
 
 void myRtcmCallback(RtcmPacket &packet)
 {
-  auto &nmeacount = myGNSS.getNmeaCounters();
-  auto &rtcmcount = myGNSS.getRtcmCounters();
-  Serial.printf("Received an RTCM %d packet: RMC=%d GGA=%d RTCM.1005=%d RTCM.1124=%d RTCM.1074=%d\r\n", 
-    packet.type, nmeacount["RMC"], nmeacount["GGA"], rtcmcount[1005], rtcmcount[1124], rtcmcount[1074]);
+  Serial.printf("Received an RTCM %d packet: ", packet.type);
+  for (int i=0; i<packet.bufferlen && i<10; ++i)
+    Serial.printf("%02X ", packet.buffer[i]);
+  Serial.println(packet.bufferlen > 10 ? "..." : "");
 }
 
 void setup()
@@ -85,17 +82,19 @@ void busy_wait(int seconds)
 
 void loop()
 {
+    Serial.println();
+    Serial.println("Here's the engine running in ROVER mode");
     myGNSS.setModeRover();
     myGNSS.saveParameters();
     myGNSS.factoryReset();
-    Serial.println();
-    Serial.println("Here's the engine running in ROVER mode");
+    Serial.println("Resetting device...");
     busy_wait(30);
     
+    Serial.println();
+    Serial.println("Here's the engine running in BASE mode");
     myGNSS.setModeBase();
     myGNSS.saveParameters();
     myGNSS.factoryReset();
-    Serial.println();
-    Serial.println("Here's the engine running in BASE mode");
+    Serial.println("Resetting device...");
     busy_wait(30);
 }

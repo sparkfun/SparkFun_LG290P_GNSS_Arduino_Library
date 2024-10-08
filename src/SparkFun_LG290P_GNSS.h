@@ -23,6 +23,8 @@
 #include "LG290P_structs.h"
 #include <SparkFun_Extensible_Message_Parser.h>
 #include <map>
+#include <list>
+#include <string>
 
 typedef enum
 {
@@ -129,53 +131,67 @@ typedef enum
 class LG290P
 {
   private:
+    // Update times
     unsigned long lastUpdateGeodetic = 0;
     unsigned long lastUpdateEcef = 0;
     unsigned long lastUpdateDateTime = 0;
     unsigned long lastUpdateVersion = 0;
 
+    // Sentence and packet counters
     std::map<std::string, int> nmeaCounters;
     std::map<int, int> rtcmCounters;
+    void clearCounters() { nmeaCounters.clear(); rtcmCounters.clear(); }
+
+    // Subscriptions
     typedef void (*nmeaCallback)(NmeaPacket &nmea);
     typedef void (*rtcmCallback)(RtcmPacket &rtcm);
     std::map<std::string, nmeaCallback> nmeaSubscriptions;
     std::map<int, rtcmCallback> rtcmSubscriptions;
-    
-    void clearCounters() { nmeaCounters.clear(); rtcmCounters.clear(); }
 
-    void stopAutoReports(); // Delete all pointers to force reinit next time a helper function is called
-
-#if false
-    bool isNmeaFixed(); // Returns true when GNGGA NMEA reports position status >= 1
-    LG290PResult getGeodetic(uint16_t maxWaitMs = 1500);
-    LG290PResult updateEcef(uint16_t maxWaitMs = 1500);
-    LG290PResult updateDateTime(uint16_t maxWaitMs = 1500);
-#endif
-
-    Print *_debugPort = nullptr; // The stream to send debug messages to if enabled. Usually Serial.
-
+    // State management
     SEMP_PARSE_STATE *_sempParse; // State of the SparkFun Extensible Message Parser
-
     bool lg290PLibrarySemaphoreBlock = false; // Gets set to true when the Unicore library needs to interact directly
-                                               // with the serial hardware
-#if false
-    char configStringToFind[100] = {'\0'};
-    bool configStringFound = false; // configHandler() sets true if we find the intended string
-#endif
 
+    // Debugging
+    Print *_debugPort = nullptr; // The stream to send debug messages to if enabled. Usually Serial.
     bool _printBadChecksum = false;       // Display bad checksum message from the parser
     bool _printParserTransitions = false; // Display the parser transitions
     bool _printRxMessages = false;        // Display the received message summary
     bool _dumpRxMessages = false;         // Display the received message hex dump
 
+    // Command processing
     std::string commandName;  // The specific command response the parser is hunting for
     uint8_t commandResponse = LG290P_RESULT_OK; // Gets EOM result from parser
     NmeaPacket pqtmResponse;  // If found, parse puts resulting $PQTM sentence here
+    bool transmit(const char *command, const char *parms);
+ 
+    // Parsing support
     static void LG290PProcessMessage(SEMP_PARSE_STATE *parse, uint16_t type);
     void nmeaHandler(SEMP_PARSE_STATE *parse);
     void rtcmHandler(SEMP_PARSE_STATE *parse);
     HardwareSerial *_hwSerialPort = nullptr;
     NmeaSnapshot *snapshot = nullptr;
+    bool initSnapshot();
+
+    // Serial port utilities
+    uint16_t serialAvailable();
+    uint8_t serialRead();
+    void serialPrintln(const char *command);
+    void clearBuffer();
+
+    // Satellite reporting
+    struct satinfo { int elev, azimuth, prn, snr; };
+    std::map<std::string /* talker id */, std::list<satinfo>> staging;
+    std::map<std::string /* talker id */, std::list<satinfo>> reporting;
+    
+#if false
+    void stopAutoReports(); // Delete all pointers to force reinit next time a helper function is called
+    LG290PResult getGeodetic(uint16_t maxWaitMs = 1500);
+    LG290PResult updateEcef(uint16_t maxWaitMs = 1500);
+    LG290PResult updateDateTime(uint16_t maxWaitMs = 1500);
+    char configStringToFind[100] = {'\0'};
+    bool configStringFound = false; // configHandler() sets true if we find the intended string
+#endif
 
   public:
     // Client interface
@@ -208,8 +224,8 @@ class LG290P
     std::map<std::string, int> &getNmeaCounters() { return nmeaCounters; }
     std::map<int, int> &getRtcmCounters() { return rtcmCounters; }
 
-    // Mode
 #if true
+    // Device configuration
     bool setModeBase();
     bool setModeRover();
     bool setPortBaudrate(int port, uint32_t newBaud);
@@ -226,19 +242,23 @@ class LG290P
     bool getVersionInfo(std::string &version, std::string &buildDate, std::string &buildTime);
     bool getFixInterval(uint16_t &fixInterval);
     bool setFixInterval(uint16_t fixInterval);
+    bool setMessageRate(const char *msgName, int rate, int msgver = -1);
+    bool saveParameters();
+    bool restoreParameters();
+
+    // Resets and engine control
     bool factoryReset();
     bool coldReset();
     bool warmReset();
     bool hotReset();
-    bool setMessageRate(const char *msgName, int rate, int msgver = -1);
+    bool disableEngine();
+    bool enableEngine();
+
+    // Subscriptions
     bool nmeaSubscribe(const char *msgName, nmeaCallback callback);
     bool nmeaUnsubscribe(const char *msgName);
     bool rtcmSubscribe(uint16_t type, rtcmCallback callback);
     bool rtcmUnsubscribe(uint16_t type);
-    bool disableEngine();
-    bool enableEngine();
-    bool saveParameters();
-    bool restoreParameters();
 
 #else
     bool setMode(const char *modeType);
@@ -273,6 +293,7 @@ class LG290P
     bool disableSystem(const char *systemName);
 #endif
 
+#if false
     // Data output
     bool setNMEAPortMessage(const char *sentenceType, const char *comName, float outputRate);
     bool setNMEAMessage(const char *sentenceType, float outputRate);
@@ -284,18 +305,15 @@ class LG290P
     bool disableOutputPort(const char *comName);
     bool saveConfiguration(uint16_t maxWaitMs = 1500);
 
-    uint16_t serialAvailable();
-    uint8_t serialRead();
-    void serialPrintln(const char *command);
-    void clearBuffer();
+#endif
 
-    bool transmit(const char *command, const char *parms);
+    // Command handling
     bool sendCommand(const char *command, const char *parms = "", uint16_t maxWaitMs = 1500);
     bool sendCommandLine(const char *command, uint16_t maxWaitMs = 1500);
     NmeaPacket &getCommandResponse() { return pqtmResponse; }
     bool sendOkCommand(const char *command, const char *parms = "", uint16_t maxWaitMs = 1500);
 
-    // Main snapshot helper functions
+    // Geodetic helper functions
     bool isNewSnapshotAvailable(); 
     double getLatitude();
     double getLongitude();
@@ -356,10 +374,7 @@ class LG290P
 
     void unicoreHandler(uint8_t *data, uint16_t length);
     void configHandler(uint8_t *response, uint16_t length);
-#endif
-    bool initSnapshot();
 
-#if false
     bool initBestnav(uint8_t rate = 1);
     UNICORE_BESTNAV_t *packetBESTNAV = nullptr;
 
