@@ -206,6 +206,7 @@ class LG290P
 
     // Statistics
     std::map<std::string, int> &getNmeaCounters() { return nmeaCounters; }
+    std::map<int, int> &getRtcmCounters() { return rtcmCounters; }
 
     // Mode
 #if true
@@ -232,8 +233,12 @@ class LG290P
     bool setMessageRate(const char *msgName, int rate, int msgver = -1);
     bool nmeaSubscribe(const char *msgName, nmeaCallback callback);
     bool nmeaUnsubscribe(const char *msgName);
+    bool rtcmSubscribe(uint16_t type, rtcmCallback callback);
+    bool rtcmUnsubscribe(uint16_t type);
     bool disableEngine();
     bool enableEngine();
+    bool saveParameters();
+    bool restoreParameters();
 
 #else
     bool setMode(const char *modeType);

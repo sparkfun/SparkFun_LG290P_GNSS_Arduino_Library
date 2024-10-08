@@ -411,6 +411,7 @@ void LG290P::LG290PProcessMessage(SEMP_PARSE_STATE *parse, uint16_t type)
         break;
 #endif
     case LG290P_RTCM_PARSER_INDEX:
+        ptrLG290P->rtcmHandler(parse);
         break;
 #if false
     case LG290P_UNICORE_HASH_PARSER_INDEX:
@@ -583,6 +584,18 @@ bool LG290P::nmeaUnsubscribe(const char *msgName)
     return true;
 }
 
+bool LG290P::rtcmSubscribe(uint16_t type, rtcmCallback callback)
+{
+    rtcmSubscriptions[type] = callback;
+    return true;
+}
+
+bool LG290P::rtcmUnsubscribe(uint16_t type)
+{
+    rtcmSubscriptions.erase(type);
+    return true;
+}
+
 bool LG290P::factoryReset()
 {
     return sendCommand("PQTMSRR");
@@ -621,6 +634,18 @@ bool LG290P::enableEngine()
 {
     return sendOkCommand("PQTMGNSSSTART");
 }
+
+bool LG290P::saveParameters()
+{
+    return sendOkCommand("PQTMSAVEPAR");
+}
+
+bool LG290P::restoreParameters()
+{
+    return sendOkCommand("PQTMRESTOREPAR");
+}
+
+
 
 #else
 
@@ -1065,14 +1090,16 @@ bool LG290P::transmit(const char *command, const char *parms)
     for (int i=1; i<cmd.length(); ++i)
         chk ^= cmd[i];
 
-    // Append checksum and newlines
+    // Append checksum
     char buf[32];
-    sprintf(buf, "*%02X\r\n", chk);
+    sprintf(buf, "*%02X", chk);
     cmd += buf;
 
-    // send!
-    debugPrintf("transmit %s", cmd.c_str());
+    // send with newlines
+    debugPrintf("...transmit '%s'", cmd.c_str());
     _hwSerialPort->print(cmd.c_str());
+    _hwSerialPort->print("\r\n");
+    
     return true;
 }
 
@@ -1086,7 +1113,7 @@ bool LG290P::sendCommand(const char *command, const char *parms, uint16_t maxWai
     bool success = false;
     clearBuffer(); // Not necessary?
 
-    debugPrintf("sendCommand(\"%s\", \"%s\")\r\n", command, parms);
+    debugPrintf("sendCommand(\"%s\", \"%s\")", command, parms);
     commandName = command[0] == '$' ? command + 1 : command;
     commandResponse = LG290P_RESULT_RESPONSE_COMMAND_WAITING; // Reset
 
@@ -1096,7 +1123,7 @@ bool LG290P::sendCommand(const char *command, const char *parms, uint16_t maxWai
     if (!transmit(command, parms))
         return false;
 
-    debugPrintf("sendCommand waiting for response for %s\r\n", command);
+    debugPrintf("...sendCommand waiting for response for %s", command);
 
     // Feed the parser until we see a response to the command
     for (unsigned long start = millis(); millis() - start < maxWaitMs;)
@@ -1105,18 +1132,16 @@ bool LG290P::sendCommand(const char *command, const char *parms, uint16_t maxWai
 
         if (commandResponse == LG290P_RESULT_RESPONSE_COMMAND_OK)
         {
-            debugPrintf("LG290P Lib: Matching Response received");
+            debugPrintf("...sendCommand: Matching Response received");
             success = true;
             break;
         }
 
         if (commandResponse == LG290P_RESULT_RESPONSE_COMMAND_ERROR)
         {
-            debugPrintf("LG290P Lib: Matching response NOT received");
+            debugPrintf("...sendCommand: Matching response NOT received");
             break;
         }
-
-        // delay(1);
     }
 
     commandName.clear();
@@ -1142,7 +1167,7 @@ bool LG290P::sendOkCommand(const char *command, const char *parms, uint16_t maxW
     NmeaPacket &response = getCommandResponse();
     bool okFound = response[1] == "OK";
 
-    debugPrintf("sendOkCommand, OK %sfound\r\n", okFound ? "" : "NOT ");
+    debugPrintf("...sendOkCommand, OK %sfound", okFound ? "" : "NOT ");
 
     return okFound;
 }
@@ -1256,7 +1281,7 @@ void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
         if (nmea[0].substr(1) == ptrLG290P->commandName)
         {
             // Display the command response
-            ptrLG290P->debugPrintf("LG290P Lib: Expected command response found %s", parse->buffer);
+            ptrLG290P->debugPrintf("...sendCommand: (main loop) Expected command response found %s", parse->buffer);
             ptrLG290P->pqtmResponse = nmea;
             ptrLG290P->commandResponse = LG290P_RESULT_RESPONSE_COMMAND_OK;
         }
@@ -1291,6 +1316,26 @@ void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
     nmeaCounters[id]++;
     if (nmeaSubscriptions.count(id) > 0)
         nmeaSubscriptions[id](nmea); // call the callback!
+}
+
+// Cracks an NMEA into the applicable container
+void LG290P::rtcmHandler(SEMP_PARSE_STATE *parse)
+{
+    bool good = parse->length > 6 && parse->buffer[0] == 0xD3;
+    RtcmPacket packet;
+    if (good)
+    {
+        packet.len = (parse->buffer[1] << 8) | parse->buffer[2];
+        packet.type = (parse->buffer[3] << 4) | (parse->buffer[4] >> 4);
+        good = packet.len + 6 == parse->length;
+    }
+
+    if (good)
+    {
+        rtcmCounters[packet.type]++;
+        if (rtcmSubscriptions.count(packet.type) > 0)
+            rtcmSubscriptions[packet.type](packet);
+    }
 }
 
 #if false

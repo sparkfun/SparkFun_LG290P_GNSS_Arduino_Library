@@ -88,12 +88,12 @@ public:
     void processRMC(NmeaSnapshot *snapshot);
 
     static NmeaPacket FromString(const std::string &str);
-    static NmeaPacket Empty;
 };
 
-class RtcmPacket
+struct RtcmPacket
 {
-
+    uint16_t len;
+    uint16_t type;
 };
 
 #if false
