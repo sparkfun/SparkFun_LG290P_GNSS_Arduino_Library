@@ -147,7 +147,9 @@ class LG290P
     typedef void (*rtcmCallback)(RtcmPacket &rtcm);
     std::map<std::string, nmeaCallback> nmeaSubscriptions;
     std::map<int, rtcmCallback> rtcmSubscriptions;
-
+    nmeaCallback nmeaAllSubscribe = nullptr;
+    rtcmCallback rtcmAllSubscribe = nullptr;
+    
     // State management
     SEMP_PARSE_STATE *_sempParse; // State of the SparkFun Extensible Message Parser
     bool lg290PLibrarySemaphoreBlock = false; // Gets set to true when the Unicore library needs to interact directly
@@ -180,10 +182,11 @@ class LG290P
     void clearBuffer();
 
     // Satellite reporting
-    struct satinfo { int elev, azimuth, prn, snr; };
+    struct satinfo { int elev, azimuth, prn, snr; char talker[3]; };
     std::map<std::string /* talker id */, std::list<satinfo>> staging;
     std::map<std::string /* talker id */, std::list<satinfo>> reporting;
-    
+    bool hasNewSatellites = false;
+
 #if false
     void stopAutoReports(); // Delete all pointers to force reinit next time a helper function is called
     LG290PResult getGeodetic(uint16_t maxWaitMs = 1500);
@@ -257,8 +260,12 @@ class LG290P
     // Subscriptions
     bool nmeaSubscribe(const char *msgName, nmeaCallback callback);
     bool nmeaUnsubscribe(const char *msgName);
+    bool nmeaSubscribeAll(nmeaCallback callback);
+    bool nmeaUnsubscribeAll();
     bool rtcmSubscribe(uint16_t type, rtcmCallback callback);
     bool rtcmUnsubscribe(uint16_t type);
+    bool rtcmSubscribeAll(rtcmCallback);
+    bool rtcmUnsubscribeAll();
 
 #else
     bool setMode(const char *modeType);
@@ -312,6 +319,15 @@ class LG290P
     bool sendCommandLine(const char *command, uint16_t maxWaitMs = 1500);
     NmeaPacket &getCommandResponse() { return pqtmResponse; }
     bool sendOkCommand(const char *command, const char *parms = "", uint16_t maxWaitMs = 1500);
+
+    // Satellites
+    std::list<satinfo> getVisibleSats(const char *talker = nullptr);
+    bool isNewSatelliteInfoAvailable(); 
+
+    // Survey In Mode
+    bool getSurveyMode(int &mode, int &positionTimes, double &accuracyLimit, double &ecefX, double &ecefY, double &ecefZ);
+    bool setSurveyInMode(int positionTimes, double accuracyLimit=0);
+    bool setSurveyFixedMode(double ecefX, double ecefY, double ecefZ);
 
     // Geodetic helper functions
     bool isNewSnapshotAvailable(); 

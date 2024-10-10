@@ -176,26 +176,9 @@ bool LG290P::begin(HardwareSerial &serialPort, Print *parserDebug, Print *parser
 // Try a few times
 bool LG290P::isConnected()
 {
-    for (int x = 0; x < 3; x++)
+    // Try up to 10 seconds
+    for (unsigned long start = millis(); millis() - start < 10000;)
     {
-#if false // ***
-        disableOutput(); // Tell unit to stop transmitting
-        // Wait until serial stops coming in
-        uint16_t maxTime = 500;
-        unsigned long startTime = millis();
-        while (1)
-        {
-            delay(1);
-
-            if (serialAvailable() == 0)
-                break;
-            while (serialAvailable())
-                serialRead();
-
-            if (millis() - startTime > maxTime)
-                return false;
-        }
-#endif
         if (sendOkCommand("PQTMUNIQID"))
             return true;
         debugPrintf("LG290P failed to connect. Trying again.");
@@ -584,6 +567,17 @@ bool LG290P::nmeaUnsubscribe(const char *msgName)
     return true;
 }
 
+bool LG290P::nmeaSubscribeAll(nmeaCallback callback)
+{
+    nmeaAllSubscribe = callback;
+    return true;
+}
+
+bool LG290P::nmeaUnsubscribeAll()
+{
+    nmeaAllSubscribe = nullptr;
+}
+
 bool LG290P::rtcmSubscribe(uint16_t type, rtcmCallback callback)
 {
     rtcmSubscriptions[type] = callback;
@@ -594,6 +588,17 @@ bool LG290P::rtcmUnsubscribe(uint16_t type)
 {
     rtcmSubscriptions.erase(type);
     return true;
+}
+
+bool LG290P::rtcmSubscribeAll(rtcmCallback callback)
+{
+    rtcmAllSubscribe = callback;
+    return true;
+}
+
+bool LG290P::rtcmUnsubscribeAll()
+{
+    rtcmAllSubscribe = nullptr;
 }
 
 bool LG290P::factoryReset()
@@ -1172,6 +1177,56 @@ bool LG290P::sendOkCommand(const char *command, const char *parms, uint16_t maxW
     return okFound;
 }
 
+std::list<LG290P::satinfo> LG290P::getVisibleSats(const char *talker /* = nullptr */)
+{
+    std::list<LG290P::satinfo> list;
+
+    // Get all the satellites visible?
+    if (talker == nullptr)
+    {
+        for (auto &item : reporting)
+            list.insert(list.end(), item.second.begin(), item.second.end());
+    }
+    else 
+    {
+        auto item = reporting.find(talker);
+        if (item != reporting.end())
+            list = item->second;
+    }
+    return list;
+}
+
+bool LG290P::getSurveyMode(int &mode, int &positionTimes, double &accuracyLimit, double &ecefX, double &ecefY, double &ecefZ)
+{
+    bool ret = sendOkCommand("PQTMCFGSVIN", ",R");
+    if (ret)
+    {
+        auto packet = getCommandResponse();
+        mode = atoi(packet[2].c_str());
+        positionTimes = atof(packet[3].c_str());
+        accuracyLimit = atof(packet[4].c_str());
+        ecefX = atof(packet[5].c_str());
+        ecefY = atof(packet[6].c_str());
+        ecefZ = atof(packet[7].c_str());
+    }
+    return ret;
+}
+
+bool LG290P::setSurveyInMode(int positionTimes, double accuracyLimit /* = 0 */)
+{
+    char parms[50];
+    snprintf(parms, sizeof parms, ",W,1,%d,%f,0.00,0.00,0.00", positionTimes, accuracyLimit);
+    return sendOkCommand("PQTMCFGSVIN", parms);
+    return true;
+}
+
+bool LG290P::setSurveyFixedMode(double ecefX, double ecefY, double ecefZ)
+{
+    char parms[50];
+    snprintf(parms, sizeof parms, ",W,2,0,0,%f,%f,%f", ecefX, ecefY, ecefZ);
+    return sendOkCommand("PQTMCFGSVIN", parms);
+}
+
 // Main handler and RAM inits
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #define CHECK_POINTER_BOOL(packetPointer, initPointer)                                                                 \
@@ -1230,37 +1285,36 @@ void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
                     CHECK_POINTER_VOID(ptrLG290P->snapshot, ptrLG290P->initSnapshot); // Check that RAM has been allocated
                     lastUpdateGeodetic = millis(); // Update stale marker
                     nmea.processGGA(ptrLG290P->snapshot);
-
                 }
 
                 if (id == "GSV")
                 {
-                    //Serial.printf("%s.%s\r\n", ps.TalkerId().c_str(), ps.SentenceId().c_str());
-    #if false
-                    uint16_t msgCount = (uint16_t)strtoul(ps[1].c_str(), NULL, 10);
-                    uint16_t msgNo = (uint16_t)strtoul(ps[2].c_str(), NULL, 10);
-                    uint16_t svsInView = (uint16_t)strtoul(ps[3].c_str(), NULL, 10);
-                    log_d("GSV: count: %d no: %d in view: %d", msgCount, msgNo, svsInView);
+                    uint16_t msgCount = (uint16_t)strtoul(nmea[1].c_str(), NULL, 10);
+                    uint16_t msgNo = (uint16_t)strtoul(nmea[2].c_str(), NULL, 10);
+                    uint16_t svsInView = (uint16_t)strtoul(nmea[3].c_str(), NULL, 10);
+                    std::string talker = nmea.TalkerId();
+
+                    if (msgNo == 1)
+                    {
+                        staging[talker].clear();
+                    }
+                    // log_d("GSV: count: %d no: %d in view: %d", msgCount, msgNo, svsInView);
                     for (int i = 0; i < 4 && 4 * (msgNo - 1) + i < svsInView; ++i)
                     {
-                        SatelliteInfo sat;
-                        sat.prn = (uint16_t)strtoul(ps[4 + 4 * i].c_str(), NULL, 10);
-                        sat.elevation = (uint16_t)strtoul(ps[5 + 4 * i].c_str(), NULL, 10);
-                        sat.azimuth = (uint16_t)strtoul(ps[6 + 4 * i].c_str(), NULL, 10);
-                        sat.snr = (uint16_t)strtoul(ps[7 + 4 * i].c_str(), NULL, 10);
-                        sat.talker_id = ps.TalkerId();
-                        sat.used = false;
-                        SatelliteStaging.push_back(sat);
+                        satinfo sat;
+                        sat.prn = (uint16_t)strtoul(nmea[4 + 4 * i].c_str(), NULL, 10);
+                        sat.elev = (uint16_t)strtoul(nmea[5 + 4 * i].c_str(), NULL, 10);
+                        sat.azimuth = (uint16_t)strtoul(nmea[6 + 4 * i].c_str(), NULL, 10);
+                        sat.snr = (uint16_t)strtoul(nmea[7 + 4 * i].c_str(), NULL, 10);
+                        strncpy(sat.talker, talker.substr(0, 2).c_str(), sizeof sat.talker);
+                        staging[talker].push_back(sat);
                     }
                     
                     if (msgNo == msgCount)
                     {
-                        // AllSatellites = SatelliteStaging; XXX fix this up
-                        SatelliteTalkerId = ps.TalkerId();
-                        SatelliteStaging.clear();
+                        reporting[talker] = staging[talker];
                         hasNewSatellites = true;
                     }
-    #endif
                 }
             }
             else
@@ -1314,8 +1368,12 @@ void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
 
     std::string id = nmea.SentenceId();
     nmeaCounters[id]++;
+    
+    // handle specific and general callbacks
     if (nmeaSubscriptions.count(id) > 0)
         nmeaSubscriptions[id](nmea); // call the callback!
+    if (nmeaAllSubscribe != nullptr)
+        nmeaAllSubscribe(nmea);
 }
 
 // Cracks an NMEA into the applicable container
@@ -1336,9 +1394,12 @@ void LG290P::rtcmHandler(SEMP_PARSE_STATE *parse)
         packet.bufferlen = parse->length;
         rtcmCounters[packet.type]++;
 
+        // handle specific and general callbacks
         // If user is subscribed for this packet, call the callback
         if (rtcmSubscriptions.count(packet.type) > 0)
             rtcmSubscriptions[packet.type](packet);
+        if (rtcmAllSubscribe != nullptr)
+            rtcmAllSubscribe(packet);
     }
 }
 
@@ -1711,6 +1772,13 @@ bool LG290P::isNewSnapshotAvailable()
         return false;
     bool r = snapshot->newDataAvailable;
     snapshot->newDataAvailable = false;
+    return r;
+}
+
+bool LG290P::isNewSatelliteInfoAvailable()
+{
+    bool r = hasNewSatellites;
+    hasNewSatellites = false;
     return r;
 }
 
