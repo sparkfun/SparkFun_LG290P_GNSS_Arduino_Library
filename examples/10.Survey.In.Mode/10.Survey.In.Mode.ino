@@ -44,9 +44,9 @@ void setup()
   SerialGNSS.setRxBufferSize(1024);
   SerialGNSS.begin(gnss_baud, SERIAL_8N1, pin_UART1_RX, pin_UART1_TX);
   
-  myGNSS.enableDebugging(Serial); // Print all debug to Serial
-  if (!myGNSS.begin(SerialGNSS, &Serial, &Serial)) //Give the serial port over to the library
-//  if (!myGNSS.begin(SerialGNSS)) //Give the serial port over to the library
+  // myGNSS.enableDebugging(Serial); // Print all debug to Serial
+  // if (!myGNSS.begin(SerialGNSS, &Serial, &Serial)) //Give the serial port over to the library
+  if (!myGNSS.begin(SerialGNSS)) //Give the serial port over to the library
   {
     Serial.println("LG290P failed to respond. Check ports and baud rates. Freezing...");
     while (true);
@@ -55,11 +55,11 @@ void setup()
   Serial.println("Setting base station mode");
   myGNSS.setModeRover();
   myGNSS.saveParameters();
-  myGNSS.factoryReset();
-  delay(5000);
+  myGNSS.softwareReset();
   Serial.println("Monitoring PQTMSVINSTATUS message");
   myGNSS.nmeaSubscribe("PQTMSVINSTATUS", MyCallback);
-  myGNSS.nmeaSubscribeAll(MyCallback);
+//  myGNSS.nmeaSubscribeAll(MyCallback);
+
   Serial.println("Enabling PQTMSVINSTATUS message");
   myGNSS.setMessageRate("PQTMSVINSTATUS", 1, 2);
 
@@ -67,6 +67,13 @@ void setup()
 
   Serial.println("Setting 'Survey In' Mode");
   myGNSS.setSurveyInMode(100);
+  myGNSS.saveParameters();
+  myGNSS.softwareReset();
+  Serial.print("Waiting until device is back online...");
+  while (!myGNSS.isConnected())
+    Serial.print(".");
+  Serial.println();
+  Serial.println("Online. Waiting for PQTMSVINSTATUS message...");
 }
 
 void MyCallback(NmeaPacket &nmea)

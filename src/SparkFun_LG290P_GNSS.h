@@ -183,8 +183,8 @@ class LG290P
 
     // Satellite reporting
     struct satinfo { int elev, azimuth, prn, snr; char talker[3]; };
-    std::map<std::string /* talker id */, std::list<satinfo>> staging;
-    std::map<std::string /* talker id */, std::list<satinfo>> reporting;
+    std::map<std::string /* talker id */, std::list<satinfo>> satelliteStaging;
+    std::map<std::string /* talker id */, std::list<satinfo>> satelliteReporting;
     bool hasNewSatellites = false;
 
 #if false
@@ -250,7 +250,7 @@ class LG290P
     bool restoreParameters();
 
     // Resets and engine control
-    bool factoryReset();
+    bool softwareReset();
     bool coldReset();
     bool warmReset();
     bool hotReset();

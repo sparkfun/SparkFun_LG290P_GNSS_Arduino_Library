@@ -1,11 +1,12 @@
 /*
-  Stop and start the GNSS engine
+  Displaying satellites in view
   By: Nathan Seidle + Mikal Hart
   SparkFun Electronics
   Date: 29 September 2024
   License: MIT. Please see LICENSE.md for more information.
 
-  This example shows how to perform the various device resets (hot, warm, cold, factory)
+  This example shows how to enable and disable the various satellite constellations.
+  This sketch is similar to Satellites.ino.
 
   These examples are targeted for an ESP32 platform but any platform that has multiple
   serial UARTs should be compatible.
@@ -35,9 +36,9 @@ HardwareSerial SerialGNSS(1); // Use UART1 on the ESP32
 void setup()
 {
   Serial.begin(115200);
-  delay(250);
+  delay(2000);
   Serial.println();
-  Serial.println("SparkFun LG290P Fix Rate Example");
+  Serial.println("SparkFun Satellite Example");
 
   // We must start the serial port before using it in the library
   // Increase buffer size to handle high baud rate streams
@@ -52,47 +53,53 @@ void setup()
     while (true);
   }
   Serial.println("LG290P detected!");
-
-  Serial.println("At startup");
-  busy_wait();
 }
 
-void busy_wait()
+void busy_wait(int nsecs)
 {
-  // Delay 2 seconds to allow the message to be seen
-  for (unsigned long start = millis(); millis() - start < 1000 * 2; )
-    myGNSS.update();
-
-  // For at least 10 seconds, but no more than 60, display lat/long until we have a fix
-  for (unsigned long start = millis(); millis() - start < 1000 * 60; )
+  for (unsigned long start = millis(); millis() - start < 1000 * nsecs;)
   {
-    if (myGNSS.isNewSnapshotAvailable())
+    myGNSS.update(); // Regularly call to parse any new data
+
+    if (myGNSS.isNewSatelliteInfoAvailable())
     {
-      Serial.printf("%02d:%02d:%02d.%03d Lat/Long=(%.8f,%.8f) Alt=%.2f\r\n", 
-        myGNSS.getHour(), myGNSS.getMinute(), myGNSS.getSecond(), myGNSS.getMillisecond(),
-        myGNSS.getLatitude(), myGNSS.getLongitude(), myGNSS.getAltitude());
-        myGNSS.update();
-      if (start - millis() >= 10000 && myGNSS.getLatitude() != 0)
-        break;
+      auto sats = myGNSS.getVisibleSats();
+      std::string prevTalker = "";
+      Serial.printf("In view: %d ", sats.size());
+      for (auto sat : sats)
+      {
+        if (sat.talker != prevTalker)
+        {
+          Serial.printf("  %s: ", sat.talker);
+          prevTalker = sat.talker;
+        }
+        Serial.printf("%d ", sat.prn);
+      }
+      Serial.println();
     }
   }
 }
 
 void loop()
 {
-  Serial.println("Hot reset");
-  myGNSS.hotReset();
-  busy_wait();
-
-  Serial.println("Warm reset");
-  myGNSS.warmReset();
-  busy_wait();
-
-  Serial.println("Cold reset");
-  myGNSS.coldReset();
-  busy_wait();
-
-  Serial.println("Factory reset");
+  Serial.println();
+  Serial.println("Test 1: All constellations enabled");
+  myGNSS.configureConstellation(true, true, true, true, true, true);
+  myGNSS.saveParameters();
   myGNSS.softwareReset();
-  busy_wait();
+  busy_wait(60);
+
+  Serial.println();
+  Serial.println("Test 2: Only GP, GA, GQ constellations enabled");
+  myGNSS.configureConstellation(true, false, true, false, true, false);
+  myGNSS.saveParameters();
+  myGNSS.softwareReset();
+  busy_wait(60);
+
+  Serial.println();
+  Serial.println("Test 3: Only GL, GB, IN constellations enabled");
+  myGNSS.configureConstellation(false, true, false, true, false, true);
+  myGNSS.saveParameters();
+  myGNSS.softwareReset();
+  busy_wait(60);
 }

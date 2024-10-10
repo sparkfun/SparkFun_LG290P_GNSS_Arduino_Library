@@ -58,12 +58,8 @@ void loop()
 {
   myGNSS.update(); // Regularly call to parse any new data
 
-  static unsigned long lastCheck = 0;
-  // if (millis() - lastCheck > 1000)
   if (myGNSS.isNewSatelliteInfoAvailable())
   {
-    lastCheck = millis();
-
     auto sats = myGNSS.getVisibleSats();
     std::string prevTalker = "";
     Serial.printf("In view: %d ", sats.size());

@@ -86,7 +86,7 @@ void loop()
     Serial.println("Here's the engine running in ROVER mode");
     myGNSS.setModeRover();
     myGNSS.saveParameters();
-    myGNSS.factoryReset();
+    myGNSS.softwareReset();
     Serial.println("Resetting device...");
     busy_wait(30);
     
@@ -94,7 +94,7 @@ void loop()
     Serial.println("Here's the engine running in BASE mode");
     myGNSS.setModeBase();
     myGNSS.saveParameters();
-    myGNSS.factoryReset();
+    myGNSS.softwareReset();
     Serial.println("Resetting device...");
     busy_wait(30);
 }

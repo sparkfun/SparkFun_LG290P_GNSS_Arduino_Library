@@ -601,7 +601,7 @@ bool LG290P::rtcmUnsubscribeAll()
     rtcmAllSubscribe = nullptr;
 }
 
-bool LG290P::factoryReset()
+bool LG290P::softwareReset()
 {
     return sendCommand("PQTMSRR");
 }
@@ -627,7 +627,9 @@ bool LG290P::configureConstellation(bool enableGPS, bool enableGLONASS, bool ena
     char parms[50];
     snprintf(parms, sizeof parms, ",W,%d,%d,%d,%d,%d,%d", enableGPS, enableGLONASS, 
         enableGalileo, enableBDS, enableQZSS, enableNavIC);
-    return sendOkCommand("PQTMCFGCNST", parms);
+    bool ret = sendOkCommand("PQTMCFGCNST", parms);
+    if (ret) satelliteReporting.clear();
+    return ret;
 }
 
 bool LG290P::disableEngine()
@@ -1179,21 +1181,21 @@ bool LG290P::sendOkCommand(const char *command, const char *parms, uint16_t maxW
 
 std::list<LG290P::satinfo> LG290P::getVisibleSats(const char *talker /* = nullptr */)
 {
-    std::list<LG290P::satinfo> list;
+    std::list<LG290P::satinfo> ret;
 
     // Get all the satellites visible?
     if (talker == nullptr)
     {
-        for (auto &item : reporting)
-            list.insert(list.end(), item.second.begin(), item.second.end());
+        for (auto &item : satelliteReporting)
+            ret.insert(ret.end(), item.second.begin(), item.second.end());
     }
     else 
     {
-        auto item = reporting.find(talker);
-        if (item != reporting.end())
-            list = item->second;
+        auto item = satelliteReporting.find(talker);
+        if (item != satelliteReporting.end())
+            ret = item->second;
     }
-    return list;
+    return ret;
 }
 
 bool LG290P::getSurveyMode(int &mode, int &positionTimes, double &accuracyLimit, double &ecefX, double &ecefY, double &ecefZ)
@@ -1296,7 +1298,7 @@ void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
 
                     if (msgNo == 1)
                     {
-                        staging[talker].clear();
+                        satelliteStaging[talker].clear();
                     }
                     // log_d("GSV: count: %d no: %d in view: %d", msgCount, msgNo, svsInView);
                     for (int i = 0; i < 4 && 4 * (msgNo - 1) + i < svsInView; ++i)
@@ -1307,12 +1309,12 @@ void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
                         sat.azimuth = (uint16_t)strtoul(nmea[6 + 4 * i].c_str(), NULL, 10);
                         sat.snr = (uint16_t)strtoul(nmea[7 + 4 * i].c_str(), NULL, 10);
                         strncpy(sat.talker, talker.substr(0, 2).c_str(), sizeof sat.talker);
-                        staging[talker].push_back(sat);
+                        satelliteStaging[talker].push_back(sat);
                     }
                     
                     if (msgNo == msgCount)
                     {
-                        reporting[talker] = staging[talker];
+                        satelliteReporting[talker] = satelliteStaging[talker];
                         hasNewSatellites = true;
                     }
                 }
