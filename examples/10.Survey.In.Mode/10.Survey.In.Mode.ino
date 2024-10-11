@@ -66,8 +66,9 @@ void setup()
   // myGNSS.sendCommand("PQTMCFGMSGRATE", ",R,PQTMSVNSTATUS,1");
 
   Serial.println("Setting 'Survey In' Mode");
-  Serial.println("Give the device 100 seconds to establish location.");
-  myGNSS.setSurveyInMode(100);
+  int secs = 86399;
+  Serial.printf("Give the device %d seconds to establish location.", secs);
+  myGNSS.setSurveyInMode(secs);
   myGNSS.saveParameters();
   myGNSS.softwareReset();
   Serial.print("Waiting until device is back online... ");
