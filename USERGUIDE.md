@@ -1,142 +1,72 @@
-TODO
+# LG290P GNSS Module Interface
 
-Types
+Warning: AI generated MD.
+This library provides an interface for controlling and configuring an LG290P GNSS (Global Navigation Satellite System) module, including functionalities such as communication, debugging, satellite data retrieval, and device configuration.
 
-    // Types
-    LG290P
-    NmeaPacket
-    RtmcPacket
+## Table of Contents
+- [Initialization](#initialization)
+- [Debugging](#debugging)
+- [Device Configuration](#device-configuration)
+- [Resets and Engine Control](#resets-and-engine-control)
+- [Message Subscriptions](#message-subscriptions)
+- [Satellite Information](#satellite-information)
+- [Survey Mode](#survey-mode)
+- [Geodetic Information](#geodetic-information)
+- [Statistics](#statistics)
 
-Functions
+## Initialization
+- **`begin(HardwareSerial &serialPort, Print *parserDebug = nullptr, Print *parserError = &Serial)`**: Initializes the GNSS module with the specified serial port.
+- **`isConnected()`**: Checks if the GNSS module is connected.
+- **`isBlocking()`**: Returns whether the module is in blocking mode.
+- **`update()`**: Updates the GNSS data.
+- **`updateOnce()`**: Updates the GNSS data only once.
 
-    // Client interface
-    bool begin(HardwareSerial &serialPort, Print *parserDebug = nullptr, Print *parserError = &Serial);
-    bool isConnected();
-    bool isBlocking();
-    bool update();
-    bool updateOnce();
+## Debugging
+- **`debugPrintf(const char *format, ...)`**: Prints formatted debug information.
+- **`enableDebugging(Print &debugPort = Serial)`**: Enables debugging on the specified port.
+- **`disableDebugging()`**: Disables debugging output.
+- **`enableParserDebug(Print *print = &Serial)`**: Enables parser debugging.
+- **`disableParserDebug()`**: Disables parser debugging.
+- **`enableParserErrors(Print *print = &Serial)`**: Enables error messages from the parser.
+- **`disableParserErrors()`**: Disables error messages from the parser.
+- **`enablePrintBadChecksums()`**: Enables the printing of messages with bad checksums.
+- **`disablePrintBadChecksums()`**: Disables the printing of messages with bad checksums.
 
-    // Debugging
-    void debugPrintf(const char *format, ...);
-    void enableDebugging(Print &debugPort = Serial);
-    void disableDebugging();
-    void enableParserDebug(Print *print = &Serial);
-    void disableParserDebug();
-    void enableParserErrors(Print *print = &Serial);
-    void disableParserErrors();
-    void enablePrintBadChecksums();
-    void disablePrintBadChecksums();
-    void enablePrintParserTransitions();
-    void disablePrintParserTransitions();
-    void enablePrintRxMessages();
-    void disablePrintRxMessages();
-    void enableRxMessageDump();
-    void disableRxMessageDump();
-    void printParserConfiguration(Print *print = &Serial);
-    void dumpBuffer(const uint8_t *buffer, uint16_t length);
+## Device Configuration
+- **`setModeBase()`**: Configures the device to operate as a base station.
+- **`setModeRover()`**: Configures the device to operate as a rover.
+- **`setPortBaudrate(int port, uint32_t newBaud)`**: Sets the baud rate of the specified port.
+- **`setBaudrate(uint32_t newBaud)`**: Sets the baud rate for the device.
+- **`getPortInfo(int port, uint32_t &newBaud, uint8_t &dataBits, uint8_t &parity, uint8_t &stop, uint8_t &flowControl)`**: Retrieves the configuration of a specified port.
 
-    // Mode
-    bool setModeBase();
-    bool setModeRover();
-    bool setPortBaudrate(int port, uint32_t newBaud);
-    bool setBaudrate(uint32_t newBaud);
-    bool getPortInfo(int port, uint32_t &newBaud, uint8_t &dataBits, uint8_t &parity, uint8_t &stop, uint8_t &flowControl);
-    bool enablePPS(uint16_t duration, bool alwaysOutput, bool positivePolarity = true);
-    bool disablePPS();
-    bool getPPSInfo(bool &enabled, uint16_t &duration, bool &alwaysOutput, bool &positivePolarity);
-    bool getConstellationInfo(bool &enableGPS, bool &enableGLONASS, bool &enableGalileo, bool &enableBDS,
-      bool &enableQZSS, bool &enableNavIC);
-    bool configureConstellation(bool enableGPS, bool enableGLONASS, bool enableGalileo, bool enableBDS,
-      bool enableQZSS, bool enableNavIC);
-    bool getSerialNumber(std::string &serial);
-    bool getVersionInfo(std::string &version, std::string &buildDate, std::string &buildTime);
-    bool getFixInterval(uint16_t &fixInterval);
-    bool setFixInterval(uint16_t fixInterval);
-    bool factoryReset();
-    bool coldReset();
-    bool warmReset();
-    bool hotReset();
-        bool enableSystem(const char *systemName);
-    bool disableSystem(const char *systemName);
+## Resets and Engine Control
+- **`softwareReset()`**: Performs a software reset.
+- **`coldReset()`**: Performs a cold reset, clearing all stored data.
+- **`warmReset()`**: Performs a warm reset, retaining some data.
+- **`hotReset()`**: Performs a hot reset, retaining most data.
 
-    // Data output
-    bool setNMEAPortMessage(const char *sentenceType, const char *comName, float outputRate);
-    bool setNMEAMessage(const char *sentenceType, float outputRate);
-    bool setRTCMPortMessage(const char *sentenceType, const char *comName, float outputRate);
-    bool setRTCMMessage(const char *sentenceType, float outputRate);
+## Message Subscriptions
+- **`nmeaSubscribe(const char *msgName, nmeaCallback callback)`**: Subscribes to specific NMEA messages.
+- **`nmeaUnsubscribe(const char *msgName)`**: Unsubscribes from specific NMEA messages.
+- **`rtcmSubscribe(uint16_t type, rtcmCallback callback)`**: Subscribes to specific RTCM messages.
+- **`rtcmUnsubscribe(uint16_t type)`**: Unsubscribes from specific RTCM messages.
 
-    // Other
-    bool disableOutput();
-    bool disableOutputPort(const char *comName);
-    bool saveConfiguration(uint16_t maxWaitMs = 1500);
+## Satellite Information
+- **`getVisibleSats(const char *talker = nullptr)`**: Retrieves a list of visible satellites.
+- **`isNewSatelliteInfoAvailable()`**: Checks if new satellite information is available.
 
-    uint16_t serialAvailable();
-    uint8_t serialRead();
-    void serialPrintln(const char *command);
-    void clearBuffer();
+## Survey Mode
+- **`getSurveyMode(int &mode, int &positionTimes, double &accuracyLimit, double &ecefX, double &ecefY, double &ecefZ)`**: Retrieves the current survey mode configuration.
+- **`setSurveyInMode(int positionTimes, double accuracyLimit=0)`**: Configures the module to survey-in mode.
 
-    bool transmit(const char *command, const char *parms);
-    bool sendCommand(const char *command, const char *parms = "", uint16_t maxWaitMs = 1500);
-    bool sendCommandLine(const char *command, uint16_t maxWaitMs = 1500);
-    NmeaPacket &getCommandResponse() { return pqtmResponse; }
-    bool sendOkCommand(const char *command, const char *parms = "", uint16_t maxWaitMs = 1500);
+## Geodetic Information
+- **`getLatitude()`**: Retrieves the current latitude.
+- **`getLongitude()`**: Retrieves the current longitude.
+- **`getAltitude()`**: Retrieves the current altitude.
+- **`getHorizontalSpeed()`**: Retrieves the current horizontal speed.
+- **`getVerticalSpeed()`**: Retrieves the current vertical speed.
+- **`getTrackGround()`**: Retrieves the current track over ground.
 
-    // Main snapshot helper functions
-    bool isNewSnapshotAvailable(); 
-    double getLatitude();
-    double getLongitude();
-    double getAltitude();
-    double getHorizontalSpeed();
-    double getVerticalSpeed();
-    double getTrackGround();
-    double getCourse();
-
-    float getLatitudeDeviation();
-    float getLongitudeDeviation();
-    float getAltitudeDeviation();
-    float getHorizontalSpeedDeviation();
-    float getVerticalSpeedDeviation();
-
-    double getEcefX();
-    double getEcefY();
-    double getEcefZ();
-    float getEcefXDeviation();
-    float getEcefYDeviation();
-    float getEcefZDeviation();
-
-    uint8_t getSIV();
-    uint8_t getSatellitesTracked();
-    uint8_t getSatellitesUsed();
-    uint8_t getSolutionStatus();
-    uint8_t getPositionType();
-    uint8_t getVelocityType();
-
-    uint8_t getRTKSolution();
-    uint8_t getPseudorangeCorrection();
-
-    uint16_t getYear();
-    uint8_t getMonth();
-    uint8_t getDay();
-    uint8_t getHour();
-    uint8_t getMinute();
-    uint8_t getSecond();
-    uint16_t getMillisecond();
-    uint8_t getTimeStatus();
-    uint8_t getDateStatus();
-    double getTimeOffset();
-    double getTimeOffsetDeviation();
-
-    uint32_t getFixAgeMilliseconds(); // Based on Geodetic report
-
-    uint8_t getModelType();
-    char *getVersion();
-    char *getID();
-    char *getCompileTime();
-
-    char *getVersionFull(uint16_t maxWaitMs = 1500);
-
-    // Limit maxWaitMs for CONFIG interactions. 800ms good. 500ms too short.
-    // because we rely on response timeout - there is no known end to the CONFIG response
-    bool isConfigurationPresent(const char *configStringToFind, uint16_t maxWaitMs = 800);
-
-    bool initSnapshot(uint8_t rate = 1);
+## Statistics
+- **`getNmeaCounters()`**: Retrieves NMEA message statistics.
+- **`getRtcmCounters()`**: Retrieves RTCM message statistics.
