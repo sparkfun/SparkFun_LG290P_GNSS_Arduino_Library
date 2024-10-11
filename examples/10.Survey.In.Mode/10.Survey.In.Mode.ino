@@ -52,38 +52,51 @@ void setup()
     while (true);
   }
   Serial.println("LG290P detected!");
-  Serial.println("Setting base station mode");
-  myGNSS.setModeRover();
-  myGNSS.saveParameters();
-  myGNSS.softwareReset();
-  Serial.println("Monitoring PQTMSVINSTATUS message");
+
+  Serial.println("Subscribing to PQTMSVINSTATUS message");
   myGNSS.nmeaSubscribe("PQTMSVINSTATUS", MyCallback);
-//  myGNSS.nmeaSubscribeAll(MyCallback);
+
+  Serial.println("Setting base station mode");
+  myGNSS.setModeBase();
 
   Serial.println("Enabling PQTMSVINSTATUS message");
-  myGNSS.setMessageRate("PQTMSVINSTATUS", 1, 2);
+  myGNSS.setMessageRate("PQTMSVINSTATUS", 1, 1);
 
-  myGNSS.sendCommand("PQTMCFGMSGRATE", ",R,PQTMSVNSTATUS");
+  // Read it back to see if it worked?
+  // myGNSS.sendCommand("PQTMCFGMSGRATE", ",R,PQTMSVNSTATUS,1");
 
   Serial.println("Setting 'Survey In' Mode");
+  Serial.println("Give the device 100 seconds to establish location.");
   myGNSS.setSurveyInMode(100);
   myGNSS.saveParameters();
   myGNSS.softwareReset();
-  Serial.print("Waiting until device is back online...");
-  while (!myGNSS.isConnected())
-    Serial.print(".");
+  Serial.print("Waiting until device is back online... ");
+  if (!myGNSS.isConnected())
+  {
+    Serial.println("reconnection failed; halting");
+    while (true);
+  }
   Serial.println();
-  Serial.println("Online. Waiting for PQTMSVINSTATUS message...");
+  Serial.println("Online. Waiting for PQTMSVINSTATUS messages...");
 }
 
 void MyCallback(NmeaPacket &nmea)
 {
-  if (nmea[0].substr(0, 2) == "$P")
-    Serial.printf("Found! '%s'\r\n", nmea.ToString().c_str());
+  std::string tow = nmea[2];
+  std::string validity = nmea[3] == "0" ? "Invalid" : nmea[3] == "1" ? "In-progress" : "Valid";
+  std::string posCount = nmea[6];
+  std::string total = nmea[7];
+  std::string ecefX = nmea[8];
+  std::string ecefY = nmea[9];
+  std::string ecefZ = nmea[10];
+  std::string accuracy = nmea[11];
+
+  Serial.printf("Week time: %s  Validity: '%s'  Pos: %s/%s  ECEF: (%s,%s,%s)  Accuracy: %sm\r\n",
+    tow.c_str(), validity.c_str(), posCount.c_str(), total.c_str(), ecefX.c_str(), 
+    ecefY.c_str(), ecefZ.c_str(), accuracy.c_str());
 }
 
 void loop()
 {
-  for (unsigned long start=millis(); millis() - start < 10000; )
-    myGNSS.update(); // Regularly call to parse any new data
+  myGNSS.update(); // Regularly call to parse any new data
 }

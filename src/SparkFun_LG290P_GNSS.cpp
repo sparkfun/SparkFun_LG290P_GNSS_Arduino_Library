@@ -1130,7 +1130,7 @@ bool LG290P::sendCommand(const char *command, const char *parms, uint16_t maxWai
     if (!transmit(command, parms))
         return false;
 
-    debugPrintf("...sendCommand waiting for response for %s", command);
+    debugPrintf("...sendCommand: waiting for response for %s", command);
 
     // Feed the parser until we see a response to the command
     for (unsigned long start = millis(); millis() - start < maxWaitMs;)
@@ -1151,6 +1151,8 @@ bool LG290P::sendCommand(const char *command, const char *parms, uint16_t maxWai
         }
     }
 
+    if (commandResponse == LG290P_RESULT_RESPONSE_COMMAND_WAITING)
+        debugPrintf("...sendCommand: TIMEOUT: no response received");
     commandName.clear();
     lg290PLibrarySemaphoreBlock = false; // Allow external tasks to control serial hardware
     return success;
