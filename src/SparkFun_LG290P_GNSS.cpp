@@ -350,8 +350,6 @@ void LG290P::disableRxMessageDump()
 // Process a complete message incoming from parser
 void LG290P::LG290PProcessMessage(SEMP_PARSE_STATE *parse, uint16_t type)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
-
     if (ptrLG290P->_printRxMessages)
     {
         // Display the raw message
@@ -431,14 +429,14 @@ bool LG290P::setModeRover()
 bool LG290P::setPortBaudrate(int port, uint32_t newBaud)
 {
     char parms[50];
-    snprintf(parms, sizeof parms, ",W,%d,%d", port, newBaud);
+    snprintf(parms, sizeof parms, ",W,%d,%lu", port, newBaud);
     return sendOkCommand("PQTMCFGUART", parms);
 }
 
 bool LG290P::setBaudrate(uint32_t newBaud)
 {
     char parms[50];
-    snprintf(parms, sizeof parms, ",W,%d", newBaud);
+    snprintf(parms, sizeof parms, ",W,%lu", newBaud);
     return sendOkCommand("PQTMCFGUART", parms);
 }
 
@@ -450,7 +448,7 @@ bool LG290P::getPortInfo(int port, uint32_t &newBaud, uint8_t &databits, uint8_t
     if (ret)
     {
         auto packet = getCommandResponse();
-        ret = ret & packet[1] == "OK";
+        ret = ret && packet[1] == "OK";
         newBaud = atol(packet[3].c_str());
         databits = atoi(packet[4].c_str());
         parity = atoi(packet[5].c_str());
@@ -576,6 +574,7 @@ bool LG290P::nmeaSubscribeAll(nmeaCallback callback)
 bool LG290P::nmeaUnsubscribeAll()
 {
     nmeaAllSubscribe = nullptr;
+    return true;
 }
 
 bool LG290P::rtcmSubscribe(uint16_t type, rtcmCallback callback)
@@ -599,6 +598,7 @@ bool LG290P::rtcmSubscribeAll(rtcmCallback callback)
 bool LG290P::rtcmUnsubscribeAll()
 {
     rtcmAllSubscribe = nullptr;
+    return true;
 }
 
 bool LG290P::softwareReset()
@@ -1262,7 +1262,8 @@ void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
 {
     // Is this a command response?
     std::string sentence = (const char *)parse->buffer;
-    if (sentence.ends_with("\r\n"))
+    if (sentence.substr(sentence.length() - 2) == "\r\n")
+    // if (sentence.ends_with("\r\n"))
         sentence.erase(sentence.size() - 2);
 
     NmeaPacket nmea = NmeaPacket::FromString(sentence);
@@ -2029,7 +2030,6 @@ char *LG290P::getCompileTime()
     CHECK_POINTER_CHAR(packetVERSION, initVersion); // Check that RAM has been allocated
     return (packetVERSION->data.compileTime);
 }
-#endif
 
 // Returns pointer to terminated response.
 //$command,VERSION,response: OK*04
@@ -2054,7 +2054,6 @@ char *LG290P::getVersionFull(uint16_t maxWaitMs)
 #endif
 }
 
-#if false
 // Cracks a given CONFIG response into settings
 void LG290P::configHandler(uint8_t *response, uint16_t length)
 {

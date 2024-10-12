@@ -15,6 +15,10 @@
 #define _SPARKFUN_LG290P_GNSS_ARDUINO_LIBRARY_H
 
 #include "Arduino.h"
+//#if !defined(ESP_ARDUINO_VERSION_MAJOR) || (ESP_ARDUINO_VERSION_MAJOR < 3)
+// Code for versions less than 3.0.0
+//#error "This code requires ESP32 Arduino version 3.0.0 or higher"
+//#endif
 
 #if __has_include("SoftwareSerial.h")
 #include <SoftwareSerial.h>
@@ -198,6 +202,13 @@ class LG290P
 
   public:
     // Client interface
+    /**
+     * @brief Starts the LG290P engine. Required at the beginning of each session
+     * @param serialPort the open port that is connected to the LG290P module
+     * @param parserDebug if provided, show debugging for the parser
+     * @param parserError if provided, show error messages for the parser
+     * @return true if the initialization succeeded
+     */
     bool begin(HardwareSerial &serialPort, Print *parserDebug = nullptr, Print *parserError = &Serial);
     bool isConnected();
     bool isBlocking();
@@ -381,9 +392,9 @@ class LG290P
     char *getID();
     char *getCompileTime();
 
-    char *getVersionFull(uint16_t maxWaitMs = 1500);
 
 #if false
+    char *getVersionFull(uint16_t maxWaitMs = 1500);
     // Limit maxWaitMs for CONFIG interactions. 800ms good. 500ms too short.
     // because we rely on response timeout - there is no known end to the CONFIG response
     bool isConfigurationPresent(const char *configStringToFind, uint16_t maxWaitMs = 800);

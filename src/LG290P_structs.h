@@ -1,6 +1,7 @@
 #ifndef _SPARKFUN_UNICORE_STRUCTS_H
 #define _SPARKFUN_UNICORE_STRUCTS_H
 #include <string>
+#include <vector>
 
 typedef struct
 {

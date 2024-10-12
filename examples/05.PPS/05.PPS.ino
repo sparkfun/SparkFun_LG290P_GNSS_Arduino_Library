@@ -53,9 +53,6 @@ void setup()
 
 void loop()
 {
-  bool ppsEnabled, alwaysOutput, positivePolarity;
-  uint16_t duration;
-
   for (auto duration : {20, 100, 600})
     for (auto polarity : {true, false})
     {

@@ -66,26 +66,6 @@ static std::string userInput;
 
 void loop()
 {
-#if false
-static unsigned long last;
-if (SerialGNSS.available())
-{
-    char ch = SerialGNSS.read();
-    static int count = 0;
-
-    Serial.printf("%02X ", ch);
-    if (millis() - last > 100)
-        Serial.println();
-    if (++count == 40 || millis() - last > 100)
-    {
-        Serial.println();
-        last = millis();
-        count = 0;
-    }
-}
-return;
-#endif
-
   myGNSS.update(); // Regularly call to parse any new data
 
   if (Serial.available())

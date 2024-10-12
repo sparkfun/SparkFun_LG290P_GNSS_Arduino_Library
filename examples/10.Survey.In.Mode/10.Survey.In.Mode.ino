@@ -56,6 +56,9 @@ void setup()
   Serial.println("Subscribing to PQTMSVINSTATUS message");
   myGNSS.nmeaSubscribe("PQTMSVINSTATUS", MyCallback);
 
+  Serial.println("Subscribing to RTCM #1005 message");
+  myGNSS.rtcmSubscribe(1005, MyRtmcCallback);
+
   Serial.println("Setting base station mode");
   myGNSS.setModeBase();
 
@@ -66,8 +69,8 @@ void setup()
   // myGNSS.sendCommand("PQTMCFGMSGRATE", ",R,PQTMSVNSTATUS,1");
 
   Serial.println("Setting 'Survey In' Mode");
-  int secs = 86399;
-  Serial.printf("Give the device %d seconds to establish location.", secs);
+  int secs = 20;
+  Serial.printf("Give the device %d seconds to establish location.\r\n", secs);
   myGNSS.setSurveyInMode(secs);
   myGNSS.saveParameters();
   myGNSS.softwareReset();
@@ -79,6 +82,27 @@ void setup()
   }
   Serial.println();
   Serial.println("Online. Waiting for PQTMSVINSTATUS messages...");
+}
+
+void MyRtmcCallback(RtcmPacket &rtmc)
+{
+  if (rtmc.type == 1005)
+  {
+    Serial.printf("1005 Payload: ");
+    for (int i=0; i<rtmc.payloadLen; ++i)
+      Serial.printf("%02X ", rtmc.buffer[3 + i]);
+    Serial.println();
+    #if false
+    byte *payload = rtmc.buffer + 3;
+    int64_t x = *(int64_t *)(payload + 5);
+    int64_t y = *(int64_t *)(payload + 10);
+    int64_t z = *(int64_t *)(payload + 10);
+    x &= 0x3FFFFFFFFF;
+    y &= 0x3FFFFFFFFF;
+    z &= 0x3FFFFFFFFF;
+    Serial.printf("XYZ=(%lld,%lld,%lld)\r\n", x, y, z);
+    #endif
+  }
 }
 
 void MyCallback(NmeaPacket &nmea)
