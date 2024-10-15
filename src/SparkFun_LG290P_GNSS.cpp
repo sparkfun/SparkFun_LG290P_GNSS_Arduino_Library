@@ -218,7 +218,7 @@ bool LG290P::update()
 
     lg290PLibrarySemaphoreBlock = false; // Allow external tasks to control serial hardware
 
-    return (newData);
+    return newData;
 }
 
 // Enable the display of parser transitions
@@ -264,7 +264,7 @@ bool LG290P::updateOnce()
             debugPrintf("LG290P Lib: 0x%02x (%c), crc: 0x%08x, state: %s --> %s", incoming,
                         ((incoming >= ' ') && (incoming < 0x7f)) ? incoming : '.', _sempParse->crc, startName, endName);
         }
-        return (true);
+        return true;
     }
 
     (void)startState; // Fix pesky warning-as-error
@@ -411,11 +411,35 @@ void LG290P::LG290PProcessMessage(SEMP_PARSE_STATE *parse, uint16_t type)
     }
 }
 
-// Mode commands
+// Commands
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+int LG290P::getNmeaCount(const char *sentenceId /* = nullptr */)
+{
+    if (sentenceId != nullptr)
+    {
+        auto find = nmeaCounters.find(sentenceId);
+        return find == nmeaCounters.end() ? 0 : find->second;
+    }
+    int sum = 0;
+    for (auto &item : nmeaCounters)
+        sum += item.second;
+    return sum;
+}
 
-#if true
+int LG290P::getRtcmCount(int packetType /* = -1 */)
+{
+    if (packetType != -1)
+    {
+        auto find = rtcmCounters.find(packetType);
+        return find == rtcmCounters.end() ? 0 : find->second;
+    }
+    int sum = 0;
+    for (auto &item : rtcmCounters)
+        sum += item.second;
+    return sum;
+}
+
 bool LG290P::setModeBase()
 {
     return sendOkCommand("PQTMCFGRCVRMODE", ",W,2");
@@ -628,6 +652,8 @@ bool LG290P::configureConstellation(bool enableGPS, bool enableGLONASS, bool ena
     snprintf(parms, sizeof parms, ",W,%d,%d,%d,%d,%d,%d", enableGPS, enableGLONASS, 
         enableGalileo, enableBDS, enableQZSS, enableNavIC);
     bool ret = sendOkCommand("PQTMCFGCNST", parms);
+
+    // Clear the reported satellites because removing a constellation might create orphans
     if (ret) satelliteReporting.clear();
     return ret;
 }
@@ -652,363 +678,6 @@ bool LG290P::restoreParameters()
     return sendOkCommand("PQTMRESTOREPAR");
 }
 
-
-
-#else
-
-// Directly set a mode: setMode("ROVER");
-bool LG290P::setMode(const char *modeType)
-{
-    char command[50];
-    snprintf(command, sizeof(command), "MODE %s", modeType);
-
-    return (sendOkCommand(command));
-}
-
-// Directly set a base mode: setModeBase("40.09029479 -105.18505761 1560.089")
-bool LG290P::setModeBase(const char *baseType)
-{
-    char command[50];
-    snprintf(command, sizeof(command), "BASE %s", baseType);
-
-    return (setMode(command));
-}
-
-// Start base mode with given coordinates
-bool LG290P::setModeBaseGeodetic(double latitude, double longitude, double altitude)
-{
-    char command[50];
-    snprintf(command, sizeof(command), "%0.11f %0.11f %0.6f", latitude, longitude, altitude);
-
-    return (setModeBase(command));
-}
-
-// Start base mode with given coordinates
-bool LG290P::setModeBaseECEF(double coordinateX, double coordinateY, double coordinateZ)
-{
-    char command[50];
-    snprintf(command, sizeof(command), "%0.4f %0.4f %0.4f", coordinateX, coordinateY, coordinateZ);
-
-    return (setModeBase(command));
-}
-
-// Start base mode using self-optimization (similar to u-blox's Survey-In method)
-bool LG290P::setModeBaseAverage()
-{
-    return (setModeBaseAverage(60));
-}
-
-bool LG290P::setModeBaseAverage(uint16_t averageTime)
-{
-    char command[50];
-    snprintf(command, sizeof(command), "TIME %d", averageTime);
-
-    return (setModeBase(command));
-}
-
-// Start rover mode: setModeRover("SURVEY")
-bool LG290P::setModeRover(const char *roverType)
-{
-    char command[50];
-    snprintf(command, sizeof(command), "ROVER %s", roverType);
-
-    return (setMode(command));
-}
-bool LG290P::setModeRoverSurvey()
-{
-    return (setModeRover("SURVEY"));
-}
-bool LG290P::setModeRoverUAV()
-{
-    return (setModeRover("UAV"));
-}
-bool LG290P::setModeRoverAutomotive()
-{
-    return (setModeRover("AUTOMOTIVE"));
-}
-bool LG290P::setModeRoverMow()
-{
-    return (setModeRover("SURVEY MOW")); // This fails for unknown reasons. Might be build7923 required, might not
-                                         // be supported on LG290P.
-}
-
-// Config commands
-//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
-// Configure a given COM port to a given baud
-// Supported baud rates: 9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600
-bool LG290P::setPortBaudrate(const char *comName, unsigned long newBaud)
-{
-    char command[50];
-    snprintf(command, sizeof(command), "CONFIG %s %ld", comName, newBaud);
-
-    return (sendOkCommand(command));
-}
-
-// Sets the baud rate of the port we are communicating on
-// Supported baud rates: 9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600
-bool LG290P::setBaudrate(unsigned long newBaud)
-{
-    char command[50];
-    snprintf(command, sizeof(command), "CONFIG %ld", newBaud);
-
-    return (sendOkCommand(command));
-}
-
-// Enable Pulse Per Second signal with various settings
-bool LG290P::enablePPS(uint32_t widthMicroseconds, uint16_t periodMilliseconds, bool positivePolarity, int16_t rfDelay,
-                      int16_t userDelay)
-{
-    char polarity[] = "POSITIVE";
-    if (positivePolarity == false)
-        strncpy(polarity, "NEGATIVE", sizeof(polarity));
-
-    char command[50];
-    snprintf(command, sizeof(command), "ENABLE GPS %s %d %d %d %d", polarity, widthMicroseconds, periodMilliseconds,
-             rfDelay, userDelay);
-
-    return (configurePPS(command));
-}
-
-// Disable the PPS signal
-bool LG290P::disablePPS()
-{
-    return (configurePPS("DISABLE"));
-}
-
-bool LG290P::configurePPS(const char *configString)
-{
-    char command[50];
-    snprintf(command, sizeof(command), "CONFIG PPS %s", configString);
-
-    return (sendOkCommand(command));
-}
-
-bool LG290P::enableConstellation(const char *constellationName)
-{
-    char command[50];
-    snprintf(command, sizeof(command), "%s", constellationName);
-
-    return (enableSystem(command));
-}
-bool LG290P::disableConstellation(const char *constellationName)
-{
-    char command[50];
-    snprintf(command, sizeof(command), "%s", constellationName);
-
-    return (disableSystem(command));
-}
-
-// Ignore satellites below a given elevation for a given constellation
-bool LG290P::setElevationAngle(int16_t elevationDegrees, const char *constellationName)
-{
-    char command[50];
-    snprintf(command, sizeof(command), "%d %s", elevationDegrees, constellationName);
-
-    return (disableSystem(command)); // Use MASK to set elevation angle
-}
-
-// Ignore satellites below a given elevation
-bool LG290P::setElevationAngle(int16_t elevationDegrees)
-{
-    char command[50];
-    snprintf(command, sizeof(command), "%d", elevationDegrees);
-
-    return (disableSystem(command)); // Use MASK to set elevation angle
-}
-
-// Ignore satellites below certain CN0 value
-// C/N0, limits the observation data output of OBSV messages
-bool LG290P::setMinCNO(uint8_t dBHz)
-{
-    char command[50];
-    snprintf(command, sizeof(command), "CN0 %d", dBHz);
-
-    return (disableSystem(command)); // Use MASK to set CN0 value
-}
-
-// Enable a given frequency name
-// See table 5-4 for list of frequency names
-bool LG290P::enableFrequency(const char *frequencyName)
-{
-    char command[50];
-    snprintf(command, sizeof(command), "%s", frequencyName);
-
-    return (enableSystem(command));
-}
-
-// Disable a given frequency name
-bool LG290P::disableFrequency(const char *frequencyName)
-{
-    char command[50];
-    snprintf(command, sizeof(command), "%s", frequencyName);
-
-    return (disableSystem(command));
-}
-
-// Called mask (disable) and unmask (enable), this is how to ignore certain constellations, or signal/frequencies,
-// or satellite elevations Returns true if successful
-bool LG290P::enableSystem(const char *systemName)
-{
-    char command[50];
-    snprintf(command, sizeof(command), "UNMASK %s", systemName);
-
-    return (sendOkCommand(command));
-}
-
-bool LG290P::disableSystem(const char *systemName)
-{
-    char command[50];
-    snprintf(command, sizeof(command), "MASK %s", systemName);
-
-    return (sendOkCommand(command));
-}
-#endif
-
-// Data Output commands
-//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
-#if false
-// Set the output rate of a given message on a given COM port/Use
-// 1, 0.5, 0.2, 0.1 corresponds to 1Hz, 2Hz, 5Hz, 10Hz respectively.
-// Ex: GPGGA 0.5 <- 2 times per second
-// Returns true if successful
-bool LG290P::setNMEAPortMessage(const char *sentenceType, const char *comName, float outputRate)
-{
-    char command[50];
-    if (outputRate == 0)
-        snprintf(command, sizeof(command), "UNLOG %s %s", comName, sentenceType);
-    else
-        snprintf(command, sizeof(command), "%s %s %0.2f", sentenceType, comName, outputRate);
-
-    return (sendOkCommand(command));
-}
-
-// Set the output rate of a given message on the port we are communicating on
-// 1, 0.5, 0.2, 0.1 corresponds to 1Hz, 2Hz, 5Hz, 10Hz respectively.
-// Ex: GPGGA 0.5 <- 2 times per second
-// Returns true if successful
-bool LG290P::setNMEAMessage(const char *sentenceType, float outputRate)
-{
-    char command[50];
-    if (outputRate == 0)
-        snprintf(command, sizeof(command), "UNLOG %s", sentenceType);
-    else
-        snprintf(command, sizeof(command), "%s %0.2f", sentenceType, outputRate);
-
-    return (sendOkCommand(command));
-}
-
-// Set the output rate of a given RTCM message on a given COM port/Use
-// 1, 0.5, 0.2, 0.1 corresponds to 1Hz, 2Hz, 5Hz, 10Hz respectively.
-// Ex: RTCM1005 0.5 <- 2 times per second
-// Returns true if successful
-bool LG290P::setRTCMPortMessage(const char *sentenceType, const char *comName, float outputRate)
-{
-    char command[50];
-    if (outputRate == 0)
-        snprintf(command, sizeof(command), "UNLOG %s %s", comName, sentenceType);
-    else
-        snprintf(command, sizeof(command), "%s %s %0.2f", sentenceType, comName, outputRate);
-
-    return (sendOkCommand(command));
-}
-
-// Set the output rate of a given RTCM message on the port we are communicating on
-// Ex: RTCM1005 10 <- Once every ten seconds
-// Returns true if successful
-bool LG290P::setRTCMMessage(const char *sentenceType, float outputRate)
-{
-    char command[50];
-    if (outputRate == 0)
-        snprintf(command, sizeof(command), "UNLOG %s", sentenceType);
-    else
-        snprintf(command, sizeof(command), "%s %0.2f", sentenceType, outputRate);
-
-    return (sendOkCommand(command));
-}
-
-// Other commands
-//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
-// Disables all messages on this port
-// Warning, each message has to be individually re-enabled
-bool LG290P::disableOutput()
-{
-#if true
-    return true;
-#else
-
-    for (int x = 0; x < 5; x++)
-    {
-        if (sendOkCommand("PQTMGNSSSTART") == true)
-        {
-            stopAutoReports(); // Remove pointers so we will re-init next check
-            return true;
-        }
-
-        delay(10 * x);
-    }
-
-    return false;
-#endif
-}
-
-// Disable all messages on a given port
-bool LG290P::disableOutputPort(const char *comName)
-{
-    // We don't know if this is the COM port we are communicating on, so err on the side of caution.
-    stopAutoReports(); // Remove pointers so we will re-init next check
-
-    char command[50];
-    snprintf(command, sizeof(command), "UNLOG %s", comName);
-
-    return (sendOkCommand(command));
-}
-
-// We've issued an unlog, so the binary messages will no longer be coming in automatically
-// Turn off pointers so the next time a getLatitude() is issued, the associated messsage is reinit'd
-void LG290P::stopAutoReports()
-{
-    if (snapshot != nullptr)
-    {
-        delete snapshot;
-        snapshot = nullptr;
-    }
-#if false
-    if (packetBESTNAV != nullptr)
-    {
-        delete packetBESTNAV;
-        packetBESTNAV = nullptr;
-    }
-    if (packetBESTNAVXYZ != nullptr)
-    {
-        delete packetBESTNAVXYZ;
-        packetBESTNAVXYZ = nullptr;
-    }
-    if (packetRECTIME != nullptr)
-    {
-        delete packetRECTIME;
-        packetRECTIME = nullptr;
-    }
-#endif
-}
-
-// Resetting the receiver will clear the satellite ephemerides, position information, satellite
-// almanacs, ionosphere parameters and UTC parameters saved in the receiver.
-bool LG290P::reset()
-{
-    return (sendOkCommand("RESET"));
-}
-
-// Saves the current configuration into non-volatile memory (NVM),
-// including LOG messages (except those triggered by ONCE), port
-// configuration, etc.
-bool LG290P::saveConfiguration(uint16_t maxWait)
-{
-    return (sendOkCommand("SAVECONFIG", maxWait));
-}
-#endif
 
 // Abstraction of the serial interface
 // Useful if we ever need to support SoftwareSerial
@@ -1854,17 +1523,15 @@ float LG290P::getVerticalSpeedDeviation()
     return snapshot->verticalSpeedDeviation;
 }
 
-uint8_t LG290P::getSIV()
+uint16_t LG290P::getSatellitesTracked()
 {
-    return getSatellitesTracked();
+    uint16_t count = 0;
+    for (auto &item : satelliteReporting)
+        count += item.second.size();
+    return count;
 }
 
-uint8_t LG290P::getSatellitesTracked()
-{
-    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
-    return snapshot->satellitesTracked;
-}
-uint8_t LG290P::getSatellitesUsed()
+uint16_t LG290P::getSatellitesUsed()
 {
     CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
     return snapshot->satellitesUsed;
