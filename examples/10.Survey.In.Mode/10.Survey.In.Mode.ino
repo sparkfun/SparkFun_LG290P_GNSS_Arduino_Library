@@ -45,8 +45,7 @@ void setup()
   SerialGNSS.begin(gnss_baud, SERIAL_8N1, pin_UART1_RX, pin_UART1_TX);
   
   // myGNSS.enableDebugging(Serial); // Print all debug to Serial
-  // if (!myGNSS.begin(SerialGNSS, &Serial, &Serial)) //Give the serial port over to the library
-  if (!myGNSS.begin(SerialGNSS)) //Give the serial port over to the library
+  if (!myGNSS.begin(SerialGNSS))     // Give the serial port over to the library
   {
     Serial.println("LG290P failed to respond. Check ports and baud rates. Freezing...");
     while (true);
@@ -64,9 +63,6 @@ void setup()
 
   Serial.println("Enabling PQTMSVINSTATUS message");
   myGNSS.setMessageRate("PQTMSVINSTATUS", 1, 1);
-
-  // Read it back to see if it worked?
-  // myGNSS.sendCommand("PQTMCFGMSGRATE", ",R,PQTMSVNSTATUS,1");
 
   Serial.println("Setting 'Survey In' Mode");
   int secs = 20;

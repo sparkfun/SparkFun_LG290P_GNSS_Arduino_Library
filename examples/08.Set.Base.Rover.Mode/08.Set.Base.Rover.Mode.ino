@@ -59,8 +59,7 @@ void setup()
   SerialGNSS.begin(gnss_baud, SERIAL_8N1, pin_UART1_RX, pin_UART1_TX);
   
   // myGNSS.enableDebugging(Serial); // Print all debug to Serial
-  // if (!myGNSS.begin(SerialGNSS, &Serial, &Serial)) //Give the serial port over to the library
-  if (!myGNSS.begin(SerialGNSS)) //Give the serial port over to the library
+  if (!myGNSS.begin(SerialGNSS))     // Give the serial port over to the library
   {
     Serial.println("LG290P failed to respond. Check ports and baud rates. Freezing...");
     while (true);
@@ -72,7 +71,6 @@ void setup()
   myGNSS.rtcmSubscribe(1124, myRtcmCallback);
   myGNSS.rtcmSubscribe(1074, myRtcmCallback);
 }
-
 
 void busy_wait(int seconds)
 {
