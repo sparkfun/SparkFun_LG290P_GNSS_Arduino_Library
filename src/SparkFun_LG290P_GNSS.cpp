@@ -3,7 +3,7 @@
   a focus on the LG290P QuadBand receiver.
 
   Development environment specifics:
-  Arduino IDE 2.3.x
+  Arduino IDE 1.8.x
 
   This library is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -18,40 +18,19 @@
 //----------------------------------------
 
 // parserTable index values
-#if true
 #define LG290P_NMEA_PARSER_INDEX 0
 #define LG290P_RTCM_PARSER_INDEX 1
-#else //***
-#define LG290P_NMEA_PARSER_INDEX 0
-#define LG290P_UNICORE_HASH_PARSER_INDEX 1
-#define LG290P_RTCM_PARSER_INDEX 2
-#define LG290P_UNICORE_BINARY_PARSER_INDEX 3
-#endif
 
 // Build the table listing all of the parsers
 SEMP_PARSE_ROUTINE const parserTable[] = {
-#if true
     sempNmeaPreamble,
     sempRtcmPreamble,
-#else //***
-    sempNmeaPreamble,
-    sempUnicoreHashPreamble,
-    sempRtcmPreamble,
-    sempUnicoreBinaryPreamble,
-#endif
 };
 const int parserCount = sizeof(parserTable) / sizeof(parserTable[0]);
 
 const char *const parserNames[] = {
-#if true
     "LG290P NMEA Parser",
     "LG290P RTCM Parser",
-#else
-    "LG290P NMEA Parser",
-    "LG290P Unicore Hash (#) Parser",
-    "LG290P RTCM Parser",
-    "LG290P Unicore Binary Parser",
-#endif
 };
 const int parserNameCount = sizeof(parserNames) / sizeof(parserNames[0]);
 
@@ -84,27 +63,11 @@ void LG290P::disablePrintBadChecksums()
 const char *LG290PGetStateName(SEMP_PARSE_STATE *parse)
 {
     const char *name;
-
-    do
-    {
-        name = sempNmeaGetStateName(parse);
-        if (name)
-            break;
-#if false //***
-        name = sempRtcmGetStateName(parse);
-        if (name)
-            break;
-        name = sempUnicoreBinaryGetStateName(parse);
-        if (name)
-            break;
-        name = sempUnicoreHashGetStateName(parse);
-        if (name)
-            break;
-#endif
-        name = sempGetStateName(parse);
-        break;
-    } while (0);
-    return name;
+    if ((name = sempNmeaGetStateName(parse)) != nullptr)
+        return name;
+    if ((name = sempRtcmGetStateName(parse)) != nullptr)
+        return name;
+    return sempGetStateName(parse);
 }
 
 // Disable debug output from the parser
@@ -138,7 +101,7 @@ void LG290P::printParserConfiguration(Print *print)
 }
 
 
-bool badNmeaChecksum(SEMP_PARSE_STATE *parse)
+bool LG290P::badNmeaChecksum(SEMP_PARSE_STATE *parse)
 {
     return false;
 }
@@ -201,6 +164,7 @@ void LG290P::enableDebugging(Print &debugPort)
 {
     _debugPort = &debugPort;
 }
+
 void LG290P::disableDebugging()
 {
     _debugPort = nullptr;
@@ -361,21 +325,9 @@ void LG290P::LG290PProcessMessage(SEMP_PARSE_STATE *parse, uint16_t type)
                                   sempNmeaGetSentenceName(parse), parse->length, parse->length);
             break;
 
-#if false //***
-        case LG290P_UNICORE_HASH_PARSER_INDEX:
-            ptrLG290P->debugPrintf("LG290P Lib: Valid Unicore Hash (#) Sentence: %s, 0x%04x (%d) bytes",
-                                  sempUnicoreHashGetSentenceName(parse), parse->length, parse->length);
-            break;
-#endif
         case LG290P_RTCM_PARSER_INDEX:
             ptrLG290P->debugPrintf("LG290P Lib: Valid RTCM message: 0x%04x (%d) bytes", parse->length, parse->length);
             break;
-#if false
-        case LG290P_UNICORE_BINARY_PARSER_INDEX:
-            ptrLG290P->debugPrintf("LG290P Lib: Valid Unicore message: 0x%04x (%d) bytes", parse->length,
-                                  parse->length);
-            break;
-#endif
         }
     }
 
@@ -386,25 +338,9 @@ void LG290P::LG290PProcessMessage(SEMP_PARSE_STATE *parse, uint16_t type)
     // Process the message
     switch (type)
     {
-#if false //***
-    case LG290P_UNICORE_BINARY_PARSER_INDEX:
-        ptrLG290P->unicoreHandler(parse->buffer, parse->length);
-        break;
-#endif
     case LG290P_RTCM_PARSER_INDEX:
         ptrLG290P->rtcmHandler(parse);
         break;
-#if false
-    case LG290P_UNICORE_HASH_PARSER_INDEX:
-        // Does this response contain the command we are looking for?
-        if (strcasecmp((char *)scratchPad->unicoreHash.sentenceName, ptrLG290P->commandName) == 0) // Found
-        {
-            ptrLG290P->debugPrintf("LG290P Lib: Query response: %s", parse->buffer);
-            ptrLG290P->commandResponse = LG290P_RESULT_RESPONSE_COMMAND_OK;
-        }
-        break;
-
-#endif
     case LG290P_NMEA_PARSER_INDEX:
         ptrLG290P->nmeaHandler(parse);
         break;
@@ -735,16 +671,6 @@ uint8_t LG290P::serialRead()
     return (0);
 }
 
-#if false
-void LG290P::serialPrintln(const char *command)
-{
-    if (_hwSerialPort != nullptr)
-    {
-        _hwSerialPort->println(command);
-    }
-}
-#endif
-
 // Correctly format command $PQTM with $ and checksum,
 // then send it!
 bool LG290P::transmit(const char *command, const char *parms)
@@ -918,15 +844,9 @@ bool LG290P::setSurveyFixedMode(double ecefX, double ecefY, double ecefZ)
             return;                                                                                                    \
     }
 
-#define CHECK_POINTER_CHAR(packetPointer, initPointer)                                                                 \
-    {                                                                                                                  \
-        if (packetPointer == nullptr)                                                                                  \
-            initPointer();                                                                                             \
-        if (packetPointer == nullptr)                                                                                  \
-            return ((char *)"Error");                                                                                  \
-    }
-
-// Cracks an NMEA into the applicable container
+// Cracks an NMEA sentence into the applicable container
+// The sentence might be a normal NMEA one like $GPGGA or a custom one like $PQTMVER. In
+// the former case, the first term is cracked into the "Talker Id" (GP) and "Sentence Id" (GGA)
 void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
 {
     // Is this a command response?
@@ -1014,24 +934,6 @@ void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
             ptrLG290P->commandResponse = LG290P_RESULT_RESPONSE_COMMAND_OK;
         }
 
-#if false
-            responsePointer = strcasestr((char *)parse->buffer, "PARSING");
-            if (responsePointer != nullptr) // Found 
-            {
-                ptrLG290P->debugPrintf("LG290P Lib: Error response: %s", parse->buffer);
-                ptrLG290P->commandResponse = LG290P_RESULT_RESPONSE_COMMAND_ERROR;
-                return;
-            }
-
-            responsePointer = strcasestr((char *)parse->buffer, "CONFIG");
-            if (responsePointer != nullptr) // Found
-            {
-                ptrLG290P->debugPrintf("CONFIG response: %s", parse->buffer);
-                ptrLG290P->configHandler(parse->buffer, parse->length);
-                ptrLG290P->commandResponse = LG290P_RESULT_RESPONSE_COMMAND_CONFIG;
-                return;
-            }
-#endif
         else if (!ptrLG290P->commandName.empty())
         {
             // Display the command response
@@ -1041,13 +943,19 @@ void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
     }
 
     std::string id = nmea.SentenceId();
-    nmeaCounters[id]++;
-    
-    // handle specific and general callbacks
-    if (nmeaSubscriptions.count(id) > 0)
-        nmeaSubscriptions[id](nmea); // call the callback!
+    if (id != "")
+    {
+        nmeaCounters[id]++;
+        
+        // Is there a callback registered for this id?
+        auto iterator = nmeaSubscriptions.find(id);
+        if (iterator != nmeaSubscriptions.end())
+            (*iterator->second)(nmea); // call it!
+    }
+
+    // Is there a general callback registered?
     if (nmeaAllSubscribe != nullptr)
-        nmeaAllSubscribe(nmea);
+        nmeaAllSubscribe(nmea); //call it!
 }
 
 // Cracks an NMEA into the applicable container
@@ -1077,197 +985,6 @@ void LG290P::rtcmHandler(SEMP_PARSE_STATE *parse)
     }
 }
 
-#if false
-// Cracks a given binary message into the applicable container
-void LG290P::unicoreHandler(uint8_t *response, uint16_t length)
-{
-    uint16_t messageID = ((uint16_t)response[offsetHeaderMessageId + 1] << 8) | response[offsetHeaderMessageId];
-
-    if (messageID == messageIdBestnav)
-    {
-        debugPrintf("BestNav Handler");
-        CHECK_POINTER_VOID(packetBESTNAV, initBestnav); // Check that RAM has been allocated
-
-        lastUpdateGeodetic = millis(); // Update stale marker
-
-        uint8_t *data = &response[LG290PHeaderLength]; // Point at the start of the data fields
-
-        // Move data into given containers
-
-        // 0 = Solution computed, 1 = Insufficient observation, 3 = No convergence, 4 = Covariance trace
-        memcpy(&packetBESTNAV->data.solutionStatus, &data[offsetBestnavPsolStatus], sizeof(uint8_t));
-
-        // 0 = None, 1 = FixedPos, 8 = DopplerVelocity, 16 = Single, ...
-        memcpy(&packetBESTNAV->data.positionType, &data[offsetBestnavPosType], sizeof(uint8_t));
-        memcpy(&packetBESTNAV->data.velocityType, &data[offsetBestnavVelType], sizeof(uint8_t));
-
-        memcpy(&packetBESTNAV->data.latitude, &data[offsetBestnavLat], sizeof(double));
-        memcpy(&packetBESTNAV->data.longitude, &data[offsetBestnavLon], sizeof(double));
-        memcpy(&packetBESTNAV->data.altitude, &data[offsetBestnavHgt], sizeof(double));
-        memcpy(&packetBESTNAV->data.horizontalSpeed, &data[offsetBestnavHorSpd], sizeof(double));
-        memcpy(&packetBESTNAV->data.verticalSpeed, &data[offsetBestnavVertSpd], sizeof(double));
-        memcpy(&packetBESTNAV->data.trackGround, &data[offsetBestnavTrkGnd], sizeof(double));
-
-        memcpy(&packetBESTNAV->data.latitudeDeviation, &data[offsetBestnavLatDeviation], sizeof(float));
-        memcpy(&packetBESTNAV->data.longitudeDeviation, &data[offsetBestnavLonDeviation], sizeof(float));
-        memcpy(&packetBESTNAV->data.heightDeviation, &data[offsetBestnavHgtDeviation], sizeof(float));
-
-        memcpy(&packetBESTNAV->data.horizontalSpeedDeviation, &data[offsetBestnavHorspdStd], sizeof(float));
-        memcpy(&packetBESTNAV->data.verticalSpeedDeviation, &data[offsetBestnavVerspdStd], sizeof(float));
-
-        memcpy(&packetBESTNAV->data.satellitesTracked, &data[offsetBestnavSatsTracked], sizeof(uint8_t));
-        memcpy(&packetBESTNAV->data.satellitesUsed, &data[offsetBestnavSatsUsed], sizeof(uint8_t));
-
-        uint8_t extSolStat;
-        memcpy(&extSolStat, &data[offsetBestnavExtSolStat], sizeof(uint8_t));
-        packetBESTNAV->data.rtkSolution = extSolStat & 0x01;                   // 0 = unchecked, 1 = checked
-        packetBESTNAV->data.pseudorangeCorrection = (extSolStat >> 1) & 0b111; // Limit to three bits
-    }
-    else if (messageID == messageIdRectime)
-    {
-        debugPrintf("RecTime Handler");
-        CHECK_POINTER_VOID(packetRECTIME, initRectime); // Check that RAM has been allocated
-
-        lastUpdateDateTime = millis();
-
-        uint8_t *data = &response[LG290PHeaderLength]; // Point at the start of the data fields
-
-        // Move data into given containers
-        memcpy(&packetRECTIME->data.timeStatus, &data[offsetRectimeClockStatus], sizeof(uint8_t));
-        memcpy(&packetRECTIME->data.timeOffset, &data[offsetRectimeOffset], sizeof(double));
-        memcpy(&packetRECTIME->data.timeDeviation, &data[offsetRectimeOffsetStd], sizeof(double));
-        memcpy(&packetRECTIME->data.year, &data[offsetRectimeUtcYear], sizeof(uint16_t));
-        memcpy(&packetRECTIME->data.month, &data[offsetRectimeUtcMonth], sizeof(uint8_t));
-        memcpy(&packetRECTIME->data.day, &data[offsetRectimeUtcDay], sizeof(uint8_t));
-        memcpy(&packetRECTIME->data.hour, &data[offsetRectimeUtcHour], sizeof(uint8_t));
-        memcpy(&packetRECTIME->data.minute, &data[offsetRectimeUtcMinute], sizeof(uint8_t));
-
-        memcpy(&packetRECTIME->data.millisecond, &data[offsetRectimeUtcMillisecond], sizeof(uint32_t));
-        packetRECTIME->data.second = round(packetRECTIME->data.millisecond / 1000.0);
-        packetRECTIME->data.millisecond -= (packetRECTIME->data.second * 1000); // Remove seconds from milliseconds
-
-        memcpy(&packetRECTIME->data.dateStatus, &data[offsetRectimeUtcStatus], sizeof(uint8_t));
-    }
-    else if (messageID == messageIdBestnavXyz)
-    {
-        debugPrintf("BestNavXyz Handler");
-        CHECK_POINTER_VOID(packetBESTNAVXYZ, initBestnavXyz); // Check that RAM has been allocated
-
-        lastUpdateEcef = millis(); // Update stale marker
-
-        uint8_t *data = &response[LG290PHeaderLength]; // Point at the start of the data fields
-
-        // Move data into given containers
-        memcpy(&packetBESTNAVXYZ->data.ecefX, &data[offsetBestnavXyzPX], sizeof(double));
-        memcpy(&packetBESTNAVXYZ->data.ecefY, &data[offsetBestnavXyzPY], sizeof(double));
-        memcpy(&packetBESTNAVXYZ->data.ecefZ, &data[offsetBestnavXyzPZ], sizeof(double));
-
-        memcpy(&packetBESTNAVXYZ->data.ecefXDeviation, &data[offsetBestnavXyzPXDeviation], sizeof(float));
-        memcpy(&packetBESTNAVXYZ->data.ecefYDeviation, &data[offsetBestnavXyzPYDeviation], sizeof(float));
-        memcpy(&packetBESTNAVXYZ->data.ecefZDeviation, &data[offsetBestnavXyzPZDeviation], sizeof(float));
-    }
-    else if (messageID == messageIdVersion)
-    {
-        debugPrintf("Version Handler");
-        CHECK_POINTER_VOID(packetVERSION, initVersion); // Check that RAM has been allocated
-
-        lastUpdateVersion = millis(); // Update stale marker
-
-        uint8_t *data = &response[LG290PHeaderLength]; // Point at the start of the data fields
-
-        // Move data into given containers
-        memcpy(&packetVERSION->data.modelType, &data[offsetVersionModuleType], sizeof(packetVERSION->data.modelType));
-        memcpy(&packetVERSION->data.swVersion, &data[offsetVersionFirmwareVersion],
-               sizeof(packetVERSION->data.swVersion));
-        memcpy(&packetVERSION->data.efuseID, &data[offsetVersionEfuseID], sizeof(packetVERSION->data.efuseID));
-        memcpy(&packetVERSION->data.compileTime, &data[offsetVersionCompTime], sizeof(packetVERSION->data.compileTime));
-    }
-    else
-    {
-        // Is this a NMEA sentence?
-        if (response[0] == '$')
-        {
-            response[length] = '\0'; // Force terminator because strncasestr does not exist
-
-            // The LG290P does not respond to binary requests when there is no GNSS reception.
-            // Block BestNavB, etc commands if there is no fix.
-            // Look for GNGGA NMEA then extract GNSS position status (spot 6).
-            // $GNGGA,181535.00,,,,,0,00,9999.0,,,,,,*43
-            char *responsePointer = strcasestr((char *)response, "GNGGA");
-            if (responsePointer != nullptr) // Found
-            {
-                char gngga[100];
-                strncpy(gngga, (const char *)response, length - 1); // Make copy before strtok
-
-                debugPrintf("LG290P Lib: GNGGA message: %s\r\n", gngga);
-
-                char *pt;
-                pt = strtok(gngga, ",");
-                int counter = 0;
-                while (pt != NULL)
-                {
-                    int spotValue = atoi(pt);
-                    if (counter++ == 6)
-                        nmeaPositionStatus = spotValue;
-                    pt = strtok(NULL, ",");
-                }
-            }
-            else
-            {
-                // Unhandled NMEA message
-                // debugPrintf("LG290P Lib: Unhandled NMEA sentence (%d bytes): %s\r\n", length, (char *)response);
-            }
-        }
-        else
-        {
-            debugPrintf("LG290P Lib: Unknown message id: %d\r\n", messageID);
-        }
-    }
-}
-// Allocate RAM for packetVERSION and initialize it
-bool LG290P::initVersion()
-{
-    packetVERSION = new UNICORE_VERSION_t; // Allocate RAM for the main struct
-    if (packetVERSION == nullptr)
-    {
-        debugPrintf("Pointer alloc fail");
-        return (false);
-    }
-    //   packetVERSION->callbackPointerPtr = nullptr;
-    //   packetVERSION->callbackData = nullptr;
-
-    // Send command for single query
-    if (sendOkCommand("VERSIONB") == false)
-    {
-        delete packetVERSION;
-        packetVERSION = nullptr; // Remove pointer so we will re-init next check
-        return (false);
-    }
-
-    debugPrintf("VERSION started");
-
-    // Wait until response is received
-    lastUpdateVersion = 0;
-    uint16_t maxWait = 1000; // Wait for one response to come in
-    unsigned long startTime = millis();
-    while (1)
-    {
-        update(); // Call parser
-        if (lastUpdateVersion > 0)
-            break;
-        if (millis() - startTime > maxWait)
-        {
-            debugPrintf("GNSS: Failed to get response from VERSION start");
-            delete packetVERSION;
-            packetVERSION = nullptr;
-            return (false);
-        }
-    }
-
-    return (true);
-}
-#endif
-
 // Allocate RAM for NMEA snapshot and initialize it
 bool LG290P::initSnapshot()
 {
@@ -1280,162 +997,6 @@ bool LG290P::initSnapshot()
 
     return true;
 }
-
-#if false
-// Allocate RAM for packetBESTNAV and initialize it
-bool LG290P::initBestnav(uint8_t rate)
-{
-    if ((startBinaryBeforeFix == false) && (isNmeaFixed() == false))
-    {
-        debugPrintf("LG290P Lib: BestNav no fix");
-        return (false);
-    }
-
-    packetBESTNAV = new UNICORE_BESTNAV_t; // Allocate RAM for the main struct
-    if (packetBESTNAV == nullptr)
-    {
-        debugPrintf("Pointer alloc fail");
-        return (false);
-    }
-    //   packetBESTNAV->callbackPointerPtr = nullptr;
-    //   packetBESTNAV->callbackData = nullptr;
-
-    // Start outputting BESTNAV in Binary on this COM port
-    // Wait until first report is available
-    char command[50];
-    snprintf(command, sizeof(command), "BESTNAVB %d", rate);
-    if (sendOkCommand(command) == false)
-    {
-        delete packetBESTNAV;
-        packetBESTNAV = nullptr; // Remove pointer so we will re-init next check
-        return (false);
-    }
-
-    debugPrintf("BestNav started");
-
-    lastUpdateGeodetic = 0;
-    uint16_t maxWait = (1000 / rate) + 100; // Wait for one response to come in
-    unsigned long startTime = millis();
-    while (1)
-    {
-        update(); // Call parser
-        if (lastUpdateGeodetic > 0)
-            break;
-        if (millis() - startTime > maxWait)
-        {
-            debugPrintf("GNSS: Failed to get response from BestNav start");
-            delete packetBESTNAV;
-            packetBESTNAV = nullptr;
-            return (false);
-        }
-    }
-    return (true);
-}
-
-// Allocate RAM for packetBESTNAVXYZ and initialize it
-bool LG290P::initBestnavXyz(uint8_t rate)
-{
-    if ((startBinaryBeforeFix == false) && (isNmeaFixed() == false))
-    {
-        debugPrintf("LG290P Lib: BestNavXyz no fix");
-        return (false);
-    }
-
-    packetBESTNAVXYZ = new UNICORE_BESTNAVXYZ_t; // Allocate RAM for the main struct
-    if (packetBESTNAVXYZ == nullptr)
-    {
-        debugPrintf("Pointer alloc fail");
-        return (false);
-    }
-    //   packetBESTNAVXYZ->callbackPointerPtr = nullptr;
-    //   packetBESTNAVXYZ->callbackData = nullptr;
-
-    // Start outputting BESTNAVXYZ in Binary on this COM port
-    char command[50];
-    snprintf(command, sizeof(command), "BESTNAVXYZB %d", rate);
-    if (sendOkCommand(command) == false)
-    {
-        delete packetBESTNAVXYZ;
-        packetBESTNAVXYZ = nullptr; // Remove pointer so we will re-init next check
-        return (false);
-    }
-
-    debugPrintf("BestNavXYZB started");
-
-    // Wait until first report is available
-    lastUpdateEcef = 0;
-    uint16_t maxWait = (1000 / rate) + 100; // Wait for one response to come in
-    unsigned long startTime = millis();
-    while (1)
-    {
-        update(); // Call parser
-        if (lastUpdateEcef > 0)
-            break;
-        if (millis() - startTime > maxWait)
-        {
-            debugPrintf("GNSS: Failed to get response from BestNavXyz start");
-            delete packetBESTNAVXYZ;
-            packetBESTNAVXYZ = nullptr;
-            return (false);
-        }
-    }
-
-    return (true);
-}
-
-// Allocate RAM for packetRECTIME and initialize it
-bool LG290P::initRectime(uint8_t rate)
-{
-    if ((startBinaryBeforeFix == false) && (isNmeaFixed() == false))
-    {
-        debugPrintf("LG290P Lib: RecTime no fix");
-        return (false);
-    }
-
-    packetRECTIME = new UNICORE_RECTIME_t; // Allocate RAM for the main struct
-    if (packetRECTIME == nullptr)
-    {
-        debugPrintf("Pointer alloc fail");
-        return (false);
-    }
-    //   packetRECTIME->callbackPointerPtr = nullptr;
-    //   packetRECTIME->callbackData = nullptr;
-
-    debugPrintf("RecTime started");
-
-    // Start outputting RECTIME in Binary on this COM port
-    char command[50];
-    snprintf(command, sizeof(command), "RECTIMEB %d", rate);
-    if (sendOkCommand(command) == false)
-    {
-        delete packetRECTIME;
-        packetRECTIME = nullptr; // Remove pointer so we will re-init next check
-        return (false);
-    }
-
-    debugPrintf("RecTimeB started");
-
-    // Wait until first report is available
-    lastUpdateDateTime = 0;
-    uint16_t maxWait = (1000 / rate) + 100; // Wait for one response to come in
-    unsigned long startTime = millis();
-    while (1)
-    {
-        update(); // Call parser
-        if (lastUpdateDateTime > 0)
-            break;
-        if (millis() - startTime > maxWait)
-        {
-            debugPrintf("GNSS: Failed to get response from RecTime start");
-            delete packetRECTIME;
-            packetRECTIME = nullptr;
-            return (false);
-        }
-    }
-
-    return (true);
-}
-#endif
 
 // All the general gets and sets
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -1479,48 +1040,11 @@ double LG290P::getHorizontalSpeed()
     CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
     return snapshot->horizontalSpeed;
 }
+
 double LG290P::getVerticalSpeed()
 {
     CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
     return snapshot->verticalSpeed;
-}
-
-double LG290P::getTrackGround()
-{
-    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
-    return snapshot->trackGround;
-}
-
-double LG290P::getCourse()
-{
-    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
-    return snapshot->course;
-}
-
-float LG290P::getLatitudeDeviation()
-{
-    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
-    return snapshot->latitudeDeviation;
-}
-float LG290P::getLongitudeDeviation()
-{
-    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
-    return snapshot->longitudeDeviation;
-}
-float LG290P::getAltitudeDeviation()
-{
-    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
-    return snapshot->heightDeviation;
-}
-float LG290P::getHorizontalSpeedDeviation()
-{
-    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
-    return snapshot->horizontalSpeedDeviation;
-}
-float LG290P::getVerticalSpeedDeviation()
-{
-    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
-    return snapshot->verticalSpeedDeviation;
 }
 
 uint16_t LG290P::getSatellitesTracked()
@@ -1537,82 +1061,18 @@ uint16_t LG290P::getSatellitesUsed()
     return snapshot->satellitesUsed;
 }
 
-// 0 = Solution computed, 1 = Insufficient observation, 3 = No convergence, 4 = Covariance trace
-uint8_t LG290P::getSolutionStatus()
-{
-    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
-    return snapshot->solutionStatus;
-}
-
-// 0 = no fix, 1 = dead reckoning only, 2 = 2D-fix, 3 = 3D-fix, 4 = GNSS + dead reckoning combined, 5 = time only
-// fix
-uint8_t LG290P::getPositionType()
-{
-    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
-    return snapshot->positionType;
-}
-uint8_t LG290P::getVelocityType()
-{
-    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
-    return snapshot->velocityType;
-}
-
-uint8_t LG290P::getRTKSolution()
-{
-    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
-    return snapshot->rtkSolution;
-}
-
-uint8_t LG290P::getPseudorangeCorrection()
-{
-    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
-    return snapshot->pseudorangeCorrection;
-}
-
 // Return the number of millis since last update
 uint32_t LG290P::getFixAgeMilliseconds()
 {
     return millis() - lastUpdateGeodetic;
 }
 
-#if false
-double LG290P::getEcefX()
-{
-    CHECK_POINTER_BOOL(packetBESTNAVXYZ, initBestnavXyz); // Check that RAM has been allocated
-    return (packetBESTNAVXYZ->data.ecefX);
-}
-double LG290P::getEcefY()
-{
-    CHECK_POINTER_BOOL(packetBESTNAVXYZ, initBestnavXyz); // Check that RAM has been allocated
-    return (packetBESTNAVXYZ->data.ecefY);
-}
-double LG290P::getEcefZ()
-{
-    CHECK_POINTER_BOOL(packetBESTNAVXYZ, initBestnavXyz); // Check that RAM has been allocated
-    return (packetBESTNAVXYZ->data.ecefZ);
-}
-float LG290P::getEcefXDeviation()
-{
-    CHECK_POINTER_BOOL(packetBESTNAVXYZ, initBestnavXyz); // Check that RAM has been allocated
-    return (packetBESTNAVXYZ->data.ecefXDeviation);
-}
-float LG290P::getEcefYDeviation()
-{
-    CHECK_POINTER_BOOL(packetBESTNAVXYZ, initBestnavXyz); // Check that RAM has been allocated
-    return (packetBESTNAVXYZ->data.ecefYDeviation);
-}
-float LG290P::getEcefZDeviation()
-{
-    CHECK_POINTER_BOOL(packetBESTNAVXYZ, initBestnavXyz); // Check that RAM has been allocated
-    return (packetBESTNAVXYZ->data.ecefZDeviation);
-}
-#endif
-
 uint16_t LG290P::getYear()
 {
     CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
     return snapshot->year;
 }
+
 uint8_t LG290P::getMonth()
 {
     CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
@@ -1648,193 +1108,6 @@ uint16_t LG290P::getMillisecond()
     CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
     return (uint16_t)(snapshot->nanosecond / 1000000);
 }
-
-#if false
-uint8_t LG290P::getTimeStatus()
-{
-    CHECK_POINTER_BOOL(packetRECTIME, initRectime); // Check that RAM has been allocated
-    return (packetRECTIME->data.timeStatus);
-}
-uint8_t LG290P::getDateStatus()
-{
-    CHECK_POINTER_BOOL(packetRECTIME, initRectime); // Check that RAM has been allocated
-    return (packetRECTIME->data.dateStatus);
-}
-
-// Receiver clock offset relative to GPS time, s.
-// Positive indicates that the receiver clock is ahead of GPS time. To calculate the GPS time, use the formula
-// below: GPS time = receiver time - clock offset
-double LG290P::getTimeOffset()
-{
-    CHECK_POINTER_BOOL(packetRECTIME, initRectime); // Check that RAM has been allocated
-    return (packetRECTIME->data.timeOffset);
-}
-
-// Standard deviation of the receiver clock offset, s.
-double LG290P::getTimeOffsetDeviation()
-{
-    CHECK_POINTER_BOOL(packetRECTIME, initRectime); // Check that RAM has been allocated
-    return (packetRECTIME->data.timeDeviation);
-}
-
-uint8_t LG290P::getModelType()
-{
-    CHECK_POINTER_BOOL(packetVERSION, initVersion); // Check that RAM has been allocated
-    return (packetVERSION->data.modelType);
-}
-char *LG290P::getVersion()
-{
-    CHECK_POINTER_CHAR(packetVERSION, initVersion); // Check that RAM has been allocated
-    return (packetVERSION->data.swVersion);
-}
-char *LG290P::getID()
-{
-    CHECK_POINTER_CHAR(packetVERSION, initVersion); // Check that RAM has been allocated
-    return (packetVERSION->data.efuseID);
-}
-char *LG290P::getCompileTime()
-{
-    CHECK_POINTER_CHAR(packetVERSION, initVersion); // Check that RAM has been allocated
-    return (packetVERSION->data.compileTime);
-}
-
-// Returns pointer to terminated response.
-//$command,VERSION,response: OK*04
-// #VERSION,92,GPS,FINE,2289,167126600,0,0,18,155;LG290P,R4.10Build7923,HRPT00-S10C-P,2310415000001-MD22B1224961040,ff3bd496fd7ca68b,2022/09/28*45d62771
-char *LG290P::getVersionFull(uint16_t maxWaitMs)
-{
-#if true //***
-    return "TODO";
-#else
-    // Issue the version command
-    LG290PResult result = sendQuery("VERSION");
-
-    // Process the response
-    if (result == LG290P_RESULT_OK)
-        // Response sitting in buffer. Return pointer to buffer.
-        return ((char *)_sempParse->buffer);
-    else if (result == LG290P_RESULT_TIMEOUT_RESPONSE)
-        return ((char *)"Timeout");
-    else if (result == LG290P_RESULT_RESPONSE_COMMAND_ERROR)
-        return ((char *)"Error1");
-    return ((char *)"Error2");
-#endif
-}
-
-// Cracks a given CONFIG response into settings
-void LG290P::configHandler(uint8_t *response, uint16_t length)
-{
-    // We've received a response such as $CONFIG,COM3,CONFIG COM3 115200*23
-    // See if it is the one we want
-    char *responsePointer = strcasestr((char *)response, configStringToFind);
-    if (responsePointer != nullptr) // Found
-    {
-        configStringFound = true;
-    }
-    else
-    {
-        // This config response was not what we were looking for
-    }
-}
-
-// Given a string such as "CONFIG COM3 115200", query the device's config settings
-// If the given string is in the CONFIG response, return true
-// Send a CONFIG command and see if a specific string exists in the responses
-// $command,config,response: OK*54
-// $CONFIG,ANTENNA,CONFIG ANTENNA POWERON*7A
-// $CONFIG,NMEAVERSION,CONFIG NMEAVERSION V410*47
-// $CONFIG,RTK,CONFIG RTK TIMEOUT 120*6C
-// $CONFIG,RTK,CONFIG RTK RELIABILITY 3 1*76
-// $CONFIG,PPP,CONFIG PPP TIMEOUT 120*6C
-// $CONFIG,DGPS,CONFIG DGPS TIMEOUT 300*6C
-// $CONFIG,RTCMB1CB2A,CONFIG RTCMB1CB2A ENABLE*25
-// $CONFIG,ANTENNADELTAHEN,CONFIG ANTENNADELTAHEN 0.0000 0.0000 0.0000*3A
-// $CONFIG,PPS,CONFIG PPS ENABLE GPS POSITIVE 500000 1000 0 0*6E
-// $CONFIG,SIGNALGROUP,CONFIG SIGNALGROUP 2*16
-// $CONFIG,ANTIJAM,CONFIG ANTIJAM AUTO*2B
-// $CONFIG,AGNSS,CONFIG AGNSS DISABLE*70
-// $CONFIG,BASEOBSFILTER,CONFIG BASEOBSFILTER DISABLE*70
-// $CONFIG,COM1,CONFIG COM1 115200*23
-// $CONFIG,COM2,CONFIG COM2 115200*23
-// $CONFIG,COM3,CONFIG COM3 115200*23
-bool LG290P::isConfigurationPresent(const char *stringToFind, uint16_t maxWaitMs)
-{
-    LG290PResult result;
-
-    clearBuffer();
-
-    // Send command and check for OK response
-    result = sendString("CONFIG", maxWaitMs);
-    if (result != LG290P_RESULT_OK)
-        // return (result);
-        return (false);
-
-    // Setup configStringToFind so configHandler() knows what to look for
-    strncpy(configStringToFind, stringToFind, sizeof(configStringToFind));
-
-    configStringFound = false; // configHandler() sets true if we find the intended string
-
-    commandResponse = LG290P_RESULT_RESPONSE_COMMAND_WAITING; // Reset
-
-    unicoreLibrarySemaphoreBlock = true; // Prevent external tasks from harvesting serial data
-
-    // Feed the parser until we see a response to the command
-    int wait = 0;
-    while (1)
-    {
-        if (wait++ == maxWaitMs)
-        {
-            debugPrintf("LG290P Lib: isConfigPresent Response timeout");
-            unicoreLibrarySemaphoreBlock = false; // Allow external tasks to control serial hardware
-            // return (LG290P_RESULT_TIMEOUT_RESPONSE);
-            return (false);
-        }
-
-        updateOnce(); // Will call LG290PProcessMessage() and configHandler()
-
-        if (configStringFound == true)
-        {
-            // return (LG290P_RESULT_CONFIG_PRESENT);
-            return (true);
-        }
-
-        if (commandResponse == LG290P_RESULT_RESPONSE_COMMAND_ERROR)
-        {
-            debugPrintf("LG290P Lib: Query failure");
-            unicoreLibrarySemaphoreBlock = false; // Allow external tasks to control serial hardware
-            // return (LG290P_RESULT_RESPONSE_COMMAND_ERROR);
-            return (false);
-        }
-
-        delay(1);
-    }
-
-    unicoreLibrarySemaphoreBlock = false; // Allow external tasks to control serial hardware
-
-    // return (LG290P_RESULT_OK);
-    return (false);
-}
-
-// Returns true when GNGGA NMEA reports position status >= 1
-bool LG290P::isNmeaFixed()
-{
-    if (nmeaPositionStatus >= 1)
-        return (true);
-    return (false);
-}
-// By default, library will attempt to start RECTIME and BESTNAV regardless of GNSS fix
-// This may lead to command timeouts as the LG290P does not appear to respond to BESTNAVB commands if 3D fix is not
-// achieved. Set startBinartBeforeFix = false via disableBinaryBeforeFix() to block binary commands before a fix is
-// achieved
-void LG290P::enableBinaryBeforeFix()
-{
-    startBinaryBeforeFix = true;
-}
-void LG290P::disableBinaryBeforeFix()
-{
-    startBinaryBeforeFix = false;
-}
-#endif
 
 NmeaPacket NmeaPacket::FromString(const std::string &str)
 {
@@ -2045,3 +1318,638 @@ void NmeaPacket::parseAltitude(const std::string &term, double &altitude)
 {
     altitude = parseDecimal(term) / 100.0;
 }
+
+#if false
+void LG290P::serialPrintln(const char *command)
+{
+    if (_hwSerialPort != nullptr)
+    {
+        _hwSerialPort->println(command);
+    }
+}
+
+// Cracks a given binary message into the applicable container
+void LG290P::unicoreHandler(uint8_t *response, uint16_t length)
+{
+    uint16_t messageID = ((uint16_t)response[offsetHeaderMessageId + 1] << 8) | response[offsetHeaderMessageId];
+
+    if (messageID == messageIdBestnav)
+    {
+        debugPrintf("BestNav Handler");
+        CHECK_POINTER_VOID(packetBESTNAV, initBestnav); // Check that RAM has been allocated
+
+        lastUpdateGeodetic = millis(); // Update stale marker
+
+        uint8_t *data = &response[LG290PHeaderLength]; // Point at the start of the data fields
+
+        // Move data into given containers
+
+        // 0 = Solution computed, 1 = Insufficient observation, 3 = No convergence, 4 = Covariance trace
+        memcpy(&packetBESTNAV->data.solutionStatus, &data[offsetBestnavPsolStatus], sizeof(uint8_t));
+
+        // 0 = None, 1 = FixedPos, 8 = DopplerVelocity, 16 = Single, ...
+        memcpy(&packetBESTNAV->data.positionType, &data[offsetBestnavPosType], sizeof(uint8_t));
+        memcpy(&packetBESTNAV->data.velocityType, &data[offsetBestnavVelType], sizeof(uint8_t));
+
+        memcpy(&packetBESTNAV->data.latitude, &data[offsetBestnavLat], sizeof(double));
+        memcpy(&packetBESTNAV->data.longitude, &data[offsetBestnavLon], sizeof(double));
+        memcpy(&packetBESTNAV->data.altitude, &data[offsetBestnavHgt], sizeof(double));
+        memcpy(&packetBESTNAV->data.horizontalSpeed, &data[offsetBestnavHorSpd], sizeof(double));
+        memcpy(&packetBESTNAV->data.verticalSpeed, &data[offsetBestnavVertSpd], sizeof(double));
+        memcpy(&packetBESTNAV->data.trackGround, &data[offsetBestnavTrkGnd], sizeof(double));
+
+        memcpy(&packetBESTNAV->data.latitudeDeviation, &data[offsetBestnavLatDeviation], sizeof(float));
+        memcpy(&packetBESTNAV->data.longitudeDeviation, &data[offsetBestnavLonDeviation], sizeof(float));
+        memcpy(&packetBESTNAV->data.heightDeviation, &data[offsetBestnavHgtDeviation], sizeof(float));
+
+        memcpy(&packetBESTNAV->data.horizontalSpeedDeviation, &data[offsetBestnavHorspdStd], sizeof(float));
+        memcpy(&packetBESTNAV->data.verticalSpeedDeviation, &data[offsetBestnavVerspdStd], sizeof(float));
+
+        memcpy(&packetBESTNAV->data.satellitesTracked, &data[offsetBestnavSatsTracked], sizeof(uint8_t));
+        memcpy(&packetBESTNAV->data.satellitesUsed, &data[offsetBestnavSatsUsed], sizeof(uint8_t));
+
+        uint8_t extSolStat;
+        memcpy(&extSolStat, &data[offsetBestnavExtSolStat], sizeof(uint8_t));
+        packetBESTNAV->data.rtkSolution = extSolStat & 0x01;                   // 0 = unchecked, 1 = checked
+        packetBESTNAV->data.pseudorangeCorrection = (extSolStat >> 1) & 0b111; // Limit to three bits
+    }
+    else if (messageID == messageIdRectime)
+    {
+        debugPrintf("RecTime Handler");
+        CHECK_POINTER_VOID(packetRECTIME, initRectime); // Check that RAM has been allocated
+
+        lastUpdateDateTime = millis();
+
+        uint8_t *data = &response[LG290PHeaderLength]; // Point at the start of the data fields
+
+        // Move data into given containers
+        memcpy(&packetRECTIME->data.timeStatus, &data[offsetRectimeClockStatus], sizeof(uint8_t));
+        memcpy(&packetRECTIME->data.timeOffset, &data[offsetRectimeOffset], sizeof(double));
+        memcpy(&packetRECTIME->data.timeDeviation, &data[offsetRectimeOffsetStd], sizeof(double));
+        memcpy(&packetRECTIME->data.year, &data[offsetRectimeUtcYear], sizeof(uint16_t));
+        memcpy(&packetRECTIME->data.month, &data[offsetRectimeUtcMonth], sizeof(uint8_t));
+        memcpy(&packetRECTIME->data.day, &data[offsetRectimeUtcDay], sizeof(uint8_t));
+        memcpy(&packetRECTIME->data.hour, &data[offsetRectimeUtcHour], sizeof(uint8_t));
+        memcpy(&packetRECTIME->data.minute, &data[offsetRectimeUtcMinute], sizeof(uint8_t));
+
+        memcpy(&packetRECTIME->data.millisecond, &data[offsetRectimeUtcMillisecond], sizeof(uint32_t));
+        packetRECTIME->data.second = round(packetRECTIME->data.millisecond / 1000.0);
+        packetRECTIME->data.millisecond -= (packetRECTIME->data.second * 1000); // Remove seconds from milliseconds
+
+        memcpy(&packetRECTIME->data.dateStatus, &data[offsetRectimeUtcStatus], sizeof(uint8_t));
+    }
+    else if (messageID == messageIdBestnavXyz)
+    {
+        debugPrintf("BestNavXyz Handler");
+        CHECK_POINTER_VOID(packetBESTNAVXYZ, initBestnavXyz); // Check that RAM has been allocated
+
+        lastUpdateEcef = millis(); // Update stale marker
+
+        uint8_t *data = &response[LG290PHeaderLength]; // Point at the start of the data fields
+
+        // Move data into given containers
+        memcpy(&packetBESTNAVXYZ->data.ecefX, &data[offsetBestnavXyzPX], sizeof(double));
+        memcpy(&packetBESTNAVXYZ->data.ecefY, &data[offsetBestnavXyzPY], sizeof(double));
+        memcpy(&packetBESTNAVXYZ->data.ecefZ, &data[offsetBestnavXyzPZ], sizeof(double));
+
+        memcpy(&packetBESTNAVXYZ->data.ecefXDeviation, &data[offsetBestnavXyzPXDeviation], sizeof(float));
+        memcpy(&packetBESTNAVXYZ->data.ecefYDeviation, &data[offsetBestnavXyzPYDeviation], sizeof(float));
+        memcpy(&packetBESTNAVXYZ->data.ecefZDeviation, &data[offsetBestnavXyzPZDeviation], sizeof(float));
+    }
+    else if (messageID == messageIdVersion)
+    {
+        debugPrintf("Version Handler");
+        CHECK_POINTER_VOID(packetVERSION, initVersion); // Check that RAM has been allocated
+
+        lastUpdateVersion = millis(); // Update stale marker
+
+        uint8_t *data = &response[LG290PHeaderLength]; // Point at the start of the data fields
+
+        // Move data into given containers
+        memcpy(&packetVERSION->data.modelType, &data[offsetVersionModuleType], sizeof(packetVERSION->data.modelType));
+        memcpy(&packetVERSION->data.swVersion, &data[offsetVersionFirmwareVersion],
+               sizeof(packetVERSION->data.swVersion));
+        memcpy(&packetVERSION->data.efuseID, &data[offsetVersionEfuseID], sizeof(packetVERSION->data.efuseID));
+        memcpy(&packetVERSION->data.compileTime, &data[offsetVersionCompTime], sizeof(packetVERSION->data.compileTime));
+    }
+    else
+    {
+        // Is this a NMEA sentence?
+        if (response[0] == '$')
+        {
+            response[length] = '\0'; // Force terminator because strncasestr does not exist
+
+            // The LG290P does not respond to binary requests when there is no GNSS reception.
+            // Block BestNavB, etc commands if there is no fix.
+            // Look for GNGGA NMEA then extract GNSS position status (spot 6).
+            // $GNGGA,181535.00,,,,,0,00,9999.0,,,,,,*43
+            char *responsePointer = strcasestr((char *)response, "GNGGA");
+            if (responsePointer != nullptr) // Found
+            {
+                char gngga[100];
+                strncpy(gngga, (const char *)response, length - 1); // Make copy before strtok
+
+                debugPrintf("LG290P Lib: GNGGA message: %s\r\n", gngga);
+
+                char *pt;
+                pt = strtok(gngga, ",");
+                int counter = 0;
+                while (pt != NULL)
+                {
+                    int spotValue = atoi(pt);
+                    if (counter++ == 6)
+                        nmeaPositionStatus = spotValue;
+                    pt = strtok(NULL, ",");
+                }
+            }
+            else
+            {
+                // Unhandled NMEA message
+                // debugPrintf("LG290P Lib: Unhandled NMEA sentence (%d bytes): %s\r\n", length, (char *)response);
+            }
+        }
+        else
+        {
+            debugPrintf("LG290P Lib: Unknown message id: %d\r\n", messageID);
+        }
+    }
+}
+// Allocate RAM for packetVERSION and initialize it
+bool LG290P::initVersion()
+{
+    packetVERSION = new UNICORE_VERSION_t; // Allocate RAM for the main struct
+    if (packetVERSION == nullptr)
+    {
+        debugPrintf("Pointer alloc fail");
+        return (false);
+    }
+    //   packetVERSION->callbackPointerPtr = nullptr;
+    //   packetVERSION->callbackData = nullptr;
+
+    // Send command for single query
+    if (sendOkCommand("VERSIONB") == false)
+    {
+        delete packetVERSION;
+        packetVERSION = nullptr; // Remove pointer so we will re-init next check
+        return (false);
+    }
+
+    debugPrintf("VERSION started");
+
+    // Wait until response is received
+    lastUpdateVersion = 0;
+    uint16_t maxWait = 1000; // Wait for one response to come in
+    unsigned long startTime = millis();
+    while (1)
+    {
+        update(); // Call parser
+        if (lastUpdateVersion > 0)
+            break;
+        if (millis() - startTime > maxWait)
+        {
+            debugPrintf("GNSS: Failed to get response from VERSION start");
+            delete packetVERSION;
+            packetVERSION = nullptr;
+            return (false);
+        }
+    }
+
+    return (true);
+}
+
+double LG290P::getTrackGround()
+{
+    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
+    return snapshot->trackGround;
+}
+
+double LG290P::getCourse()
+{
+    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
+    return snapshot->course;
+}
+
+float LG290P::getLatitudeDeviation()
+{
+    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
+    return snapshot->latitudeDeviation;
+}
+float LG290P::getLongitudeDeviation()
+{
+    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
+    return snapshot->longitudeDeviation;
+}
+float LG290P::getAltitudeDeviation()
+{
+    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
+    return snapshot->heightDeviation;
+}
+float LG290P::getHorizontalSpeedDeviation()
+{
+    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
+    return snapshot->horizontalSpeedDeviation;
+}
+float LG290P::getVerticalSpeedDeviation()
+{
+    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
+    return snapshot->verticalSpeedDeviation;
+}
+
+// 0 = Solution computed, 1 = Insufficient observation, 3 = No convergence, 4 = Covariance trace
+uint8_t LG290P::getSolutionStatus()
+{
+    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
+    return snapshot->solutionStatus;
+}
+
+// 0 = no fix, 1 = dead reckoning only, 2 = 2D-fix, 3 = 3D-fix, 4 = GNSS + dead reckoning combined, 5 = time only
+// fix
+uint8_t LG290P::getPositionType()
+{
+    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
+    return snapshot->positionType;
+}
+uint8_t LG290P::getVelocityType()
+{
+    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
+    return snapshot->velocityType;
+}
+
+uint8_t LG290P::getRTKSolution()
+{
+    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
+    return snapshot->rtkSolution;
+}
+
+uint8_t LG290P::getPseudorangeCorrection()
+{
+    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
+    return snapshot->pseudorangeCorrection;
+}
+
+double LG290P::getEcefX()
+{
+    CHECK_POINTER_BOOL(packetBESTNAVXYZ, initBestnavXyz); // Check that RAM has been allocated
+    return (packetBESTNAVXYZ->data.ecefX);
+}
+double LG290P::getEcefY()
+{
+    CHECK_POINTER_BOOL(packetBESTNAVXYZ, initBestnavXyz); // Check that RAM has been allocated
+    return (packetBESTNAVXYZ->data.ecefY);
+}
+double LG290P::getEcefZ()
+{
+    CHECK_POINTER_BOOL(packetBESTNAVXYZ, initBestnavXyz); // Check that RAM has been allocated
+    return (packetBESTNAVXYZ->data.ecefZ);
+}
+float LG290P::getEcefXDeviation()
+{
+    CHECK_POINTER_BOOL(packetBESTNAVXYZ, initBestnavXyz); // Check that RAM has been allocated
+    return (packetBESTNAVXYZ->data.ecefXDeviation);
+}
+float LG290P::getEcefYDeviation()
+{
+    CHECK_POINTER_BOOL(packetBESTNAVXYZ, initBestnavXyz); // Check that RAM has been allocated
+    return (packetBESTNAVXYZ->data.ecefYDeviation);
+}
+float LG290P::getEcefZDeviation()
+{
+    CHECK_POINTER_BOOL(packetBESTNAVXYZ, initBestnavXyz); // Check that RAM has been allocated
+    return (packetBESTNAVXYZ->data.ecefZDeviation);
+}
+
+// Allocate RAM for packetBESTNAV and initialize it
+bool LG290P::initBestnav(uint8_t rate)
+{
+    if ((startBinaryBeforeFix == false) && (isNmeaFixed() == false))
+    {
+        debugPrintf("LG290P Lib: BestNav no fix");
+        return (false);
+    }
+
+    packetBESTNAV = new UNICORE_BESTNAV_t; // Allocate RAM for the main struct
+    if (packetBESTNAV == nullptr)
+    {
+        debugPrintf("Pointer alloc fail");
+        return (false);
+    }
+    //   packetBESTNAV->callbackPointerPtr = nullptr;
+    //   packetBESTNAV->callbackData = nullptr;
+
+    // Start outputting BESTNAV in Binary on this COM port
+    // Wait until first report is available
+    char command[50];
+    snprintf(command, sizeof(command), "BESTNAVB %d", rate);
+    if (sendOkCommand(command) == false)
+    {
+        delete packetBESTNAV;
+        packetBESTNAV = nullptr; // Remove pointer so we will re-init next check
+        return (false);
+    }
+
+    debugPrintf("BestNav started");
+
+    lastUpdateGeodetic = 0;
+    uint16_t maxWait = (1000 / rate) + 100; // Wait for one response to come in
+    unsigned long startTime = millis();
+    while (1)
+    {
+        update(); // Call parser
+        if (lastUpdateGeodetic > 0)
+            break;
+        if (millis() - startTime > maxWait)
+        {
+            debugPrintf("GNSS: Failed to get response from BestNav start");
+            delete packetBESTNAV;
+            packetBESTNAV = nullptr;
+            return (false);
+        }
+    }
+    return (true);
+}
+
+// Allocate RAM for packetBESTNAVXYZ and initialize it
+bool LG290P::initBestnavXyz(uint8_t rate)
+{
+    if ((startBinaryBeforeFix == false) && (isNmeaFixed() == false))
+    {
+        debugPrintf("LG290P Lib: BestNavXyz no fix");
+        return (false);
+    }
+
+    packetBESTNAVXYZ = new UNICORE_BESTNAVXYZ_t; // Allocate RAM for the main struct
+    if (packetBESTNAVXYZ == nullptr)
+    {
+        debugPrintf("Pointer alloc fail");
+        return (false);
+    }
+    //   packetBESTNAVXYZ->callbackPointerPtr = nullptr;
+    //   packetBESTNAVXYZ->callbackData = nullptr;
+
+    // Start outputting BESTNAVXYZ in Binary on this COM port
+    char command[50];
+    snprintf(command, sizeof(command), "BESTNAVXYZB %d", rate);
+    if (sendOkCommand(command) == false)
+    {
+        delete packetBESTNAVXYZ;
+        packetBESTNAVXYZ = nullptr; // Remove pointer so we will re-init next check
+        return (false);
+    }
+
+    debugPrintf("BestNavXYZB started");
+
+    // Wait until first report is available
+    lastUpdateEcef = 0;
+    uint16_t maxWait = (1000 / rate) + 100; // Wait for one response to come in
+    unsigned long startTime = millis();
+    while (1)
+    {
+        update(); // Call parser
+        if (lastUpdateEcef > 0)
+            break;
+        if (millis() - startTime > maxWait)
+        {
+            debugPrintf("GNSS: Failed to get response from BestNavXyz start");
+            delete packetBESTNAVXYZ;
+            packetBESTNAVXYZ = nullptr;
+            return (false);
+        }
+    }
+
+    return (true);
+}
+
+// Allocate RAM for packetRECTIME and initialize it
+bool LG290P::initRectime(uint8_t rate)
+{
+    if ((startBinaryBeforeFix == false) && (isNmeaFixed() == false))
+    {
+        debugPrintf("LG290P Lib: RecTime no fix");
+        return (false);
+    }
+
+    packetRECTIME = new UNICORE_RECTIME_t; // Allocate RAM for the main struct
+    if (packetRECTIME == nullptr)
+    {
+        debugPrintf("Pointer alloc fail");
+        return (false);
+    }
+    //   packetRECTIME->callbackPointerPtr = nullptr;
+    //   packetRECTIME->callbackData = nullptr;
+
+    debugPrintf("RecTime started");
+
+    // Start outputting RECTIME in Binary on this COM port
+    char command[50];
+    snprintf(command, sizeof(command), "RECTIMEB %d", rate);
+    if (sendOkCommand(command) == false)
+    {
+        delete packetRECTIME;
+        packetRECTIME = nullptr; // Remove pointer so we will re-init next check
+        return (false);
+    }
+
+    debugPrintf("RecTimeB started");
+
+    // Wait until first report is available
+    lastUpdateDateTime = 0;
+    uint16_t maxWait = (1000 / rate) + 100; // Wait for one response to come in
+    unsigned long startTime = millis();
+    while (1)
+    {
+        update(); // Call parser
+        if (lastUpdateDateTime > 0)
+            break;
+        if (millis() - startTime > maxWait)
+        {
+            debugPrintf("GNSS: Failed to get response from RecTime start");
+            delete packetRECTIME;
+            packetRECTIME = nullptr;
+            return (false);
+        }
+    }
+
+    return (true);
+}
+
+uint8_t LG290P::getTimeStatus()
+{
+    CHECK_POINTER_BOOL(packetRECTIME, initRectime); // Check that RAM has been allocated
+    return (packetRECTIME->data.timeStatus);
+}
+uint8_t LG290P::getDateStatus()
+{
+    CHECK_POINTER_BOOL(packetRECTIME, initRectime); // Check that RAM has been allocated
+    return (packetRECTIME->data.dateStatus);
+}
+
+// Receiver clock offset relative to GPS time, s.
+// Positive indicates that the receiver clock is ahead of GPS time. To calculate the GPS time, use the formula
+// below: GPS time = receiver time - clock offset
+double LG290P::getTimeOffset()
+{
+    CHECK_POINTER_BOOL(packetRECTIME, initRectime); // Check that RAM has been allocated
+    return (packetRECTIME->data.timeOffset);
+}
+
+// Standard deviation of the receiver clock offset, s.
+double LG290P::getTimeOffsetDeviation()
+{
+    CHECK_POINTER_BOOL(packetRECTIME, initRectime); // Check that RAM has been allocated
+    return (packetRECTIME->data.timeDeviation);
+}
+
+uint8_t LG290P::getModelType()
+{
+    CHECK_POINTER_BOOL(packetVERSION, initVersion); // Check that RAM has been allocated
+    return (packetVERSION->data.modelType);
+}
+char *LG290P::getVersion()
+{
+    CHECK_POINTER_CHAR(packetVERSION, initVersion); // Check that RAM has been allocated
+    return (packetVERSION->data.swVersion);
+}
+char *LG290P::getID()
+{
+    CHECK_POINTER_CHAR(packetVERSION, initVersion); // Check that RAM has been allocated
+    return (packetVERSION->data.efuseID);
+}
+char *LG290P::getCompileTime()
+{
+    CHECK_POINTER_CHAR(packetVERSION, initVersion); // Check that RAM has been allocated
+    return (packetVERSION->data.compileTime);
+}
+
+// Returns pointer to terminated response.
+//$command,VERSION,response: OK*04
+// #VERSION,92,GPS,FINE,2289,167126600,0,0,18,155;LG290P,R4.10Build7923,HRPT00-S10C-P,2310415000001-MD22B1224961040,ff3bd496fd7ca68b,2022/09/28*45d62771
+char *LG290P::getVersionFull(uint16_t maxWaitMs)
+{
+    // Issue the version command
+    LG290PResult result = sendQuery("VERSION");
+
+    // Process the response
+    if (result == LG290P_RESULT_OK)
+        // Response sitting in buffer. Return pointer to buffer.
+        return ((char *)_sempParse->buffer);
+    else if (result == LG290P_RESULT_TIMEOUT_RESPONSE)
+        return ((char *)"Timeout");
+    else if (result == LG290P_RESULT_RESPONSE_COMMAND_ERROR)
+        return ((char *)"Error1");
+    return ((char *)"Error2");
+}
+
+// Cracks a given CONFIG response into settings
+void LG290P::configHandler(uint8_t *response, uint16_t length)
+{
+    // We've received a response such as $CONFIG,COM3,CONFIG COM3 115200*23
+    // See if it is the one we want
+    char *responsePointer = strcasestr((char *)response, configStringToFind);
+    if (responsePointer != nullptr) // Found
+    {
+        configStringFound = true;
+    }
+    else
+    {
+        // This config response was not what we were looking for
+    }
+}
+
+// Given a string such as "CONFIG COM3 115200", query the device's config settings
+// If the given string is in the CONFIG response, return true
+// Send a CONFIG command and see if a specific string exists in the responses
+// $command,config,response: OK*54
+// $CONFIG,ANTENNA,CONFIG ANTENNA POWERON*7A
+// $CONFIG,NMEAVERSION,CONFIG NMEAVERSION V410*47
+// $CONFIG,RTK,CONFIG RTK TIMEOUT 120*6C
+// $CONFIG,RTK,CONFIG RTK RELIABILITY 3 1*76
+// $CONFIG,PPP,CONFIG PPP TIMEOUT 120*6C
+// $CONFIG,DGPS,CONFIG DGPS TIMEOUT 300*6C
+// $CONFIG,RTCMB1CB2A,CONFIG RTCMB1CB2A ENABLE*25
+// $CONFIG,ANTENNADELTAHEN,CONFIG ANTENNADELTAHEN 0.0000 0.0000 0.0000*3A
+// $CONFIG,PPS,CONFIG PPS ENABLE GPS POSITIVE 500000 1000 0 0*6E
+// $CONFIG,SIGNALGROUP,CONFIG SIGNALGROUP 2*16
+// $CONFIG,ANTIJAM,CONFIG ANTIJAM AUTO*2B
+// $CONFIG,AGNSS,CONFIG AGNSS DISABLE*70
+// $CONFIG,BASEOBSFILTER,CONFIG BASEOBSFILTER DISABLE*70
+// $CONFIG,COM1,CONFIG COM1 115200*23
+// $CONFIG,COM2,CONFIG COM2 115200*23
+// $CONFIG,COM3,CONFIG COM3 115200*23
+bool LG290P::isConfigurationPresent(const char *stringToFind, uint16_t maxWaitMs)
+{
+    LG290PResult result;
+
+    clearBuffer();
+
+    // Send command and check for OK response
+    result = sendString("CONFIG", maxWaitMs);
+    if (result != LG290P_RESULT_OK)
+        // return (result);
+        return (false);
+
+    // Setup configStringToFind so configHandler() knows what to look for
+    strncpy(configStringToFind, stringToFind, sizeof(configStringToFind));
+
+    configStringFound = false; // configHandler() sets true if we find the intended string
+
+    commandResponse = LG290P_RESULT_RESPONSE_COMMAND_WAITING; // Reset
+
+    unicoreLibrarySemaphoreBlock = true; // Prevent external tasks from harvesting serial data
+
+    // Feed the parser until we see a response to the command
+    int wait = 0;
+    while (1)
+    {
+        if (wait++ == maxWaitMs)
+        {
+            debugPrintf("LG290P Lib: isConfigPresent Response timeout");
+            unicoreLibrarySemaphoreBlock = false; // Allow external tasks to control serial hardware
+            // return (LG290P_RESULT_TIMEOUT_RESPONSE);
+            return (false);
+        }
+
+        updateOnce(); // Will call LG290PProcessMessage() and configHandler()
+
+        if (configStringFound == true)
+        {
+            // return (LG290P_RESULT_CONFIG_PRESENT);
+            return (true);
+        }
+
+        if (commandResponse == LG290P_RESULT_RESPONSE_COMMAND_ERROR)
+        {
+            debugPrintf("LG290P Lib: Query failure");
+            unicoreLibrarySemaphoreBlock = false; // Allow external tasks to control serial hardware
+            // return (LG290P_RESULT_RESPONSE_COMMAND_ERROR);
+            return (false);
+        }
+
+        delay(1);
+    }
+
+    unicoreLibrarySemaphoreBlock = false; // Allow external tasks to control serial hardware
+
+    // return (LG290P_RESULT_OK);
+    return (false);
+}
+
+// Returns true when GNGGA NMEA reports position status >= 1
+bool LG290P::isNmeaFixed()
+{
+    if (nmeaPositionStatus >= 1)
+        return (true);
+    return (false);
+}
+// By default, library will attempt to start RECTIME and BESTNAV regardless of GNSS fix
+// This may lead to command timeouts as the LG290P does not appear to respond to BESTNAVB commands if 3D fix is not
+// achieved. Set startBinartBeforeFix = false via disableBinaryBeforeFix() to block binary commands before a fix is
+// achieved
+void LG290P::enableBinaryBeforeFix()
+{
+    startBinaryBeforeFix = true;
+}
+void LG290P::disableBinaryBeforeFix()
+{
+    startBinaryBeforeFix = false;
+}
+#endif
