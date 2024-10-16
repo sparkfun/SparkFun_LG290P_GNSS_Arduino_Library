@@ -6,7 +6,7 @@
 # Datatypes (KEYWORD1)
 #######################################
 
-LP290P	KEYWORD1
+LG290P	KEYWORD1
 
 #######################################
 # Methods and Functions (KEYWORD2)
