@@ -62,9 +62,6 @@ void setup()
   Serial.println("Setting base station mode");
   myGNSS.setModeBase();
 
-  Serial.println("Enabling PQTMSVINSTATUS message");
-  myGNSS.setMessageRate("PQTMSVINSTATUS", 1, 1);
-
   Serial.println("Setting 'Survey In' Mode");
   int secs = 100;
   Serial.printf("Give the device %d seconds to establish location.\r\n", secs);
@@ -77,6 +74,10 @@ void setup()
     Serial.println("reconnection failed; halting");
     while (true);
   }
+
+  Serial.println("Enabling PQTMSVINSTATUS message");
+  myGNSS.setMessageRate("PQTMSVINSTATUS", 1, 1);
+
   Serial.println();
   Serial.println("Online. Waiting for PQTMSVINSTATUS messages...");
 }
