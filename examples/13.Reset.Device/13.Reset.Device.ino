@@ -67,6 +67,7 @@ void busy_wait()
   // For at least 10 seconds, but no more than 60, display lat/long until we have a fix
   for (unsigned long start = millis(); millis() - start < 1000 * 60; )
   {
+    myGNSS.update();
     if (myGNSS.isNewSnapshotAvailable())
     {
       Serial.printf("%02d:%02d:%02d.%03d Lat/Long=(%.8f,%.8f) Alt=%.2f\r\n", 
@@ -81,6 +82,8 @@ void busy_wait()
 
 void loop()
 {
+  myGNSS.setFixInterval(1000);
+
   Serial.println("Hot reset");
   myGNSS.hotReset();
   busy_wait();
