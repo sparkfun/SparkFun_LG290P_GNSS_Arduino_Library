@@ -36,16 +36,16 @@ HardwareSerial SerialGNSS(1); // Use UART1 on the ESP32
 void setup()
 {
   Serial.begin(115200);
-  delay(250);
+  delay(3000);
   Serial.println();
-  Serial.println("SparkFun LG290P Position, Velocity, Time Example");
-
+  Serial.println("SparkFun LG290P Position, Velocity, Time example");
+  Serial.println("Initializing device...");
   // We must start the serial port before using it in the library
   // Increase buffer size to handle high baud rate streams
   SerialGNSS.setRxBufferSize(1024);
   SerialGNSS.begin(gnss_baud, SERIAL_8N1, pin_UART1_RX, pin_UART1_TX);
   
-  // myGNSS.enableDebugging(Serial); // Print all debug to Serial
+  myGNSS.enableDebugging(Serial); // Print all debug to Serial
   if (!myGNSS.begin(SerialGNSS))     // Give the serial port over to the library
   {
     Serial.println("LG290P failed to respond. Check ports and baud rates. Freezing...");

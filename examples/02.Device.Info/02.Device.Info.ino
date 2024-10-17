@@ -30,9 +30,10 @@ HardwareSerial SerialGNSS(1); // Use UART1 on the ESP32
 void setup()
 {
   Serial.begin(115200);
-  delay(250);
+  delay(3000);
   Serial.println();
-  Serial.println("SparkFun LG290P Device Info Example");
+  Serial.println("SparkFun LG290P Device Info example");
+  Serial.println("Initializing device...");
 
   // We must start the serial port before using it in the library
   // Increase buffer size to handle high baud rate streams
@@ -46,7 +47,6 @@ void setup()
     while (true);
   }
   Serial.println("LG290P detected!");
-  Serial.println();
 
   bool gpsEnabled, glonassEnabled, galileoEnabled, bdsEnabled, qzssEnabled, navicEnabled;
   Serial.print("Constellations: ");

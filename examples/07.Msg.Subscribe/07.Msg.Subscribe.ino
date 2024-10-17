@@ -35,9 +35,10 @@ HardwareSerial SerialGNSS(1); // Use UART1 on the ESP32
 void setup()
 {
   Serial.begin(115200);
-  delay(250);
+  delay(3000);
   Serial.println();
-  Serial.println("SparkFun LG290P PQTM Message Enable Example");
+  Serial.println("SparkFun LG290P Message Subscription example");
+  Serial.println("Initializing device...");
 
   // We must start the serial port before using it in the library
   // Increase buffer size to handle high baud rate streams
@@ -70,9 +71,9 @@ void busy_wait(int secs)
   }
 }
 
-void MyCallback(NmeaPacket &nmea)
+void MyPqtmCallback(NmeaPacket &nmea)
 {
-  Serial.printf("Found! '%s'\r\n", nmea.ToString().c_str());
+  Serial.printf("    '%s'\r\n", nmea.ToString().c_str());
 }
 
 void loop()
@@ -80,9 +81,9 @@ void loop()
   busy_wait(10);
   Serial.println();
   Serial.println("*** Enable and subscribe to PVT and ODO sentences ***");
-  myGNSS.nmeaSubscribe("PQTMPVT", MyCallback);
+  myGNSS.nmeaSubscribe("PQTMPVT", MyPqtmCallback);
   myGNSS.setMessageRate("PQTMPVT", 1, 1);
-  myGNSS.nmeaSubscribe("PQTMODO", MyCallback);
+  myGNSS.nmeaSubscribe("PQTMODO", MyPqtmCallback);
   myGNSS.setMessageRate("PQTMODO", 1, 1);
   busy_wait(10);
   Serial.println();

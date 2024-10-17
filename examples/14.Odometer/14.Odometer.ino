@@ -35,9 +35,10 @@ HardwareSerial SerialGNSS(1); // Use UART1 on the ESP32
 void setup()
 {
   Serial.begin(115200);
-  delay(250);
+  delay(3000);
   Serial.println();
-  Serial.println("SparkFun LG290P PQTM Message Enable Example");
+  Serial.println("SparkFun LG290P Odometer example");
+  Serial.println("Initializing device...");
 
   // We must start the serial port before using it in the library
   // Increase buffer size to handle high baud rate streams
@@ -51,17 +52,16 @@ void setup()
     while (true);
   }
   Serial.println("LG290P detected!");
-  Serial.println();
 
   Serial.println();
   Serial.println("*** Enable and subscribe to ODO sentences ***");
-  myGNSS.nmeaSubscribe("PQTMODO", MyCallback);  
+  myGNSS.nmeaSubscribe("PQTMODO", MyPqtmCallback);  
   myGNSS.setMessageRate("PQTMODO", 1, 1);
   myGNSS.sendCommand("$PQTMCFGODO", ",W,1,0"); // enable odo
   myGNSS.setFixInterval(1000);
 }
 
-void MyCallback(NmeaPacket &nmea)
+void MyPqtmCallback(NmeaPacket &nmea)
 {
     bool odoEnabled = nmea[3] == "1";
     Serial.printf("This device's odometer is %senabled and it has traveled %s meters\r\n", odoEnabled ? "" : "NOT ", nmea[4].c_str());

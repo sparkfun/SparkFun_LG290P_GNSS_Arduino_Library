@@ -35,9 +35,10 @@ HardwareSerial SerialGNSS(1); // Use UART1 on the ESP32
 void setup()
 {
   Serial.begin(115200);
-  delay(2000);
+  delay(3000);
   Serial.println();
-  Serial.println("SparkFun Satellite Example");
+  Serial.println("SparkFun Satellite example");
+  Serial.println("Initializing device...");
 
   // We must start the serial port before using it in the library
   // Increase buffer size to handle high baud rate streams

@@ -131,6 +131,20 @@ bool LG290P::begin(HardwareSerial &serialPort, Print *parserDebug, Print *parser
         sempStopParser(&_sempParse);
         return false;
     }
+
+    // After we've established that we can talk to the device, reset it to default values
+    if (!restoreParameters())
+    {
+        sempStopParser(&_sempParse);
+        return false;
+    }
+
+    softwareReset();
+    if (!isConnected())
+    {
+        sempStopParser(&_sempParse);
+        return false;
+    }
     return true;
 }
 
