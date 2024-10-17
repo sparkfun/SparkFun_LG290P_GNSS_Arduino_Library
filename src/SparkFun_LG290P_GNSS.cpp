@@ -1319,6 +1319,12 @@ void NmeaPacket::parseAltitude(const std::string &term, double &altitude)
     altitude = parseDecimal(term) / 100.0;
 }
 
+double LG290P::getCourse()
+{
+    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
+    return snapshot->course;
+}
+
 #if false
 void LG290P::serialPrintln(const char *command)
 {
@@ -1521,12 +1527,6 @@ double LG290P::getTrackGround()
 {
     CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
     return snapshot->trackGround;
-}
-
-double LG290P::getCourse()
-{
-    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
-    return snapshot->course;
 }
 
 float LG290P::getLatitudeDeviation()

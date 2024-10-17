@@ -645,9 +645,9 @@ class LG290P
      */
     uint32_t getFixAgeMilliseconds();
 
-  #if false // TODO?
     double getTrackGround();
     double getCourse();
+  #if false // TODO?
 
     float getLatitudeDeviation();
     float getLongitudeDeviation();
