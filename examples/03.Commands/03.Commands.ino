@@ -5,7 +5,7 @@
   Date: 29 September 2024
   License: MIT. Please see LICENSE.md for more information.
 
-  This example shows how to query a LG290P GNSS module for its position and time data.
+  This example shows how to send a command to the LG290P GNSS module, as well as query it for NMEA packets.
   These examples are targeted for an ESP32 platform but any platform that has multiple
   serial UARTs should be compatible.
 
@@ -47,7 +47,7 @@ void setup()
   SerialGNSS.begin(gnss_baud, SERIAL_8N1, pin_UART1_RX, pin_UART1_TX);
   
   // myGNSS.enableDebugging(Serial); // Print all debug to Serial
-  if (!myGNSS.begin(SerialGNSS))     // Give the serial port over to the library
+  if (myGNSS.begin(SerialGNSS) == false)     // Give the serial port over to the library
   {
     Serial.println("LG290P failed to respond. Check ports and baud rates. Freezing...");
     while (true);
