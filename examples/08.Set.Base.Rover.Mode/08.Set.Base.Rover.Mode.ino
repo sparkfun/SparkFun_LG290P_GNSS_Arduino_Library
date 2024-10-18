@@ -49,7 +49,7 @@ void myRtcmCallback(RtcmPacket &packet)
 void setup()
 {
   Serial.begin(115200);
-  delay(3000);
+  delay(250);
   Serial.println();
   Serial.println("SparkFun LG290P Base/Rover Mode example");
   Serial.println("Initializing device...");

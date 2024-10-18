@@ -36,7 +36,7 @@ HardwareSerial SerialGNSS(1); // Use UART1 on the ESP32
 void setup()
 {
   Serial.begin(115200);
-  delay(3000);
+  delay(250);
   Serial.println();
   Serial.println("SparkFun LG290P Fix Rate example");
   Serial.println("Initializing device...");
