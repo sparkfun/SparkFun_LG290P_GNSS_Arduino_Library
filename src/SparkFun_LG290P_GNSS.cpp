@@ -149,7 +149,7 @@ bool LG290P::begin(HardwareSerial &serialPort, Print *parserDebug, Print *parser
 }
 
 // Query the device with 'UNIQID', expect OK response
-// Device may be booting and outputting other messages (ie, $devicename,COM3*65)
+// Device may be booting and outputting other messages (ie, PQTMVER)
 // Try a few times
 bool LG290P::isConnected()
 {

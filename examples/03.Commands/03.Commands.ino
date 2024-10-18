@@ -71,9 +71,15 @@ void loop()
   if (Serial.available())
     processSerial();
 
-  if (myGNSS.isNewSnapshotAvailable())
+  static uint16_t lastSec = -1;
+  uint16_t sec = myGNSS.getSecond();
+
+  if (sec != lastSec && sec % 5 == 0)
   {
-    Serial.printf("Lat/Long/Alt: %.8f/%.8f/%.2f\r\n", myGNSS.getLatitude(), myGNSS.getLongitude(), myGNSS.getAltitude());
+    lastSec = sec;
+    Serial.printf("%02d:%02d:%02d NMEA packets GGA: %d  RMC: %d\r\n", 
+      myGNSS.getHour(), myGNSS.getMinute(), sec,
+      myGNSS.getNmeaCount("GGA"), myGNSS.getNmeaCount("RMC"));
   }
 }
 
