@@ -56,7 +56,28 @@ void setup()
   Serial.println("*** Normal mode ***");
 }
 
-void busy_wait(int secs)
+void loop()
+{
+  busyWait(10);
+  Serial.println();
+  Serial.println("*** Enable and subscribe to PVT and ODO sentences ***");
+  myGNSS.nmeaSubscribe("PQTMPVT", MyPqtmCallback);
+  myGNSS.setMessageRate("PQTMPVT", 1, 1);
+  myGNSS.nmeaSubscribe("PQTMODO", MyPqtmCallback);
+  myGNSS.setMessageRate("PQTMODO", 1, 1);
+  busyWait(10);
+  Serial.println();
+  Serial.println("*** Disable PVT and ODO sentences but continue subscribing ***");
+  myGNSS.setMessageRate("PQTMPVT", 0, 1);
+  myGNSS.setMessageRate("PQTMODO", 0, 1);
+  busyWait(10);
+  Serial.println();
+  Serial.println("*** Unsubscribe from PVT and ODO sentences too ***");
+  myGNSS.nmeaUnsubscribe("PQTMPVT");
+  myGNSS.nmeaUnsubscribe("PQTMODO");
+}
+
+void busyWait(int secs)
 {
   while (secs)
   {
@@ -75,25 +96,3 @@ void MyPqtmCallback(NmeaPacket &nmea)
 {
   Serial.printf("    '%s'\r\n", nmea.ToString().c_str());
 }
-
-void loop()
-{
-  busy_wait(10);
-  Serial.println();
-  Serial.println("*** Enable and subscribe to PVT and ODO sentences ***");
-  myGNSS.nmeaSubscribe("PQTMPVT", MyPqtmCallback);
-  myGNSS.setMessageRate("PQTMPVT", 1, 1);
-  myGNSS.nmeaSubscribe("PQTMODO", MyPqtmCallback);
-  myGNSS.setMessageRate("PQTMODO", 1, 1);
-  busy_wait(10);
-  Serial.println();
-  Serial.println("*** Disable PVT and ODO sentences but continue subscribing ***");
-  myGNSS.setMessageRate("PQTMPVT", 0, 1);
-  myGNSS.setMessageRate("PQTMODO", 0, 1);
-  busy_wait(10);
-  Serial.println();
-  Serial.println("*** Unsubscribe from PVT and ODO sentences too ***");
-  myGNSS.nmeaUnsubscribe("PQTMPVT");
-  myGNSS.nmeaUnsubscribe("PQTMODO");
-}
-

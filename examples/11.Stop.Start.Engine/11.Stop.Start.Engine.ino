@@ -54,7 +54,22 @@ void setup()
   Serial.println("LG290P detected!");
 }
 
-void busy_wait(int seconds, bool printinfo)
+void loop()
+{
+    myGNSS.enableEngine();
+    Serial.println();
+    Serial.println("Here's the engine running normally with $PQTMGNSSSTART");
+    busyWait(2, false);
+    busyWait(15, true);
+    
+    myGNSS.disableEngine();
+    Serial.println();
+    Serial.println("Here's the engine shut off with $PQTMGNSSSTOP");
+    busyWait(2, false);
+    busyWait(15, true);
+}
+
+void busyWait(int seconds, bool printinfo)
 {
     for (unsigned long start = millis(); millis() - start < 1000 * seconds; )
     {
@@ -64,19 +79,4 @@ void busy_wait(int seconds, bool printinfo)
             myGNSS.getLatitude(), myGNSS.getLongitude(), myGNSS.getAltitude());
         myGNSS.update();
     }
-}
-
-void loop()
-{
-    myGNSS.enableEngine();
-    Serial.println();
-    Serial.println("Here's the engine running normally with $PQTMGNSSSTART");
-    busy_wait(2, false);
-    busy_wait(15, true);
-    
-    myGNSS.disableEngine();
-    Serial.println();
-    Serial.println("Here's the engine shut off with $PQTMGNSSSTOP");
-    busy_wait(2, false);
-    busy_wait(15, true);
 }

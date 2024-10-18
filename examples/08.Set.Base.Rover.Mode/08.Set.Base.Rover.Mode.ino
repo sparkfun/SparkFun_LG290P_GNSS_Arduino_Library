@@ -73,12 +73,6 @@ void setup()
   myGNSS.rtcmSubscribe(1074, myRtcmCallback);
 }
 
-void busy_wait(int seconds)
-{
-    for (unsigned long start = millis(); millis() - start < 1000 * seconds; )
-       myGNSS.update();
-}
-
 void loop()
 {
     Serial.println();
@@ -87,7 +81,7 @@ void loop()
     myGNSS.saveParameters();
     myGNSS.softwareReset();
     Serial.println("Resetting device...");
-    busy_wait(30);
+    busyWait(30);
     
     Serial.println();
     Serial.println("Here's the engine running in BASE mode");
@@ -95,5 +89,11 @@ void loop()
     myGNSS.saveParameters();
     myGNSS.softwareReset();
     Serial.println("Resetting device...");
-    busy_wait(30);
+    busyWait(30);
+}
+
+void busyWait(int seconds)
+{
+    for (unsigned long start = millis(); millis() - start < 1000 * seconds; )
+       myGNSS.update();
 }

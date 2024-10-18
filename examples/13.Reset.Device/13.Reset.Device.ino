@@ -55,10 +55,31 @@ void setup()
   Serial.println();
 
   Serial.println("At startup");
-  busy_wait();
+  busyWait();
 }
 
-void busy_wait()
+void loop()
+{
+  myGNSS.setFixInterval(1000);
+
+  Serial.println("Hot reset");
+  myGNSS.hotReset();
+  busyWait();
+
+  Serial.println("Warm reset");
+  myGNSS.warmReset();
+  busyWait();
+
+  Serial.println("Cold reset");
+  myGNSS.coldReset();
+  busyWait();
+
+  Serial.println("Factory reset");
+  myGNSS.softwareReset();
+  busyWait();
+}
+
+void busyWait()
 {
   // Delay 2 seconds to allow the message to be seen
   for (unsigned long start = millis(); millis() - start < 1000 * 2; )
@@ -78,25 +99,4 @@ void busy_wait()
         break;
     }
   }
-}
-
-void loop()
-{
-  myGNSS.setFixInterval(1000);
-
-  Serial.println("Hot reset");
-  myGNSS.hotReset();
-  busy_wait();
-
-  Serial.println("Warm reset");
-  myGNSS.warmReset();
-  busy_wait();
-
-  Serial.println("Cold reset");
-  myGNSS.coldReset();
-  busy_wait();
-
-  Serial.println("Factory reset");
-  myGNSS.softwareReset();
-  busy_wait();
 }

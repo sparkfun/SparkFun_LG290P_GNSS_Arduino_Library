@@ -54,7 +54,19 @@ void setup()
   Serial.println("LG290P detected!");
 }
 
-void busy_wait(int secs)
+void loop()
+{
+  Serial.println("Normal mode (RMC and GGA enabled)");
+  busyWait(10);
+  Serial.println("Disable RMC and GGA sentences");
+  myGNSS.setMessageRate("GGA", 0);
+  myGNSS.setMessageRate("RMC", 0);
+  busyWait(10);
+  myGNSS.setMessageRate("GGA", 1);
+  myGNSS.setMessageRate("RMC", 1);
+}
+
+void busyWait(int secs)
 {
   while (secs)
   {
@@ -68,16 +80,3 @@ void busy_wait(int secs)
     myGNSS.update(); // Regularly call to parse any new data
   }
 }
-
-void loop()
-{
-  Serial.println("Normal mode (RMC and GGA enabled)");
-  busy_wait(10);
-  Serial.println("Disable RMC and GGA sentences");
-  myGNSS.setMessageRate("GGA", 0);
-  myGNSS.setMessageRate("RMC", 0);
-  busy_wait(10);
-  myGNSS.setMessageRate("GGA", 1);
-  myGNSS.setMessageRate("RMC", 1);
-}
-

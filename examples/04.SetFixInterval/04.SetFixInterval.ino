@@ -55,7 +55,31 @@ void setup()
   Serial.println("LG290P detected!");
 }
 
-void busy_wait(int seconds, bool printinfo)
+void loop()
+{
+    static bool fast = true;
+    int fixInterval = fast ? 100 : 1000;
+    
+    Serial.println();
+    Serial.printf("We'll change the fix rate to '%s' (%dms) and do a hot restart\r\n", fast ? "fast" : "normal", fixInterval);
+    busyWait(2, false);
+
+    Serial.printf("Changing the fix interval to %dms\r\n", fixInterval);
+    Serial.println(myGNSS.setFixInterval(fixInterval) ? "Success!" : "Fail");
+    busyWait(2, false);
+
+    Serial.printf("Performing hot reset\r\n");
+    if (myGNSS.hotReset())
+        Serial.println("Success!");
+    busyWait(2, false);
+    busyWait(30, true);
+
+    fast = !fast;
+}
+
+// Delay while we poll the receiver for new data
+// Print new data if printinfo is enabled 
+void busyWait(int seconds, bool printinfo)
 {
     for (unsigned long start = millis(); millis() - start < 1000 * seconds; )
     {
@@ -65,26 +89,4 @@ void busy_wait(int seconds, bool printinfo)
             myGNSS.getLatitude(), myGNSS.getLongitude(), myGNSS.getAltitude());
         myGNSS.update();
     }
-}
-
-void loop()
-{
-    static bool fast = true;
-    int fixInterval = fast ? 100 : 1000;
-    
-    Serial.println();
-    Serial.printf("We'll change the fix rate to '%s' (%dms) and do a hot restart\r\n", fast ? "fast" : "normal", fixInterval);
-    busy_wait(2, false);
-
-    Serial.printf("Changing the fix interval to %dms\r\n", fixInterval);
-    Serial.println(myGNSS.setFixInterval(fixInterval) ? "Success!" : "Fail");
-    busy_wait(2, false);
-
-    Serial.printf("Performing hot reset\r\n");
-    if (myGNSS.hotReset())
-        Serial.println("Success!");
-    busy_wait(2, false);
-    busy_wait(30, true);
-
-    fast = !fast;
 }

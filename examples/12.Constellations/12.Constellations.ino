@@ -55,7 +55,31 @@ void setup()
   Serial.println("LG290P detected!");
 }
 
-void busy_wait(int nsecs)
+void loop()
+{
+  Serial.println();
+  Serial.println("Test 1: All constellations enabled");
+  myGNSS.configureConstellation(true, true, true, true, true, true);
+  myGNSS.saveParameters();
+  myGNSS.softwareReset();
+  busyWait(60);
+
+  Serial.println();
+  Serial.println("Test 2: Only GP, GA, GQ constellations enabled");
+  myGNSS.configureConstellation(true, false, true, false, true, false);
+  myGNSS.saveParameters();
+  myGNSS.softwareReset();
+  busyWait(60);
+
+  Serial.println();
+  Serial.println("Test 3: Only GL, GB, IN constellations enabled");
+  myGNSS.configureConstellation(false, true, false, true, false, true);
+  myGNSS.saveParameters();
+  myGNSS.softwareReset();
+  busyWait(60);
+}
+
+void busyWait(int nsecs)
 {
   for (unsigned long start = millis(); millis() - start < 1000 * nsecs;)
   {
@@ -78,28 +102,4 @@ void busy_wait(int nsecs)
       Serial.println();
     }
   }
-}
-
-void loop()
-{
-  Serial.println();
-  Serial.println("Test 1: All constellations enabled");
-  myGNSS.configureConstellation(true, true, true, true, true, true);
-  myGNSS.saveParameters();
-  myGNSS.softwareReset();
-  busy_wait(60);
-
-  Serial.println();
-  Serial.println("Test 2: Only GP, GA, GQ constellations enabled");
-  myGNSS.configureConstellation(true, false, true, false, true, false);
-  myGNSS.saveParameters();
-  myGNSS.softwareReset();
-  busy_wait(60);
-
-  Serial.println();
-  Serial.println("Test 3: Only GL, GB, IN constellations enabled");
-  myGNSS.configureConstellation(false, true, false, true, false, true);
-  myGNSS.saveParameters();
-  myGNSS.softwareReset();
-  busy_wait(60);
 }
