@@ -63,7 +63,7 @@ void setup()
   myGNSS.setModeBase();
 
   Serial.println("Setting 'Survey In' Mode");
-  int secs = 100;
+  int secs = 60;
   Serial.printf("Give the device %d seconds to establish location.\r\n", secs);
   myGNSS.setSurveyInMode(secs);
   myGNSS.saveParameters();
