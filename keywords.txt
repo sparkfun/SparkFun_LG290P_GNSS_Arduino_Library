@@ -12,97 +12,97 @@ LG290P	KEYWORD1
 # Methods and Functions (KEYWORD2)
 #######################################
 
-begin                 KEYWORD2
-isConnected           KEYWORD2
-isBlocking            KEYWORD2
-update                KEYWORD2
+begin	KEYWORD2
+isConnected	KEYWORD2
+isBlocking	KEYWORD2
+update	KEYWORD2
 
-debugPrintf           KEYWORD2
-enableDebugging       KEYWORD2
-disableDebugging      KEYWORD2
-enableParserDebug     KEYWORD2
-disableParserDebug    KEYWORD2
-enableParserErrors    KEYWORD2
-disableParserErrors   KEYWORD2
-enablePrintBadChecksums   KEYWORD2
-disablePrintBadChecksums  KEYWORD2
-enablePrintParserTransitions   KEYWORD2
-disablePrintParserTransitions  KEYWORD2
-enablePrintRxMessages   KEYWORD2
-disablePrintRxMessages  KEYWORD2
-enableRxMessageDump     KEYWORD2
-disableRxMessageDump    KEYWORD2
-printParserConfiguration  KEYWORD2
-dumpBuffer             KEYWORD2
+debugPrintf	KEYWORD2
+enableDebugging	KEYWORD2
+disableDebugging	KEYWORD2
+enableParserDebug	KEYWORD2
+disableParserDebug	KEYWORD2
+enableParserErrors	KEYWORD2
+disableParserErrors	KEYWORD2
+enablePrintBadChecksums	KEYWORD2
+disablePrintBadChecksums	KEYWORD2
+enablePrintParserTransitions	KEYWORD2
+disablePrintParserTransitions	KEYWORD2
+enablePrintRxMessages	KEYWORD2
+disablePrintRxMessages	KEYWORD2
+enableRxMessageDump	KEYWORD2
+disableRxMessageDump	KEYWORD2
+printParserConfiguration	KEYWORD2
+dumpBuffer	KEYWORD2
 
-getNmeaCount           KEYWORD2
-getRtcmCount           KEYWORD2
-clearNmeaCount         KEYWORD2
-clearRtcmCount         KEYWORD2
+getNmeaCount	KEYWORD2
+getRtcmCount	KEYWORD2
+clearNmeaCount	KEYWORD2
+clearRtcmCount	KEYWORD2
 
-setModeBase            KEYWORD2
-setModeRover           KEYWORD2
-setPortBaudrate        KEYWORD2
-setBaudrate            KEYWORD2
-getPortInfo            KEYWORD2
-enablePPS              KEYWORD2
-disablePPS             KEYWORD2
-getPPSInfo             KEYWORD2
-getConstellationInfo   KEYWORD2
-configureConstellation KEYWORD2
-getSerialNumber        KEYWORD2
-getVersionInfo         KEYWORD2
-getFixInterval         KEYWORD2
-setFixInterval         KEYWORD2
-setMessageRate         KEYWORD2
-saveParameters         KEYWORD2
-restoreParameters      KEYWORD2
+setModeBase	KEYWORD2
+setModeRover	KEYWORD2
+setPortBaudrate	KEYWORD2
+setBaudrate	KEYWORD2
+getPortInfo	KEYWORD2
+enablePPS	KEYWORD2
+disablePPS	KEYWORD2
+getPPSInfo	KEYWORD2
+getConstellationInfo	KEYWORD2
+configureConstellation	KEYWORD2
+getSerialNumber	KEYWORD2
+getVersionInfo	KEYWORD2
+getFixInterval	KEYWORD2
+setFixInterval	KEYWORD2
+setMessageRate	KEYWORD2
+saveParameters	KEYWORD2
+restoreParameters	KEYWORD2
 
-softwareReset          KEYWORD2
-coldReset              KEYWORD2
-warmReset              KEYWORD2
-hotReset               KEYWORD2
-disableEngine          KEYWORD2
-enableEngine           KEYWORD2
+softwareReset	KEYWORD2
+coldReset	KEYWORD2
+warmReset	KEYWORD2
+hotReset	KEYWORD2
+disableEngine	KEYWORD2
+enableEngine	KEYWORD2
 
-nmeaSubscribe          KEYWORD2
-nmeaUnsubscribe        KEYWORD2
-nmeaSubscribeAll       KEYWORD2
-nmeaUnsubscribeAll     KEYWORD2
-rtcmSubscribe          KEYWORD2
-rtcmUnsubscribe        KEYWORD2
-rtcmSubscribeAll       KEYWORD2
-rtcmUnsubscribeAll     KEYWORD2
+nmeaSubscribe	KEYWORD2
+nmeaUnsubscribe	KEYWORD2
+nmeaSubscribeAll	KEYWORD2
+nmeaUnsubscribeAll	KEYWORD2
+rtcmSubscribe	KEYWORD2
+rtcmUnsubscribe	KEYWORD2
+rtcmSubscribeAll	KEYWORD2
+rtcmUnsubscribeAll	KEYWORD2
 
-sendCommand            KEYWORD2
-sendCommandLine        KEYWORD2
-getCommandResponse     KEYWORD2
-sendOkCommand          KEYWORD2
+sendCommand	KEYWORD2
+sendCommandLine	KEYWORD2
+getCommandResponse	KEYWORD2
+sendOkCommand	KEYWORD2
 
-getVisibleSats         KEYWORD2
-isNewSatelliteInfoAvailable   KEYWORD2
-getSatellitesTracked    KEYWORD2
-getSatellitesUsed       KEYWORD2
+getVisibleSats	KEYWORD2
+isNewSatelliteInfoAvailable	KEYWORD2
+getSatellitesInView	KEYWORD2
+getSatellitesUsed	KEYWORD2
 
-getSurveyMode          KEYWORD2
-setSurveyInMode        KEYWORD2
-setSurveyFixedMode     KEYWORD2
+getSurveyMode	KEYWORD2
+setSurveyInMode	KEYWORD2
+setSurveyFixedMode	KEYWORD2
 
 isNewSnapshotAvailable KEYWORD2
-getLatitude            KEYWORD2
-getLongitude           KEYWORD2
-getAltitude            KEYWORD2
-getHorizontalSpeed     KEYWORD2
-getVerticalSpeed       KEYWORD2
+getLatitude	KEYWORD2
+getLongitude	KEYWORD2
+getAltitude	KEYWORD2
+getHorizontalSpeed	KEYWORD2
+getVerticalSpeed	KEYWORD2
 
-getYear                KEYWORD2
-getMonth               KEYWORD2
-getDay                 KEYWORD2
-getHour                KEYWORD2
-getMinute              KEYWORD2
-getSecond              KEYWORD2
-getMillisecond         KEYWORD2
-getFixAgeMilliseconds  KEYWORD2
+getYear	KEYWORD2
+getMonth	KEYWORD2
+getDay	KEYWORD2
+getHour	KEYWORD2
+getMinute	KEYWORD2
+getSecond	KEYWORD2
+getMillisecond	KEYWORD2
+getFixAgeMilliseconds	KEYWORD2
 
 #######################################
 # Constants (LITERAL1)

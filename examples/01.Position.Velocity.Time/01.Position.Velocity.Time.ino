@@ -13,7 +13,7 @@
 
   Feel like supporting open source hardware?
   Buy a board from SparkFun!
-  SparkFun Quadband GNSS RTK Breakout - LG290P (GPS-XXXXX) https://www.sparkfun.com/products/XXXX
+  SparkFun Quadband GNSS RTK Breakout - LG290P (GPS-26620) https://www.sparkfun.com/products/26620
 
   Hardware Connections:
   Connect RX3 (green wire) of the LG290P to pin 14 on the ESP32
@@ -23,7 +23,7 @@
   Connect a multi-band GNSS antenna: https://www.sparkfun.com/products/21801
 */
 
-#include <SparkFun_LG290P_GNSS.h>
+#include <SparkFun_LG290P_GNSS.h> // Click here to get the library: http://librarymanager/All#SparkFun_LG290P
 
 // Adjust these values according to your configuration
 int pin_UART1_TX = 14;
@@ -33,20 +33,25 @@ int gnss_baud = 460800;
 LG290P myGNSS;
 HardwareSerial SerialGNSS(1); // Use UART1 on the ESP32
 
+unsigned long lastCheck = 0;
+
 void setup()
 {
   Serial.begin(115200);
-  delay(3000);
+  delay(250);
   Serial.println();
+
   Serial.println("SparkFun LG290P Position, Velocity, Time example");
   Serial.println("Initializing device...");
+
   // We must start the serial port before using it in the library
   // Increase buffer size to handle high baud rate streams
   SerialGNSS.setRxBufferSize(1024);
   SerialGNSS.begin(gnss_baud, SERIAL_8N1, pin_UART1_RX, pin_UART1_TX);
-  
-  myGNSS.enableDebugging(Serial); // Print all debug to Serial
-  if (!myGNSS.begin(SerialGNSS))     // Give the serial port over to the library
+
+  //myGNSS.enableDebugging(Serial); // Print all debug to Serial
+
+  if (myGNSS.begin(SerialGNSS) == false)     // Give the serial port over to the library
   {
     Serial.println("LG290P failed to respond. Check ports and baud rates. Freezing...");
     while (true);
@@ -58,20 +63,19 @@ void loop()
 {
   myGNSS.update(); // Regularly call to parse any new data
 
-  static unsigned long lastCheck = 0;
   if (millis() - lastCheck > 1000)
   {
     lastCheck = millis();
 
-    // The get methods are updated whenever new data is parsed with the update() call.
+    // The 'get' methods are updated whenever new data is parsed with the update() call.
     // By default, this data is updated once per second.
     Serial.printf("Lat/Long/Alt: %.8f/%.8f/%.2f\r\n", myGNSS.getLatitude(), myGNSS.getLongitude(), myGNSS.getAltitude());
-    Serial.printf("Horizontal Speed: %.2fm/s Course: %.2f degrees\r\n", 
-      myGNSS.getHorizontalSpeed(), myGNSS.getCourse());
+    Serial.printf("Horizontal Speed: %.2fm/s Course: %.2f degrees\r\n",
+                  myGNSS.getHorizontalSpeed(), myGNSS.getCourse());
     Serial.printf("Date (yyyy/mm/dd): %04d/%02d/%02d Time (hh:mm:ss) %02d:%02d:%02d.%03d\r\n",
-      myGNSS.getYear(), myGNSS.getMonth(), myGNSS.getDay(), 
-      myGNSS.getHour(), myGNSS.getMinute(), myGNSS.getSecond(), myGNSS.getMillisecond());
-    Serial.printf("Satellites used: %d\r\n", myGNSS.getSatellitesUsed());
+                  myGNSS.getYear(), myGNSS.getMonth(), myGNSS.getDay(),
+                  myGNSS.getHour(), myGNSS.getMinute(), myGNSS.getSecond(), myGNSS.getMillisecond());
+    Serial.printf("Satellites in view: %d\r\n", myGNSS.getSatellitesInView());
     Serial.println();
   }
 }

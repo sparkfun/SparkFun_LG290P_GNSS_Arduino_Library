@@ -7,7 +7,7 @@
 
   Feel like supporting open source hardware?
   Buy a board from SparkFun!
-  SparkFun Quadband GNSS RTK Breakout - LG290P (GPS-XXXXX) https://www.sparkfun.com/products/XXXX
+  SparkFun Quadband GNSS RTK Breakout - LG290P (GPS-26620) https://www.sparkfun.com/products/26620
 
   Hardware Connections:
   Connect RX3 (green wire) of the LG290P to pin 14 on the ESP32
@@ -17,7 +17,7 @@
   Connect a multi-band GNSS antenna: https://www.sparkfun.com/products/21801
 */
 
-#include <SparkFun_LG290P_GNSS.h>
+#include <SparkFun_LG290P_GNSS.h> // Click here to get the library: http://librarymanager/All#SparkFun_LG290P
 
 // Adjust these values according to your configuration
 int pin_UART1_TX = 14;
@@ -30,7 +30,7 @@ HardwareSerial SerialGNSS(1); // Use UART1 on the ESP32
 void setup()
 {
   Serial.begin(115200);
-  delay(3000);
+  delay(250);
   Serial.println();
   Serial.println("SparkFun LG290P PPS (pulse per second) example");
   Serial.println("Initializing device...");
@@ -41,7 +41,7 @@ void setup()
   SerialGNSS.begin(gnss_baud, SERIAL_8N1, pin_UART1_RX, pin_UART1_TX);
   
   // myGNSS.enableDebugging(Serial); // Print all debug to Serial
-  if (!myGNSS.begin(SerialGNSS))     // Give the serial port over to the library
+  if (myGNSS.begin(SerialGNSS) == false)     // Give the serial port over to the library
   {
     Serial.println("LG290P failed to respond. Check ports and baud rates. Freezing...");
     while (true);

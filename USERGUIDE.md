@@ -219,7 +219,7 @@ This library provides an interface for controlling and configuring an LG290P GNS
 - **`bool isNewSatelliteInfoAvailable();`**  
   Checks if new satellite information has been received since the last query.
 
-- **`uint16_t getSatellitesTracked();`**  
+- **`uint16_t getSatellitesInView();`**  
   Gets the number of satellites currently being tracked.
 
 - **`uint16_t getSatellitesUsed();`**  

@@ -13,7 +13,7 @@
 
   Feel like supporting open source hardware?
   Buy a board from SparkFun!
-  SparkFun Quadband GNSS RTK Breakout - LG290P (GPS-XXXXX) https://www.sparkfun.com/products/XXXX
+  SparkFun Quadband GNSS RTK Breakout - LG290P (GPS-26620) https://www.sparkfun.com/products/26620
 
   Hardware Connections:
   Connect RX3 (green wire) of the LG290P to pin 14 on the ESP32
@@ -23,7 +23,7 @@
   Connect a multi-band GNSS antenna: https://www.sparkfun.com/products/21801
 */
 
-#include <SparkFun_LG290P_GNSS.h>
+#include <SparkFun_LG290P_GNSS.h> // Click here to get the library: http://librarymanager/All#SparkFun_LG290P
 
 // Adjust these values according to your configuration
 int pin_UART1_TX = 14;
@@ -49,7 +49,7 @@ void myRtcmCallback(RtcmPacket &packet)
 void setup()
 {
   Serial.begin(115200);
-  delay(3000);
+  delay(250);
   Serial.println();
   Serial.println("SparkFun LG290P Base/Rover Mode example");
   Serial.println("Initializing device...");
@@ -60,7 +60,7 @@ void setup()
   SerialGNSS.begin(gnss_baud, SERIAL_8N1, pin_UART1_RX, pin_UART1_TX);
   
   // myGNSS.enableDebugging(Serial); // Print all debug to Serial
-  if (!myGNSS.begin(SerialGNSS))     // Give the serial port over to the library
+  if (myGNSS.begin(SerialGNSS) == false)     // Give the serial port over to the library
   {
     Serial.println("LG290P failed to respond. Check ports and baud rates. Freezing...");
     while (true);
@@ -73,12 +73,6 @@ void setup()
   myGNSS.rtcmSubscribe(1074, myRtcmCallback);
 }
 
-void busy_wait(int seconds)
-{
-    for (unsigned long start = millis(); millis() - start < 1000 * seconds; )
-       myGNSS.update();
-}
-
 void loop()
 {
     Serial.println();
@@ -87,7 +81,7 @@ void loop()
     myGNSS.saveParameters();
     myGNSS.softwareReset();
     Serial.println("Resetting device...");
-    busy_wait(30);
+    busyWait(30);
     
     Serial.println();
     Serial.println("Here's the engine running in BASE mode");
@@ -95,5 +89,11 @@ void loop()
     myGNSS.saveParameters();
     myGNSS.softwareReset();
     Serial.println("Resetting device...");
-    busy_wait(30);
+    busyWait(30);
+}
+
+void busyWait(int seconds)
+{
+    for (unsigned long start = millis(); millis() - start < 1000 * seconds; )
+       myGNSS.update();
 }

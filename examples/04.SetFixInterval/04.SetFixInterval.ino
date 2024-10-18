@@ -13,7 +13,7 @@
 
   Feel like supporting open source hardware?
   Buy a board from SparkFun!
-  SparkFun Quadband GNSS RTK Breakout - LG290P (GPS-XXXXX) https://www.sparkfun.com/products/XXXX
+  SparkFun Quadband GNSS RTK Breakout - LG290P (GPS-26620) https://www.sparkfun.com/products/26620
 
   Hardware Connections:
   Connect RX3 (green wire) of the LG290P to pin 14 on the ESP32
@@ -23,7 +23,7 @@
   Connect a multi-band GNSS antenna: https://www.sparkfun.com/products/21801
 */
 
-#include <SparkFun_LG290P_GNSS.h>
+#include <SparkFun_LG290P_GNSS.h> // Click here to get the library: http://librarymanager/All#SparkFun_LG290P
 
 // Adjust these values according to your configuration
 int pin_UART1_TX = 14;
@@ -36,7 +36,7 @@ HardwareSerial SerialGNSS(1); // Use UART1 on the ESP32
 void setup()
 {
   Serial.begin(115200);
-  delay(3000);
+  delay(250);
   Serial.println();
   Serial.println("SparkFun LG290P Fix Rate example");
   Serial.println("Initializing device...");
@@ -47,24 +47,12 @@ void setup()
   SerialGNSS.begin(gnss_baud, SERIAL_8N1, pin_UART1_RX, pin_UART1_TX);
   
   // myGNSS.enableDebugging(Serial); // Print all debug to Serial
-  if (!myGNSS.begin(SerialGNSS))     // Give the serial port over to the library
+  if (myGNSS.begin(SerialGNSS) == false)     // Give the serial port over to the library
   {
     Serial.println("LG290P failed to respond. Check ports and baud rates. Freezing...");
     while (true);
   }
   Serial.println("LG290P detected!");
-}
-
-void busy_wait(int seconds, bool printinfo)
-{
-    for (unsigned long start = millis(); millis() - start < 1000 * seconds; )
-    {
-        if (printinfo && myGNSS.isNewSnapshotAvailable())
-            Serial.printf("%02d:%02d:%02d.%03d Lat/Long=(%.8f,%.8f) Alt=%.2f\r\n", 
-            myGNSS.getHour(), myGNSS.getMinute(), myGNSS.getSecond(), myGNSS.getMillisecond(),
-            myGNSS.getLatitude(), myGNSS.getLongitude(), myGNSS.getAltitude());
-        myGNSS.update();
-    }
 }
 
 void loop()
@@ -74,17 +62,31 @@ void loop()
     
     Serial.println();
     Serial.printf("We'll change the fix rate to '%s' (%dms) and do a hot restart\r\n", fast ? "fast" : "normal", fixInterval);
-    busy_wait(2, false);
+    busyWait(2, false);
 
     Serial.printf("Changing the fix interval to %dms\r\n", fixInterval);
     Serial.println(myGNSS.setFixInterval(fixInterval) ? "Success!" : "Fail");
-    busy_wait(2, false);
+    busyWait(2, false);
 
     Serial.printf("Performing hot reset\r\n");
     if (myGNSS.hotReset())
         Serial.println("Success!");
-    busy_wait(2, false);
-    busy_wait(30, true);
+    busyWait(2, false);
+    busyWait(30, true);
 
     fast = !fast;
+}
+
+// Delay while we poll the receiver for new data
+// Print new data if printinfo is enabled 
+void busyWait(int seconds, bool printinfo)
+{
+    for (unsigned long start = millis(); millis() - start < 1000 * seconds; )
+    {
+        if (printinfo && myGNSS.isNewSnapshotAvailable())
+            Serial.printf("%02d:%02d:%02d.%03d Lat/Long=(%.8f,%.8f) Alt=%.2f\r\n", 
+            myGNSS.getHour(), myGNSS.getMinute(), myGNSS.getSecond(), myGNSS.getMillisecond(),
+            myGNSS.getLatitude(), myGNSS.getLongitude(), myGNSS.getAltitude());
+        myGNSS.update();
+    }
 }
