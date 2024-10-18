@@ -514,7 +514,7 @@ class LG290P
      * @details Information gleaned from GSV sentences
      * @return The number of satellites being tracked.
      */
-    uint16_t getSatellitesTracked();
+    uint16_t getSatellitesInView();
 
     /**
      * @brief Gets the number of satellites used for positioning.

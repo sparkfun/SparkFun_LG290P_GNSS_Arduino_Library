@@ -1061,7 +1061,7 @@ double LG290P::getVerticalSpeed()
     return snapshot->verticalSpeed;
 }
 
-uint16_t LG290P::getSatellitesTracked()
+uint16_t LG290P::getSatellitesInView()
 {
     uint16_t count = 0;
     for (auto &item : satelliteReporting)
