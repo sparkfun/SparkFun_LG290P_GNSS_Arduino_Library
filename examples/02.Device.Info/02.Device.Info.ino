@@ -17,7 +17,7 @@
   Connect a multi-band GNSS antenna: https://www.sparkfun.com/products/21801
 */
 
-#include <SparkFun_LG290P_GNSS.h>
+#include <SparkFun_LG290P_GNSS.h> // Click here to get the library: http://librarymanager/All#SparkFun_LG290P
 
 // Adjust these values according to your configuration
 int pin_UART1_TX = 14;
