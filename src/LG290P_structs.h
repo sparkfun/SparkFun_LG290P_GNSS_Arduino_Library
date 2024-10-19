@@ -1,5 +1,5 @@
-#ifndef _SPARKFUN_UNICORE_STRUCTS_H
-#define _SPARKFUN_UNICORE_STRUCTS_H
+#ifndef _SPARKFUN_LG290P_STRUCTS_H
+#define _SPARKFUN_LG290P_STRUCTS_H
 #include <string>
 #include <vector>
 
@@ -22,7 +22,8 @@ typedef struct
     double hdop = 0;
     char fixStatus = 'N';
     double course = 0;
-//***
+
+#if false
     uint8_t timeStatus = 3; // 0 = valid, 3 = invalid
     uint8_t dateStatus = 0; // 0 = Invalid, 1 = valid, 2 = leap second warning
     double verticalSpeed = 0;
@@ -44,8 +45,16 @@ typedef struct
 
     uint8_t rtkSolution = 0;
     uint8_t pseudorangeCorrection = 0;
+#endif
 
 } NmeaSnapshot;
+
+typedef struct
+{
+    double ecefX;
+    double ecefY;
+    double ecefZ;
+} RtcmSnapshot;
 
 class NmeaPacket
 {
@@ -329,4 +338,4 @@ typedef struct
 } UNICORE_VERSION_t;
 #endif
 
-#endif // _SPARKFUN_UNICORE_STRUCTS_H
+#endif // _SPARKFUN_LG290P_STRUCTS_H

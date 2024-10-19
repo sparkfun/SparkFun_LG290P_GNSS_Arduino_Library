@@ -53,8 +53,8 @@ void setup()
 
 void loop()
 {
-  for (auto duration : {20, 100, 600})
-    for (auto polarity : {true, false})
+  for (int duration : {20, 100, 600})
+    for (bool polarity : {true, false})
     {
         Serial.printf("PPS set to %d ms, %s polarity\r\n", duration, polarity ? "POSITIVE" : "NEGATIVE");
         if (!myGNSS.enablePPS(duration, true, polarity))

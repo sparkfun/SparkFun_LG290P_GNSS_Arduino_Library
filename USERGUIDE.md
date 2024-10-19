@@ -279,5 +279,8 @@ This library provides an interface for controlling and configuring an LG290P GNS
 - **`uint16_t getMillisecond();`**  
   Retrieves the current millisecond.
 
-- **`uint32_t getFixAgeMilliseconds();`**  
-  Retrieves the age of the last fix in milliseconds.
+- **`uint32_t getGeodeticAgeMs();`**  
+  Retrieves the age of the last NMEA GGA/RMC report in milliseconds.
+
+- **`uint32_t getEcefAgeMs();`**  
+  Retrieves the age of the last RTCM 1005 report in milliseconds.

@@ -102,7 +102,13 @@ getHour	KEYWORD2
 getMinute	KEYWORD2
 getSecond	KEYWORD2
 getMillisecond	KEYWORD2
-getFixAgeMilliseconds	KEYWORD2
+
+getEcefX    KEYWORD2
+getEcefY    KEYWORD2
+getEcefZ    KEYWORD2
+
+getGeodeticAgeMs	KEYWORD2
+getEcefAgeMs	KEYWORD2
 
 #######################################
 # Constants (LITERAL1)

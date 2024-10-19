@@ -464,9 +464,20 @@ class LG290P
      * @param command The command to send.
      * @param parms (Optional) Parameters for the command, default is an empty string.
      * @param maxWaitMs (Optional) Maximum wait time in milliseconds, default is 1500 ms.
+     * @param waitForResponse (Optional) Wait for the matching response string
      * @return true if the command was sent successfully, false otherwise.
      */
-    bool sendCommand(const char *command, const char *parms = "", uint16_t maxWaitMs = 1500);
+    bool sendCommand(const char *command, const char *parms = "", uint16_t maxWaitMs = 1500, bool waitForResponse = true);
+
+    /**
+     * @brief Sends a custom command that generates no response from the device.
+     * @details Typically used for RESET commands that don't have the capacity to respond
+     * @details This function will prepend the $, if needed, and calculate the checksum.
+     * @param command The command to send.
+     * @param maxWaitMs (Optional) Maximum wait time in milliseconds, default is 1500 ms.
+     * @return true if the command was sent successfully, false otherwise.
+     */
+    bool sendCommandNoResponse(const char *command, uint16_t maxWaitMs = 1500);
 
     /**
      * @brief Sends a full command line to the device.
@@ -640,10 +651,35 @@ class LG290P
     uint16_t getMillisecond();
 
     /** 
-     * @brief Gets the age of the fix in milliseconds.
+     * @brief Gets the age of the latest NMEA geodetic report in milliseconds.
      * @return Number of milliseconds since the last report (GGA or RMC)
      */
-    uint32_t getFixAgeMilliseconds();
+    uint32_t getGeodeticAgeMs();
+
+    /** 
+     * @brief Gets the age of the latest RTCM ECEF report in milliseconds.
+     * @return Number of milliseconds since the last report (RTCM 1005)
+     */
+    uint32_t getEcefAgeMs();
+
+    /**
+     * @brief Gets the ECEF X coordinate of the current position.
+     * @return X in meters
+     */
+    double getEcefX();
+
+    /**
+     * @brief Gets the ECEF Y coordinate of the current position.
+     * @return Y in meters
+     */
+    double getEcefY();
+
+    /**
+     * @brief Gets the ECEF Z coordinate of the current position.
+     * @return Z in meters
+     */
+    double getEcefZ();
+
 
     double getTrackGround();
     double getCourse();
@@ -722,6 +758,7 @@ class LG290P
     void rtcmHandler(SEMP_PARSE_STATE *parse);
     HardwareSerial *_hwSerialPort = nullptr;
     NmeaSnapshot *snapshot = nullptr;
+    RtcmSnapshot rtcmSnapshot;
     bool initSnapshot();
     bool updateOnce();
 
