@@ -5,7 +5,7 @@
   Date: 29 September 2024
   License: MIT. Please see LICENSE.md for more information.
 
-  This example shows how enable the various "survey in" modes.  
+  This example shows how enable the fixed survey in modes.
 
   These examples are targeted for an ESP32 platform but any platform that has multiple
   serial UARTs should be compatible.
@@ -37,7 +37,7 @@ void setup()
   Serial.begin(115200);
   delay(250);
   Serial.println();
-  Serial.println("SparkFun Survey In Mode example");
+  Serial.println("SparkFun Survey Fixed Mode example");
   Serial.println("Initializing device...");
 
   // We must start the serial port before using it in the library
@@ -53,19 +53,14 @@ void setup()
   }
   Serial.println("LG290P detected!");
 
-  Serial.println("Subscribing to PQTMSVINSTATUS message");
-  myGNSS.nmeaSubscribe("PQTMSVINSTATUS", MyPqtmCallback);
-
   Serial.println("Subscribing to RTCM #1005 message");
   myGNSS.rtcmSubscribe(1005, MyRtmcCallback);
 
   Serial.println("Setting base station mode");
   myGNSS.setModeBase();
 
-  Serial.println("Setting 'Survey In' Mode");
-  int secs = 60;
-  Serial.printf("Give the device %d seconds to establish location.\r\n", secs);
-  myGNSS.setSurveyInMode(secs);
+  Serial.println("Setting 'Survey' Mode fixed to top of Eiffel Tower");
+  myGNSS.setSurveyFixedMode(4200944.016, 168364.025, 4780802.825);
   myGNSS.saveParameters();
   myGNSS.softwareReset();
   Serial.print("Waiting until device is back online... ");
@@ -75,9 +70,6 @@ void setup()
     while (true);
   }
   Serial.println("Online!");
-
-  Serial.println("Enabling PQTMSVINSTATUS messages");
-  myGNSS.setMessageRate("PQTMSVINSTATUS", 1, 1);
 }
 
 
@@ -89,20 +81,4 @@ void loop()
 void MyRtmcCallback(RtcmPacket &rtcm)
 {
   Serial.printf("Received an RTCM %d packet.  ECEF: (%.4f,%.4f,%.4f)\r\n", rtcm.type, myGNSS.getEcefX(), myGNSS.getEcefY(), myGNSS.getEcefZ());
-}
-
-void MyPqtmCallback(NmeaPacket &nmea)
-{
-  std::string tow = nmea[2];
-  std::string validity = nmea[3] == "0" ? "Invalid" : nmea[3] == "1" ? "In-progress" : "Valid";
-  std::string posCount = nmea[6];
-  std::string total = nmea[7];
-  std::string ecefX = nmea[8];
-  std::string ecefY = nmea[9];
-  std::string ecefZ = nmea[10];
-  std::string accuracy = nmea[11];
-
-  Serial.printf("PQTMSVINSTATUS: Week time: %s  Validity: '%s'  Pos: %s/%s  ECEF: (%s,%s,%s)  Accuracy: %sm\r\n",
-    tow.c_str(), validity.c_str(), posCount.c_str(), total.c_str(), ecefX.c_str(), 
-    ecefY.c_str(), ecefZ.c_str(), accuracy.c_str());
 }

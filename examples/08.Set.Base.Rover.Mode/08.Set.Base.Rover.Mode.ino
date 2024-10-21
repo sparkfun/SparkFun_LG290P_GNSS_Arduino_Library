@@ -44,6 +44,8 @@ void myRtcmCallback(RtcmPacket &packet)
   for (int i=0; i<packet.bufferlen && i<10; ++i)
     Serial.printf("%02X ", packet.buffer[i]);
   Serial.println(packet.bufferlen > 10 ? "..." : "");
+  if (packet.type == 1005)
+  Serial.printf("ECEF: (%.4f,%.4f,%.4f)\r\n", myGNSS.getEcefX(), myGNSS.getEcefY(), myGNSS.getEcefZ());
 }
 
 void setup()

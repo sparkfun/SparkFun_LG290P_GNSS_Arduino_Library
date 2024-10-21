@@ -125,27 +125,22 @@ bool LG290P::begin(HardwareSerial &serialPort, Print *parserDebug, Print *parser
         return false;
     }
 
-    // We assume the user has started the serial port with proper pins and baud rate prior to calling begin()
-    if (!isConnected())
+    // First thing: repeatedly try to restore parameters (factory default) for as many as 10 seconds
+    bool ok = false;
+    for (unsigned long start = millis(); !ok && millis() - start < 10000; )
+        ok = restoreParameters();
+
+    // If that worked, do a software reset, then wait until we're reconnected
+    if (ok)
     {
-        sempStopParser(&_sempParse);
-        return false;
+        softwareReset();
+        ok = isConnected();
     }
 
-    // After we've established that we can talk to the device, reset it to default values
-    if (!restoreParameters())
-    {
+    if (!ok)
         sempStopParser(&_sempParse);
-        return false;
-    }
-
-    softwareReset();
-    if (!isConnected())
-    {
-        sempStopParser(&_sempParse);
-        return false;
-    }
-    return true;
+    
+    return ok;
 }
 
 // Query the device with 'UNIQID', expect OK response
@@ -158,8 +153,6 @@ bool LG290P::isConnected()
     {
         if (sendOkCommand("PQTMUNIQID"))
             return true;
-        debugPrintf("LG290P failed to connect. Trying again.");
-        delay(5);
     }
     return false;
 }
@@ -577,22 +570,22 @@ bool LG290P::rtcmUnsubscribeAll()
 
 bool LG290P::softwareReset()
 {
-    return sendCommand("PQTMSRR");
+    return sendCommandNoResponse("PQTMSRR");
 }
 
 bool LG290P::coldReset()
 {
-    return sendCommand("PQTMCOLD");
+    return sendCommandNoResponse("PQTMCOLD");
 }
 
 bool LG290P::warmReset()
 {
-    return sendCommand("PQTMWARM");
+    return sendCommandNoResponse("PQTMWARM");
 }
 
 bool LG290P::hotReset()
 {
-    return sendCommand("PQTMHOT");
+    return sendCommandNoResponse("PQTMHOT");
 }
 
 bool LG290P::configureConstellation(bool enableGPS, bool enableGLONASS, bool enableGalileo, bool enableBDS,
@@ -721,13 +714,12 @@ bool LG290P::transmit(const char *command, const char *parms)
 
 // Send a $PQTM query string to the LG290P and wait for response
 // If you want to see the response string, you can get it from getCommandResponse()
-bool LG290P::sendCommand(const char *command, const char *parms, uint16_t maxWaitMs)
+bool LG290P::sendCommand(const char *command, const char *parms, uint16_t maxWaitMs, bool waitForResponse)
 {
     if (lg290PLibrarySemaphoreBlock)
         return false;
 
     bool success = false;
-    // clearBuffer(); // Not necessary?
 
     debugPrintf("sendCommand(\"%s\", \"%s\")", command, parms);
     commandName = command[0] == '$' ? command + 1 : command;
@@ -739,7 +731,8 @@ bool LG290P::sendCommand(const char *command, const char *parms, uint16_t maxWai
     if (!transmit(command, parms))
         return false;
 
-    debugPrintf("...sendCommand: waiting for response for %s", command);
+    if (waitForResponse)
+        debugPrintf("...sendCommand: waiting for response for %s", command);
 
     // Feed the parser until we see a response to the command
     for (unsigned long start = millis(); millis() - start < maxWaitMs;)
@@ -761,10 +754,20 @@ bool LG290P::sendCommand(const char *command, const char *parms, uint16_t maxWai
     }
 
     if (commandResponse == LG290P_RESULT_RESPONSE_COMMAND_WAITING)
-        debugPrintf("...sendCommand: TIMEOUT: no response received");
+    {
+        if (waitForResponse)
+            debugPrintf("...sendCommand: TIMEOUT: no response received");
+        else
+            success = true;
+    }
     commandName.clear();
     lg290PLibrarySemaphoreBlock = false; // Allow external tasks to control serial hardware
     return success;
+}
+
+bool LG290P::sendCommandNoResponse(const char *command, uint16_t maxWaitMs)
+{
+    return sendCommand(command, "", maxWaitMs, false);
 }
 
 bool LG290P::sendCommandLine(const char *commandline, uint16_t maxWaitMs)
@@ -972,7 +975,35 @@ void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
         nmeaAllSubscribe(nmea); //call it!
 }
 
-// Cracks an NMEA into the applicable container
+int64_t extract_38bit_signed(const uint8_t *packet, int bit_offset)
+{
+    // Extract 38-bit value starting from the given bit_offset
+    int64_t value = 0;
+    int byte_offset = bit_offset / 8;
+    int bit_in_byte = bit_offset % 8;
+    
+    // We need to grab up to 6 bytes and mask out the unused 2 bits.
+    for (int i=0; i<6; ++i)
+    {
+      value <<= 8;
+      value |= (int64_t)(packet[byte_offset + i]);
+    }
+
+    // Shift right to discard the unwanted bits and align to 38-bit value
+    value >>= (10 - bit_in_byte);
+    
+    // Mask to keep only 38 bits
+    value &= 0x3FFFFFFFFFLL;  // 38-bit mask (0x3FFFFFFFFF is 38 ones in binary)
+
+    // Check if the sign bit (38th bit) is set and extend the sign for 64-bit int
+    if (value & (1LL << 37)) {
+        value |= ~((1LL << 38) - 1);  // Extend the sign
+    }
+    
+    return value;
+}
+
+// Cracks an RTCM packet into the applicable container
 void LG290P::rtcmHandler(SEMP_PARSE_STATE *parse)
 {
     bool good = parse->length > 6 && parse->buffer[0] == 0xD3;
@@ -989,6 +1020,15 @@ void LG290P::rtcmHandler(SEMP_PARSE_STATE *parse)
         packet.buffer = parse->buffer;
         packet.bufferlen = parse->length;
         rtcmCounters[packet.type]++;
+
+        if (packet.type == 1005)
+        {
+            rtcmSnapshot.ecefX = extract_38bit_signed(packet.buffer + 3, 34) / 10000.0;
+            rtcmSnapshot.ecefY = extract_38bit_signed(packet.buffer + 3, 74) / 10000.0;
+            rtcmSnapshot.ecefZ = extract_38bit_signed(packet.buffer + 3, 114) / 10000.0;
+            lastUpdateEcef = millis();
+        }
+
 
         // handle specific and general callbacks
         // If user is subscribed for this packet, call the callback
@@ -1055,11 +1095,28 @@ double LG290P::getHorizontalSpeed()
     return snapshot->horizontalSpeed;
 }
 
+double LG290P::getEcefX()
+{
+    return rtcmSnapshot.ecefX;
+}
+
+double LG290P::getEcefY()
+{
+    return rtcmSnapshot.ecefY;
+}
+
+double LG290P::getEcefZ()
+{
+    return rtcmSnapshot.ecefZ;
+}
+
+#if false
 double LG290P::getVerticalSpeed()
 {
     CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
     return snapshot->verticalSpeed;
 }
+#endif
 
 uint16_t LG290P::getSatellitesInView()
 {
@@ -1089,7 +1146,7 @@ uint8_t LG290P::getFixType()
 }
 
 // Return the number of millis since last update
-uint32_t LG290P::getFixAgeMilliseconds()
+uint32_t LG290P::getGeodeticAgeMs()
 {
     return millis() - lastUpdateGeodetic;
 }
