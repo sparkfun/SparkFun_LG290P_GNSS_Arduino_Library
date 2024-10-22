@@ -529,10 +529,17 @@ class LG290P
 
     /**
      * @brief Gets the number of satellites used for positioning.
-     * @details Informated gleaned from GGA sentence.
+     * @details Information gleaned from GGA sentence.
      * @return The number of satellites used.
      */
     uint16_t getSatellitesUsed();
+
+    /**
+     * @brief Gets the number fix type
+     * @details Information gleaned from GGA sentence.
+     * @return The fix type.
+     */
+    uint8_t getFixType();
 
     /** Survey Mode **/
 
@@ -683,6 +690,7 @@ class LG290P
 
     double getTrackGround();
     double getCourse();
+  
   #if false // TODO?
 
     float getLatitudeDeviation();

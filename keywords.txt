@@ -83,6 +83,7 @@ getVisibleSats	KEYWORD2
 isNewSatelliteInfoAvailable	KEYWORD2
 getSatellitesInView	KEYWORD2
 getSatellitesUsed	KEYWORD2
+getFixType	KEYWORD2
 
 getSurveyMode	KEYWORD2
 setSurveyInMode	KEYWORD2
