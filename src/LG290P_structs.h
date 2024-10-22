@@ -237,9 +237,13 @@ public:
 struct RtcmPacket
 {
     uint8_t *buffer;
+    uint8_t *payload;
     uint16_t bufferlen;
     uint16_t payloadLen;
     uint16_t type;
+
+    static int64_t extract_38bit_signed(const uint8_t *packet, int bit_offset);
+    static bool FromBuffer(uint8_t *buffer, size_t bufferLen, RtcmPacket &result);
 };
 
 #if false

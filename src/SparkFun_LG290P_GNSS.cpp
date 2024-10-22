@@ -975,7 +975,7 @@ void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
         nmeaAllSubscribe(nmea); //call it!
 }
 
-int64_t extract_38bit_signed(const uint8_t *packet, int bit_offset)
+int64_t RtcmPacket::extract_38bit_signed(const uint8_t *packet, int bit_offset)
 {
     // Extract 38-bit value starting from the given bit_offset
     int64_t value = 0;
@@ -1003,29 +1003,39 @@ int64_t extract_38bit_signed(const uint8_t *packet, int bit_offset)
     return value;
 }
 
-// Cracks an RTCM packet into the applicable container
-void LG290P::rtcmHandler(SEMP_PARSE_STATE *parse)
+/* static */
+bool RtcmPacket::FromBuffer(uint8_t *buffer, size_t bufferLen, RtcmPacket &result)
 {
-    bool good = parse->length > 6 && parse->buffer[0] == 0xD3;
-    RtcmPacket packet;
+    bool good = bufferLen > 6 && buffer[0] == 0xD3;
     if (good)
     {
-        packet.payloadLen = (parse->buffer[1] << 8) | parse->buffer[2];
-        good = packet.payloadLen + 6 == parse->length;
+        result.payloadLen = (buffer[1] << 8) | buffer[2];
+        good = result.payloadLen + 6 == bufferLen;
     }
 
     if (good)
     {
-        packet.type = (parse->buffer[3] << 4) | (parse->buffer[4] >> 4);
-        packet.buffer = parse->buffer;
-        packet.bufferlen = parse->length;
+        result.type = (buffer[3] << 4) | (buffer[4] >> 4);
+        result.buffer = buffer;
+        result.bufferlen = bufferLen;
+        result.payload = buffer + 3;
+    }
+    return good;
+}
+
+// Cracks an RTCM packet into the applicable container
+void LG290P::rtcmHandler(SEMP_PARSE_STATE *parse)
+{
+    RtcmPacket packet;
+    if (RtcmPacket::FromBuffer(parse->buffer, parse->length, packet))
+    {
         rtcmCounters[packet.type]++;
 
         if (packet.type == 1005)
         {
-            rtcmSnapshot.ecefX = extract_38bit_signed(packet.buffer + 3, 34) / 10000.0;
-            rtcmSnapshot.ecefY = extract_38bit_signed(packet.buffer + 3, 74) / 10000.0;
-            rtcmSnapshot.ecefZ = extract_38bit_signed(packet.buffer + 3, 114) / 10000.0;
+            rtcmSnapshot.ecefX = RtcmPacket::extract_38bit_signed(packet.buffer + 3, 34) / 10000.0;
+            rtcmSnapshot.ecefY = RtcmPacket::extract_38bit_signed(packet.buffer + 3, 74) / 10000.0;
+            rtcmSnapshot.ecefZ = RtcmPacket::extract_38bit_signed(packet.buffer + 3, 114) / 10000.0;
             lastUpdateEcef = millis();
         }
 
