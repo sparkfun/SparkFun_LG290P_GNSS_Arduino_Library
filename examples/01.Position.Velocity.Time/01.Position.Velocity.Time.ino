@@ -76,6 +76,33 @@ void loop()
                   myGNSS.getYear(), myGNSS.getMonth(), myGNSS.getDay(),
                   myGNSS.getHour(), myGNSS.getMinute(), myGNSS.getSecond(), myGNSS.getMillisecond());
     Serial.printf("Satellites in view: %d\r\n", myGNSS.getSatellitesInView());
+    Serial.printf("Fix type: %d - ", myGNSS.getFixType());
+    switch (myGNSS.getFixType())
+    {
+      default:
+        Serial.print("Unknown");
+        break;
+      case 0:
+        Serial.print("No fix");
+        break;
+      case 1:
+        Serial.print("3D Fix");
+        break;
+      case 2:
+        Serial.print("DGPS Fix");
+        break;
+      case 3:
+        Serial.print("GPS PPS Mode, fix valid");
+        break;
+      case 4:
+        Serial.print("RTK Fix");
+        break;
+      case 5:
+        Serial.print("RTK Float");
+        break;
+    }
+    Serial.println();
+
     Serial.println();
   }
 }

@@ -1142,6 +1142,19 @@ uint16_t LG290P::getSatellitesUsed()
     return snapshot->satellitesUsed;
 }
 
+uint8_t LG290P::getFixType()
+{
+    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
+    return (snapshot->quality - '0'); //Convert ASCII to uint8_t
+
+    // 0 = Fix not available or invalid.
+    // 1 = GPS SPS Mode, fix valid.
+    // 2 = Differential GPS, SPS Mode, or Satellite Based Augmentation. System (SBAS), fix valid.
+    // 3 = GPS PPS Mode, fix valid.
+    // 4 = Real Time Kinematic (RTK) System used in RTK mode with fixed integers.
+    // 5 = Float RTK. Satellite system used in RTK mode, floating integers.
+}
+
 // Return the number of millis since last update
 uint32_t LG290P::getGeodeticAgeMs()
 {
