@@ -283,7 +283,7 @@ class LG290P
    * @param enableNavIC (out) true if NavIC constellation is currently enabled
    * @return true if command succeeded
    */
-  bool getConstellationInfo(bool &enableGPS, bool &enableGlonass, bool &enableGalileo, bool &enableBds,
+  bool getConstellations(bool &enableGPS, bool &enableGlonass, bool &enableGalileo, bool &enableBds,
     bool &enableQzss, bool &enableNavIV);
 
   /** 
@@ -296,7 +296,7 @@ class LG290P
    * @param enableQzss true to enable QZSS constellation
    * @param enableNavIC true to enable NavIC constellation
    */
-  bool configureConstellation(bool enableGPS, bool enableGlonass, bool enableGalileo, bool enableBds,
+  bool setConstellations(bool enableGPS, bool enableGlonass, bool enableGalileo, bool enableBds,
     bool enableQzss, bool enableNavIC);
     /**
      * @brief Retrieves the serial number of the device.

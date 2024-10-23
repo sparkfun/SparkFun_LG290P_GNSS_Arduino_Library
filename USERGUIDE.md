@@ -124,10 +124,10 @@ This library provides an interface for controlling and configuring an LG290P GNS
 - **`bool getPPS(bool &enabled, uint16_t &duration, bool &alwaysOutput, bool &positivePolarity);`**  
   Get information about the PPS configuration.
 
-- **`bool getConstellationInfo(bool &enableGPS, bool &enableGlonass, bool &enableGalileo, bool &enableBds, bool &enableQzss, bool &enableNavIV);`**  
+- **`bool getConstellations(bool &enableGPS, bool &enableGlonass, bool &enableGalileo, bool &enableBds, bool &enableQzss, bool &enableNavIV);`**  
   Get enabled GNSS constellations.
 
-- **`bool configureConstellation(bool enableGPS, bool enableGlonass, bool enableGalileo, bool enableBds, bool enableQzss, bool enableNavIC);`**  
+- **`bool setConstellations(bool enableGPS, bool enableGlonass, bool enableGalileo, bool enableBds, bool enableQzss, bool enableNavIC);`**  
   Configure which GNSS constellations to enable.
 
 - **`bool getSerialNumber(std::string &serial);`**  

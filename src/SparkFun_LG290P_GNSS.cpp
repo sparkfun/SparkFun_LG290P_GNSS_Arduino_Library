@@ -452,7 +452,7 @@ bool LG290P::getPPS(bool &enabled, uint16_t &duration, bool &alwaysOutput, bool 
     return ret;
 }
 
-bool LG290P::getConstellationInfo(bool &enableGPS, bool &enableGLONASS, bool &enableGalileo, bool &enableBDS,
+bool LG290P::getConstellations(bool &enableGPS, bool &enableGLONASS, bool &enableGalileo, bool &enableBDS,
       bool &enableQZSS, bool &enableNavIC)
 {
     bool ret = sendCommand("PQTMCFGCNST", ",R");
@@ -588,7 +588,7 @@ bool LG290P::hotStart()
     return sendCommandNoResponse("PQTMHOT");
 }
 
-bool LG290P::configureConstellation(bool enableGPS, bool enableGLONASS, bool enableGalileo, bool enableBDS,
+bool LG290P::setConstellations(bool enableGPS, bool enableGLONASS, bool enableGalileo, bool enableBDS,
       bool enableQZSS, bool enableNavIC)
 {
     char parms[50];

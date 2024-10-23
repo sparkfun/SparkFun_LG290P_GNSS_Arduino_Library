@@ -48,8 +48,8 @@ getPortInfo	KEYWORD2
 setPPS	KEYWORD2
 disablePPS	KEYWORD2
 getPPS	KEYWORD2
-getConstellationInfo	KEYWORD2
-configureConstellation	KEYWORD2
+getConstellations	KEYWORD2
+setConstellations	KEYWORD2
 getSerialNumber	KEYWORD2
 getVersionInfo	KEYWORD2
 getFixInterval	KEYWORD2

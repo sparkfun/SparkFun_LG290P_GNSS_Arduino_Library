@@ -50,7 +50,7 @@ void setup()
 
   bool gpsEnabled, glonassEnabled, galileoEnabled, bdsEnabled, qzssEnabled, navicEnabled;
   Serial.print("Constellations: ");
-  if (myGNSS.getConstellationInfo(gpsEnabled, glonassEnabled, galileoEnabled, bdsEnabled, qzssEnabled, navicEnabled))
+  if (myGNSS.getConstellations(gpsEnabled, glonassEnabled, galileoEnabled, bdsEnabled, qzssEnabled, navicEnabled))
   {
     Serial.printf("GPS: %s, GLONASS: %s, Galileo: %s, Beidou: %s, QZSS: %s, NavIC: %s\r\n", 
       gpsEnabled ? "Yes" : "No", glonassEnabled ? "Yes" : "No", galileoEnabled ? "Yes" : "No", 
