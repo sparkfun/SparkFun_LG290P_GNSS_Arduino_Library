@@ -63,7 +63,7 @@ void loop()
   myGNSS.setFixInterval(1000);
 
   Serial.println("Hot reset");
-  myGNSS.hotReset();
+  myGNSS.hotStart();
   busyWait();
 
   Serial.println("Warm reset");

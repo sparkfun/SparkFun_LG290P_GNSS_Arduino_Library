@@ -69,7 +69,7 @@ void loop()
     busyWait(2, false);
 
     Serial.printf("Performing hot reset\r\n");
-    if (myGNSS.hotReset())
+    if (myGNSS.hotStart())
         Serial.println("Success!");
     busyWait(2, false);
     busyWait(30, true);
