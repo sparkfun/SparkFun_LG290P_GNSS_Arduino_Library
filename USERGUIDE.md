@@ -156,7 +156,7 @@ This library provides an interface for controlling and configuring an LG290P GNS
 - **`bool reset();`**  
   Perform a software reset on the GNSS module.
 
-- **`bool coldReset();`**  
+- **`bool coldStart();`**  
   Perform a cold reset on the GNSS module.
 
 - **`bool warmReset();`**  

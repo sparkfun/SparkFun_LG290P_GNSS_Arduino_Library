@@ -58,8 +58,8 @@ setMessageRate	KEYWORD2
 saveParameters	KEYWORD2
 factoryReset	KEYWORD2
 
-coldReset	KEYWORD2
 reset	KEYWORD2
+coldStart	KEYWORD2
 warmReset	KEYWORD2
 hotReset	KEYWORD2
 disableEngine	KEYWORD2

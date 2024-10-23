@@ -368,7 +368,7 @@ class LG290P
      * @brief Performs a cold reset (complete reset) of the device.
      * @return true if successful, false otherwise.
      */
-    bool coldReset();
+    bool coldStart();
 
     /**
      * @brief Performs a warm reset (partial reset) of the device.

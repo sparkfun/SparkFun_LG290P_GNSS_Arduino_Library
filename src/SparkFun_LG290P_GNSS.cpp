@@ -573,7 +573,7 @@ bool LG290P::reset()
     return sendCommandNoResponse("PQTMSRR");
 }
 
-bool LG290P::coldReset()
+bool LG290P::coldStart()
 {
     return sendCommandNoResponse("PQTMCOLD");
 }

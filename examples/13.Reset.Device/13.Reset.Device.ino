@@ -71,7 +71,7 @@ void loop()
   busyWait();
 
   Serial.println("Cold reset");
-  myGNSS.coldReset();
+  myGNSS.coldStart();
   busyWait();
 
   Serial.println("Factory reset");
