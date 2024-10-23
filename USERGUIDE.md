@@ -145,7 +145,7 @@ This library provides an interface for controlling and configuring an LG290P GNS
 - **`bool setMessageRate(const char *msgName, int rate, int msgver = -1);`**  
   Set the message rate for a specific message type.
 
-- **`bool saveParameters();`**  
+- **`bool save();`**  
   Save the current configuration parameters to non-volatile memory.
 
 - **`bool factoryReset();`**  

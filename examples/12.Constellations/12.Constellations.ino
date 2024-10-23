@@ -60,21 +60,21 @@ void loop()
   Serial.println();
   Serial.println("Test 1: All constellations enabled");
   myGNSS.setConstellations(true, true, true, true, true, true);
-  myGNSS.saveParameters();
+  myGNSS.save();
   myGNSS.reset();
   busyWait(60);
 
   Serial.println();
   Serial.println("Test 2: Only GP, GA, GQ constellations enabled");
   myGNSS.setConstellations(true, false, true, false, true, false);
-  myGNSS.saveParameters();
+  myGNSS.save();
   myGNSS.reset();
   busyWait(60);
 
   Serial.println();
   Serial.println("Test 3: Only GL, GB, IN constellations enabled");
   myGNSS.setConstellations(false, true, false, true, false, true);
-  myGNSS.saveParameters();
+  myGNSS.save();
   myGNSS.reset();
   busyWait(60);
 }

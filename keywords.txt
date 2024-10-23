@@ -55,7 +55,7 @@ getVersionInfo	KEYWORD2
 getFixInterval	KEYWORD2
 setFixInterval	KEYWORD2
 setMessageRate	KEYWORD2
-saveParameters	KEYWORD2
+save	KEYWORD2
 factoryReset	KEYWORD2
 
 reset	KEYWORD2

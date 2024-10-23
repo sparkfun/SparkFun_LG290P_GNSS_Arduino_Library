@@ -611,7 +611,7 @@ bool LG290P::enableEngine()
     return sendOkCommand("PQTMGNSSSTART");
 }
 
-bool LG290P::saveParameters()
+bool LG290P::save()
 {
     return sendOkCommand("PQTMSAVEPAR");
 }

@@ -66,7 +66,7 @@ void setup()
   int secs = 60;
   Serial.printf("Give the device %d seconds to establish location.\r\n", secs);
   myGNSS.setSurveyInMode(secs);
-  myGNSS.saveParameters();
+  myGNSS.save();
   myGNSS.reset();
   Serial.print("Waiting until device is back online... ");
   if (!myGNSS.isConnected())

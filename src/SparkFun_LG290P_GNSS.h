@@ -348,7 +348,7 @@ class LG290P
      * @details Uses the PQTMSAVEPAR command.
      * @return true if successful, false otherwise.
      */
-    bool saveParameters();
+    bool save();
 
     /**
      * @brief Restores the default configuration.
