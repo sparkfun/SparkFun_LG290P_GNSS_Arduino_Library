@@ -85,7 +85,7 @@ getSatellitesInView	KEYWORD2
 getSatellitesUsed	KEYWORD2
 getFixType	KEYWORD2
 
-getSurveyMode	KEYWORD2
+getSurveyInMode	KEYWORD2
 setSurveyInMode	KEYWORD2
 setSurveyFixedMode	KEYWORD2
 

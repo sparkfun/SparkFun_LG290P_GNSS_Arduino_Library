@@ -554,7 +554,7 @@ class LG290P
      * @param ecefZ Reference to a double for the ECEF Z coordinate.
      * @return true if the mode settings were successfully retrieved, false otherwise.
      */
-    bool getSurveyMode(int &mode, int &positionTimes, double &accuracyLimit, double &ecefX, double &ecefY, double &ecefZ);
+    bool getSurveyInMode(int &mode, int &positionTimes, double &accuracyLimit, double &ecefX, double &ecefY, double &ecefZ);
 
     /**
      * @brief Sets the device to "Survey-In" mode.
