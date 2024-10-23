@@ -355,7 +355,7 @@ class LG290P
      * @details Uses the PQTMRESTOREPAR command.
      * @return true if successful, false otherwise.
      */
-    bool restoreParameters();
+    bool factoryReset();
 
     // Resets and engine control
     /**

@@ -128,7 +128,7 @@ bool LG290P::begin(HardwareSerial &serialPort, Print *parserDebug, Print *parser
     // First thing: repeatedly try to restore parameters (factory default) for as many as 10 seconds
     bool ok = false;
     for (unsigned long start = millis(); !ok && millis() - start < 10000; )
-        ok = restoreParameters();
+        ok = factoryReset();
 
     // If that worked, do a software reset, then wait until we're reconnected
     if (ok)
@@ -616,7 +616,7 @@ bool LG290P::saveParameters()
     return sendOkCommand("PQTMSAVEPAR");
 }
 
-bool LG290P::restoreParameters()
+bool LG290P::factoryReset()
 {
     return sendOkCommand("PQTMRESTOREPAR");
 }
