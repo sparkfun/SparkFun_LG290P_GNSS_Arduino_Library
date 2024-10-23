@@ -253,7 +253,7 @@ class LG290P
    * @param positivePolarity set to false if the pulse should be inverted
    * @return true if the command succeeded
    */
-  bool enablePPS(uint16_t duration, bool alwaysOutput, bool positivePolarity = true);
+  bool setPPS(uint16_t duration, bool alwaysOutput, bool positivePolarity = true);
 
   /** 
    * @brief Turn off the PPS signal

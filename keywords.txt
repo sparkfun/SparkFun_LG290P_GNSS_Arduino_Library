@@ -45,7 +45,7 @@ setModeRover	KEYWORD2
 setPortBaudrate	KEYWORD2
 setBaudrate	KEYWORD2
 getPortInfo	KEYWORD2
-enablePPS	KEYWORD2
+setPPS	KEYWORD2
 disablePPS	KEYWORD2
 getPPSInfo	KEYWORD2
 getConstellationInfo	KEYWORD2

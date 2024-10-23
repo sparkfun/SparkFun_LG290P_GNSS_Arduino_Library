@@ -425,7 +425,7 @@ bool LG290P::getPortInfo(int port, uint32_t &newBaud, uint8_t &databits, uint8_t
     return ret;
 }
 
-bool LG290P::enablePPS(uint16_t duration, bool alwaysOutput, bool positivePolarity)
+bool LG290P::setPPS(uint16_t duration, bool alwaysOutput, bool positivePolarity)
 {
     char parms[50];
     snprintf(parms, sizeof parms, ",W,1,1,%d,%d,%d,0", duration, alwaysOutput ? 1 : 2, positivePolarity);

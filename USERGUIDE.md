@@ -115,7 +115,7 @@ This library provides an interface for controlling and configuring an LG290P GNS
 - **`bool getPortInfo(int port, uint32_t &newBaud, uint8_t &dataBits, uint8_t &parity, uint8_t &stop, uint8_t &flowControl);`**  
   Get information about the specified port.
 
-- **`bool enablePPS(uint16_t duration, bool alwaysOutput, bool positivePolarity = true);`**  
+- **`bool setPPS(uint16_t duration, bool alwaysOutput, bool positivePolarity = true);`**  
   Enable Pulse-Per-Second (PPS) output with specified parameters.
 
 - **`bool disablePPS();`**  
