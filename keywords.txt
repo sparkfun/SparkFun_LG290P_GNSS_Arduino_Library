@@ -47,7 +47,7 @@ setBaudrate	KEYWORD2
 getPortInfo	KEYWORD2
 setPPS	KEYWORD2
 disablePPS	KEYWORD2
-getPPSInfo	KEYWORD2
+getPPS	KEYWORD2
 getConstellationInfo	KEYWORD2
 configureConstellation	KEYWORD2
 getSerialNumber	KEYWORD2

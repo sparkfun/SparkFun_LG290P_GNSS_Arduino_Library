@@ -270,7 +270,7 @@ class LG290P
    * @param alwaysOutput (out) true if PPS pulse should be generated even when device has no fix
    * @param positivePolarity (out) false if the pulse should be inverted
    */
-  bool getPPSInfo(bool &enabled, uint16_t &duration, bool &alwaysOutput, bool &positivePolarity);
+  bool getPPS(bool &enabled, uint16_t &duration, bool &alwaysOutput, bool &positivePolarity);
 
   /** 
    * @brief Get information about which satellite constellations are currently enabled

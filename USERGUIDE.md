@@ -121,7 +121,7 @@ This library provides an interface for controlling and configuring an LG290P GNS
 - **`bool disablePPS();`**  
   Disable Pulse-Per-Second (PPS) output.
 
-- **`bool getPPSInfo(bool &enabled, uint16_t &duration, bool &alwaysOutput, bool &positivePolarity);`**  
+- **`bool getPPS(bool &enabled, uint16_t &duration, bool &alwaysOutput, bool &positivePolarity);`**  
   Get information about the PPS configuration.
 
 - **`bool getConstellationInfo(bool &enableGPS, bool &enableGlonass, bool &enableGalileo, bool &enableBds, bool &enableQzss, bool &enableNavIV);`**  

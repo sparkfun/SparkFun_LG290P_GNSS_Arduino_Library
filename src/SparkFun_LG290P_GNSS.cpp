@@ -437,7 +437,7 @@ bool LG290P::disablePPS()
     return sendOkCommand("PQTMCFGPPS", ",W,1,0");
 }
 
-bool LG290P::getPPSInfo(bool &enabled, uint16_t &duration, bool &alwaysOutput, bool &positivePolarity)
+bool LG290P::getPPS(bool &enabled, uint16_t &duration, bool &alwaysOutput, bool &positivePolarity)
 {
     bool ret = sendCommand("PQTMCFGPPS", ",R,1");
     if (ret)
