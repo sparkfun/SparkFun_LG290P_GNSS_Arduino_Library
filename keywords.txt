@@ -60,7 +60,7 @@ factoryReset	KEYWORD2
 
 reset	KEYWORD2
 coldStart	KEYWORD2
-warmReset	KEYWORD2
+warmStart	KEYWORD2
 hotReset	KEYWORD2
 disableEngine	KEYWORD2
 enableEngine	KEYWORD2
