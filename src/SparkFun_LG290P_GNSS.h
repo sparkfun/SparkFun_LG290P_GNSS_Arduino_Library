@@ -362,7 +362,7 @@ class LG290P
      * @brief Performs a software reset of the device.
      * @return true if successful, false otherwise.
      */
-    bool softwareReset();
+    bool reset();
 
     /**
      * @brief Performs a cold reset (complete reset) of the device.

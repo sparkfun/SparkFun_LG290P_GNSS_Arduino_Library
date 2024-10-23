@@ -133,7 +133,7 @@ bool LG290P::begin(HardwareSerial &serialPort, Print *parserDebug, Print *parser
     // If that worked, do a software reset, then wait until we're reconnected
     if (ok)
     {
-        softwareReset();
+        reset();
         ok = isConnected();
     }
 
@@ -568,7 +568,7 @@ bool LG290P::rtcmUnsubscribeAll()
     return true;
 }
 
-bool LG290P::softwareReset()
+bool LG290P::reset()
 {
     return sendCommandNoResponse("PQTMSRR");
 }
