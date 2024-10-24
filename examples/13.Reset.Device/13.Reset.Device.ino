@@ -63,21 +63,21 @@ void loop()
   myGNSS.setFixInterval(1000);
 
   Serial.println("Hot reset");
-  myGNSS.hotReset();
+  myGNSS.hotStart();
   busyWait();
 
   Serial.println("Warm reset");
-  myGNSS.warmReset();
+  myGNSS.warmStart();
   busyWait();
 
   Serial.println("Cold reset");
-  myGNSS.coldReset();
+  myGNSS.coldStart();
   busyWait();
 
   // A true "factory reset" is accomplished by calling PQTMRESTOREPAR followed by a software reset
   Serial.println("Factory reset");
   myGNSS.restoreParameters();
-  myGNSS.softwareReset();
+  myGNSS.reset();
   busyWait();
 }
 

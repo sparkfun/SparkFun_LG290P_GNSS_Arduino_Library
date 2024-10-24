@@ -115,19 +115,19 @@ This library provides an interface for controlling and configuring an LG290P GNS
 - **`bool getPortInfo(int port, uint32_t &newBaud, uint8_t &dataBits, uint8_t &parity, uint8_t &stop, uint8_t &flowControl);`**  
   Get information about the specified port.
 
-- **`bool enablePPS(uint16_t duration, bool alwaysOutput, bool positivePolarity = true);`**  
+- **`bool setPPS(uint16_t duration, bool alwaysOutput, bool positivePolarity = true);`**  
   Enable Pulse-Per-Second (PPS) output with specified parameters.
 
 - **`bool disablePPS();`**  
   Disable Pulse-Per-Second (PPS) output.
 
-- **`bool getPPSInfo(bool &enabled, uint16_t &duration, bool &alwaysOutput, bool &positivePolarity);`**  
+- **`bool getPPS(bool &enabled, uint16_t &duration, bool &alwaysOutput, bool &positivePolarity);`**  
   Get information about the PPS configuration.
 
-- **`bool getConstellationInfo(bool &enableGPS, bool &enableGlonass, bool &enableGalileo, bool &enableBds, bool &enableQzss, bool &enableNavIV);`**  
+- **`bool getConstellations(bool &enableGPS, bool &enableGlonass, bool &enableGalileo, bool &enableBds, bool &enableQzss, bool &enableNavIV);`**  
   Get enabled GNSS constellations.
 
-- **`bool configureConstellation(bool enableGPS, bool enableGlonass, bool enableGalileo, bool enableBds, bool enableQzss, bool enableNavIC);`**  
+- **`bool setConstellations(bool enableGPS, bool enableGlonass, bool enableGalileo, bool enableBds, bool enableQzss, bool enableNavIC);`**  
   Configure which GNSS constellations to enable.
 
 - **`bool getSerialNumber(std::string &serial);`**  
@@ -145,24 +145,24 @@ This library provides an interface for controlling and configuring an LG290P GNS
 - **`bool setMessageRate(const char *msgName, int rate, int msgver = -1);`**  
   Set the message rate for a specific message type.
 
-- **`bool saveParameters();`**  
+- **`bool save();`**  
   Save the current configuration parameters to non-volatile memory.
 
-- **`bool restoreParameters();`**  
-  Restore configuration parameters from non-volatile memory.
+- **`bool factoryReset();`**  
+  Reset all settings to factory defaults.
 
 ## Resets and Engine Control
 
-- **`bool softwareReset();`**  
+- **`bool reset();`**  
   Perform a software reset on the GNSS module.
 
-- **`bool coldReset();`**  
+- **`bool coldStart();`**  
   Perform a cold reset on the GNSS module.
 
-- **`bool warmReset();`**  
+- **`bool warmStart();`**  
   Perform a warm reset on the GNSS module.
 
-- **`bool hotReset();`**  
+- **`bool hotStart();`**  
   Perform a hot reset on the GNSS module.
 
 - **`bool disableEngine();`**  
@@ -227,7 +227,7 @@ This library provides an interface for controlling and configuring an LG290P GNS
 
 ## Survey Mode
 
-- **`bool getSurveyMode(int &mode, int &positionTimes, double &accuracyLimit, double &ecefX, double &ecefY, double &ecefZ);`**  
+- **`bool getSurveyInMode(int &mode, int &positionTimes, double &accuracyLimit, double &ecefX, double &ecefY, double &ecefZ);`**  
   Retrieves the current survey mode settings, including position times and accuracy limit.
 
 - **`bool setSurveyInMode(int positionTimes, double accuracyLimit = 0);`**  

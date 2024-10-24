@@ -422,7 +422,7 @@ bool LG290P::getPortInfo(int port, uint32_t &newBaud, uint8_t &databits, uint8_t
     return ret;
 }
 
-bool LG290P::enablePPS(uint16_t duration, bool alwaysOutput, bool positivePolarity)
+bool LG290P::setPPS(uint16_t duration, bool alwaysOutput, bool positivePolarity)
 {
     char parms[50];
     snprintf(parms, sizeof parms, ",W,1,1,%d,%d,%d,0", duration, alwaysOutput ? 1 : 2, positivePolarity);
@@ -434,7 +434,7 @@ bool LG290P::disablePPS()
     return sendOkCommand("PQTMCFGPPS", ",W,1,0");
 }
 
-bool LG290P::getPPSInfo(bool &enabled, uint16_t &duration, bool &alwaysOutput, bool &positivePolarity)
+bool LG290P::getPPS(bool &enabled, uint16_t &duration, bool &alwaysOutput, bool &positivePolarity)
 {
     bool ret = sendCommand("PQTMCFGPPS", ",R,1");
     if (ret)
@@ -449,7 +449,7 @@ bool LG290P::getPPSInfo(bool &enabled, uint16_t &duration, bool &alwaysOutput, b
     return ret;
 }
 
-bool LG290P::getConstellationInfo(bool &enableGPS, bool &enableGLONASS, bool &enableGalileo, bool &enableBDS,
+bool LG290P::getConstellations(bool &enableGPS, bool &enableGLONASS, bool &enableGalileo, bool &enableBDS,
       bool &enableQZSS, bool &enableNavIC)
 {
     bool ret = sendCommand("PQTMCFGCNST", ",R");
@@ -565,27 +565,27 @@ bool LG290P::rtcmUnsubscribeAll()
     return true;
 }
 
-bool LG290P::softwareReset()
+bool LG290P::reset()
 {
     return sendCommandNoResponse("PQTMSRR");
 }
 
-bool LG290P::coldReset()
+bool LG290P::coldStart()
 {
     return sendCommandNoResponse("PQTMCOLD");
 }
 
-bool LG290P::warmReset()
+bool LG290P::warmStart()
 {
     return sendCommandNoResponse("PQTMWARM");
 }
 
-bool LG290P::hotReset()
+bool LG290P::hotStart()
 {
     return sendCommandNoResponse("PQTMHOT");
 }
 
-bool LG290P::configureConstellation(bool enableGPS, bool enableGLONASS, bool enableGalileo, bool enableBDS,
+bool LG290P::setConstellations(bool enableGPS, bool enableGLONASS, bool enableGalileo, bool enableBDS,
       bool enableQZSS, bool enableNavIC)
 {
     char parms[50];
@@ -608,12 +608,12 @@ bool LG290P::enableEngine()
     return sendOkCommand("PQTMGNSSSTART");
 }
 
-bool LG290P::saveParameters()
+bool LG290P::save()
 {
     return sendOkCommand("PQTMSAVEPAR");
 }
 
-bool LG290P::restoreParameters()
+bool LG290P::factoryReset()
 {
     return sendOkCommand("PQTMRESTOREPAR");
 }
@@ -809,7 +809,7 @@ std::list<LG290P::satinfo> LG290P::getVisibleSats(const char *talker /* = nullpt
     return ret;
 }
 
-bool LG290P::getSurveyMode(int &mode, int &positionTimes, double &accuracyLimit, double &ecefX, double &ecefY, double &ecefZ)
+bool LG290P::getSurveyInMode(int &mode, int &positionTimes, double &accuracyLimit, double &ecefX, double &ecefY, double &ecefZ)
 {
     bool ret = sendOkCommand("PQTMCFGSVIN", ",R");
     if (ret)

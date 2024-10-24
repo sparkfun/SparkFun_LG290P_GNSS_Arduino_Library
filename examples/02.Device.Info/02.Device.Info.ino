@@ -50,7 +50,7 @@ void setup()
 
   bool gpsEnabled, glonassEnabled, galileoEnabled, bdsEnabled, qzssEnabled, navicEnabled;
   Serial.print("Constellations: ");
-  if (myGNSS.getConstellationInfo(gpsEnabled, glonassEnabled, galileoEnabled, bdsEnabled, qzssEnabled, navicEnabled))
+  if (myGNSS.getConstellations(gpsEnabled, glonassEnabled, galileoEnabled, bdsEnabled, qzssEnabled, navicEnabled))
   {
     Serial.printf("GPS: %s, GLONASS: %s, Galileo: %s, Beidou: %s, QZSS: %s, NavIC: %s\r\n", 
       gpsEnabled ? "Yes" : "No", glonassEnabled ? "Yes" : "No", galileoEnabled ? "Yes" : "No", 
@@ -94,7 +94,7 @@ void setup()
 
   bool ppsEnabled, alwaysOutput, positivePolarity;
   uint16_t duration;
-  if (myGNSS.getPPSInfo(ppsEnabled, duration, alwaysOutput, positivePolarity))
+  if (myGNSS.getPPS(ppsEnabled, duration, alwaysOutput, positivePolarity))
   {
     Serial.printf("PPS=%s, Duration=%dms, Always=%s, Polarity=%s\r\n",
       ppsEnabled ? "Enabled" : "Disabled", duration, alwaysOutput ? "Yes" : "No", positivePolarity ? "Pos" : "Neg");
