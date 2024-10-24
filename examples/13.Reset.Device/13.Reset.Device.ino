@@ -63,19 +63,19 @@ void loop()
   myGNSS.setFixInterval(1000);
 
   Serial.println("Hot reset");
-  myGNSS.hotReset();
+  myGNSS.hotStart();
   busyWait();
 
   Serial.println("Warm reset");
-  myGNSS.warmReset();
+  myGNSS.warmStart();
   busyWait();
 
   Serial.println("Cold reset");
-  myGNSS.coldReset();
+  myGNSS.coldStart();
   busyWait();
 
   Serial.println("Factory reset");
-  myGNSS.softwareReset();
+  myGNSS.reset();
   busyWait();
 }
 

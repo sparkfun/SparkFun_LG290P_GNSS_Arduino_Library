@@ -253,7 +253,7 @@ class LG290P
    * @param positivePolarity set to false if the pulse should be inverted
    * @return true if the command succeeded
    */
-  bool enablePPS(uint16_t duration, bool alwaysOutput, bool positivePolarity = true);
+  bool setPPS(uint16_t duration, bool alwaysOutput, bool positivePolarity = true);
 
   /** 
    * @brief Turn off the PPS signal
@@ -270,7 +270,7 @@ class LG290P
    * @param alwaysOutput (out) true if PPS pulse should be generated even when device has no fix
    * @param positivePolarity (out) false if the pulse should be inverted
    */
-  bool getPPSInfo(bool &enabled, uint16_t &duration, bool &alwaysOutput, bool &positivePolarity);
+  bool getPPS(bool &enabled, uint16_t &duration, bool &alwaysOutput, bool &positivePolarity);
 
   /** 
    * @brief Get information about which satellite constellations are currently enabled
@@ -283,7 +283,7 @@ class LG290P
    * @param enableNavIC (out) true if NavIC constellation is currently enabled
    * @return true if command succeeded
    */
-  bool getConstellationInfo(bool &enableGPS, bool &enableGlonass, bool &enableGalileo, bool &enableBds,
+  bool getConstellations(bool &enableGPS, bool &enableGlonass, bool &enableGalileo, bool &enableBds,
     bool &enableQzss, bool &enableNavIV);
 
   /** 
@@ -296,7 +296,7 @@ class LG290P
    * @param enableQzss true to enable QZSS constellation
    * @param enableNavIC true to enable NavIC constellation
    */
-  bool configureConstellation(bool enableGPS, bool enableGlonass, bool enableGalileo, bool enableBds,
+  bool setConstellations(bool enableGPS, bool enableGlonass, bool enableGalileo, bool enableBds,
     bool enableQzss, bool enableNavIC);
     /**
      * @brief Retrieves the serial number of the device.
@@ -348,39 +348,39 @@ class LG290P
      * @details Uses the PQTMSAVEPAR command.
      * @return true if successful, false otherwise.
      */
-    bool saveParameters();
+    bool save();
 
     /**
      * @brief Restores the default configuration.
      * @details Uses the PQTMRESTOREPAR command.
      * @return true if successful, false otherwise.
      */
-    bool restoreParameters();
+    bool factoryReset();
 
     // Resets and engine control
     /**
      * @brief Performs a software reset of the device.
      * @return true if successful, false otherwise.
      */
-    bool softwareReset();
+    bool reset();
 
     /**
      * @brief Performs a cold reset (complete reset) of the device.
      * @return true if successful, false otherwise.
      */
-    bool coldReset();
+    bool coldStart();
 
     /**
      * @brief Performs a warm reset (partial reset) of the device.
      * @return true if successful, false otherwise.
      */
-    bool warmReset();
+    bool warmStart();
 
     /**
      * @brief Performs a hot reset (minimal reset) of the device.
      * @return true if successful, false otherwise.
      */
-    bool hotReset();
+    bool hotStart();
 
     /**
      * @brief Disables the GNSS engine.
@@ -554,7 +554,7 @@ class LG290P
      * @param ecefZ Reference to a double for the ECEF Z coordinate.
      * @return true if the mode settings were successfully retrieved, false otherwise.
      */
-    bool getSurveyMode(int &mode, int &positionTimes, double &accuracyLimit, double &ecefX, double &ecefY, double &ecefZ);
+    bool getSurveyInMode(int &mode, int &positionTimes, double &accuracyLimit, double &ecefX, double &ecefY, double &ecefZ);
 
     /**
      * @brief Sets the device to "Survey-In" mode.

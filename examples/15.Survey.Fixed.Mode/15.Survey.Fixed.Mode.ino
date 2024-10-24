@@ -61,8 +61,8 @@ void setup()
 
   Serial.println("Setting 'Survey' Mode fixed to top of Eiffel Tower");
   myGNSS.setSurveyFixedMode(4200944.016, 168364.025, 4780802.825);
-  myGNSS.saveParameters();
-  myGNSS.softwareReset();
+  myGNSS.save();
+  myGNSS.reset();
   Serial.print("Waiting until device is back online... ");
   if (!myGNSS.isConnected())
   {

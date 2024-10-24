@@ -57,7 +57,7 @@ void loop()
     for (bool polarity : {true, false})
     {
         Serial.printf("PPS set to %d ms, %s polarity\r\n", duration, polarity ? "POSITIVE" : "NEGATIVE");
-        if (!myGNSS.enablePPS(duration, true, polarity))
+        if (!myGNSS.setPPS(duration, true, polarity))
             Serial.println("Error!");
 
         // Stay in this state for 10 seconds
