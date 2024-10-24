@@ -835,7 +835,7 @@ bool LG290P::setSurveyInMode(int positionTimes, double accuracyLimit /* = 0 */)
 
 bool LG290P::setSurveyFixedMode(double ecefX, double ecefY, double ecefZ)
 {
-    char parms[50];
+    char parms[100];
     snprintf(parms, sizeof parms, ",W,2,0,0,%f,%f,%f", ecefX, ecefY, ecefZ);
     return sendOkCommand("PQTMCFGSVIN", parms);
 }
