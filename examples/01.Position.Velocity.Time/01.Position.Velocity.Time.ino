@@ -49,8 +49,7 @@ void setup()
   SerialGNSS.setRxBufferSize(1024);
   SerialGNSS.begin(gnss_baud, SERIAL_8N1, pin_UART1_RX, pin_UART1_TX);
 
-  //myGNSS.enableDebugging(Serial); // Print all debug to Serial
-
+  // myGNSS.enableDebugging(Serial); // Print all debug to Serial
   if (myGNSS.begin(SerialGNSS) == false)     // Give the serial port over to the library
   {
     Serial.println("LG290P failed to respond. Check ports and baud rates. Freezing...");

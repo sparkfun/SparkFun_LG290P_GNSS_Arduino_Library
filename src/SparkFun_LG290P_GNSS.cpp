@@ -125,20 +125,17 @@ bool LG290P::begin(HardwareSerial &serialPort, Print *parserDebug, Print *parser
         return false;
     }
 
-    // First thing: repeatedly try to restore parameters (factory default) for as many as 10 seconds
-    bool ok = false;
-    for (unsigned long start = millis(); !ok && millis() - start < 10000; )
-        ok = restoreParameters();
-
-    // If that worked, do a software reset, then wait until we're reconnected
-    if (ok)
-    {
-        softwareReset();
-        ok = isConnected();
-    }
+    bool ok = isConnected();
+    ok = ok && setMessageRate("GGA", 1);
+    ok = ok && setMessageRate("RMC", 1);
+    ok = ok && setMessageRate("PQTMEPE", 1, 2);
+    ok = ok && setMessageRate("PQTMPVT", 1, 1);
+    ok = ok && setMessageRate("PQTMPL", 1, 1);
 
     if (!ok)
+    {
         sempStopParser(&_sempParse);
+    }
     
     return ok;
 }
@@ -873,17 +870,16 @@ void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
         sentence.erase(sentence.size() - 2);
 
     NmeaPacket nmea = NmeaPacket::FromString(sentence);
+    auto id = nmea.SentenceId();
+
 
     // Do $PQTM strings later
     if (sentence.substr(0, 2) != "$P")
     {
-        std::string strName = nmea[0];
         if (nmea.IsValid())
         {
             if (nmea.ChecksumValid())
             {
-                std::string id = nmea.SentenceId();
-
                 if (id == "RMC")
                 {
                     CHECK_POINTER_VOID(ptrLG290P->snapshot, ptrLG290P->initSnapshot); // Check that RAM has been allocated
@@ -943,7 +939,7 @@ void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
     else
     {
         // Is this the response to a command we issued with sendCommand?
-        if (nmea[0].substr(1) == ptrLG290P->commandName)
+        if (id == ptrLG290P->commandName)
         {
             // Display the command response
             ptrLG290P->debugPrintf("...sendCommand: (main loop) Expected command response found %s", parse->buffer);
@@ -951,15 +947,57 @@ void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
             ptrLG290P->commandResponse = LG290P_RESULT_RESPONSE_COMMAND_OK;
         }
 
+        else if (id == "PQTMPVT")
+        {
+            // YYYYMMDD [3]
+            // hhmmss.sss [4]
+            // leap seconds [8]
+            // lat [9]
+            // lon [10]
+            // alt [11]
+            // nvelocity [13]
+            // evelocity [14]
+            // dvelocity [15]
+            // speed [16]
+            // heading [17]
+            // HDOP [18]
+            // PDOP [19]
+        }
+
+        else if (id == "PQTMSVNSTATUS")
+        {
+            // handle MeanAcc
+            // MeanX [8]
+            // MeanY [9]
+            // MeanZ [10]
+            // MeanAcc [11]
+        }
+
+        else if (id == "PQTMEPE")
+        {
+            // handle 5 components of Horizontal Position Accuracy
+            // North [2]
+            // East [3]
+            // Down [4]
+            // 2D [5]
+            // 3D [6]
+        }
+
+        else if (id == "PQTMPL")
+        {
+            // todo
+        }
+
+#if false
         else if (!ptrLG290P->commandName.empty())
         {
             // Display the command response
             ptrLG290P->debugPrintf("LG290P Lib: Unknown command response: %s", parse->buffer);
             ptrLG290P->debugPrintf("LG290P Lib: Looking for command: %s", ptrLG290P->commandName.c_str());
         }
+#endif
     }
 
-    std::string id = nmea.SentenceId();
     if (id != "")
     {
         nmeaCounters[id]++;
@@ -975,7 +1013,7 @@ void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
         nmeaAllSubscribe(nmea); //call it!
 }
 
-int64_t RtcmPacket::extract_38bit_signed(const uint8_t *packet, int bit_offset)
+int64_t RtcmPacket::extract_38bit_signed(int bit_offset)
 {
     // Extract 38-bit value starting from the given bit_offset
     int64_t value = 0;
@@ -986,7 +1024,7 @@ int64_t RtcmPacket::extract_38bit_signed(const uint8_t *packet, int bit_offset)
     for (int i=0; i<6; ++i)
     {
       value <<= 8;
-      value |= (int64_t)(packet[byte_offset + i]);
+      value |= (int64_t)(payload[byte_offset + i]);
     }
 
     // Shift right to discard the unwanted bits and align to 38-bit value
@@ -1033,12 +1071,11 @@ void LG290P::rtcmHandler(SEMP_PARSE_STATE *parse)
 
         if (packet.type == 1005)
         {
-            rtcmSnapshot.ecefX = RtcmPacket::extract_38bit_signed(packet.buffer + 3, 34) / 10000.0;
-            rtcmSnapshot.ecefY = RtcmPacket::extract_38bit_signed(packet.buffer + 3, 74) / 10000.0;
-            rtcmSnapshot.ecefZ = RtcmPacket::extract_38bit_signed(packet.buffer + 3, 114) / 10000.0;
+            rtcmSnapshot.ecefX = packet.extract_38bit_signed(34) / 10000.0;
+            rtcmSnapshot.ecefY = packet.extract_38bit_signed(74) / 10000.0;
+            rtcmSnapshot.ecefZ = packet.extract_38bit_signed(114) / 10000.0;
             lastUpdateEcef = millis();
         }
-
 
         // handle specific and general callbacks
         // If user is subscribed for this packet, call the callback
