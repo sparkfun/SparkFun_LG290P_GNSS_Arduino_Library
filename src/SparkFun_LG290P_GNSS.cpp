@@ -390,14 +390,14 @@ bool LG290P::setModeRover()
     return sendOkCommand("PQTMCFGRCVRMODE", ",W,1");
 }
 
-bool LG290P::getMode(bool &isRoverMode)
+bool LG290P::getMode(int &mode)
 {
     bool ret = sendOkCommand("PQTMCFGRCVRMODE", ",R");
     if (ret)
     {
         auto packet = getCommandResponse();
         ret = ret && packet[1] == "OK";
-        isRoverMode = packet[2] == "1";
+        mode = atoi(packet[2].c_str());
     }
     return ret;
 }
@@ -527,6 +527,19 @@ bool LG290P::setMessageRate(const char *msgName, int rate, int msgVer)
     char parms[50];
     snprintf(parms, sizeof parms, msgVer == -1 ? ",W,%s,%d" : ",W,%s,%d,%d", msgName, rate, msgVer);
     return sendOkCommand("PQTMCFGMSGRATE", parms);
+}
+
+bool LG290P::getMessageRate(const char *msgName, int &rate, int msgVer)
+{
+    char parms[50];
+    snprintf(parms, sizeof parms, msgVer == -1 ? ",R,%s" : ",R,%s,%d", msgName, msgVer);
+    bool ret = sendOkCommand("PQTMCFGMSGRATE", parms);
+    if (ret)
+    {
+        auto packet = getCommandResponse();
+        rate = atoi(packet[3].c_str());
+    }
+    return ret;
 }
 
 bool LG290P::nmeaSubscribe(const char *msgName, nmeaCallback callback)

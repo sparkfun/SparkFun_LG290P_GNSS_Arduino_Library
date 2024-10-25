@@ -35,17 +35,14 @@ HardwareSerial SerialGNSS(1); // Use UART1 on the ESP32
 
 void myNmeaCallback(NmeaPacket &packet)
 {
-  Serial.printf("Received an NMEA $%s%s packet: %s ...\r\n", packet.TalkerId().c_str(), packet.SentenceId().c_str(), packet[1].c_str());
+  Serial.printf("$%s%s ", packet.TalkerId().c_str(), packet.SentenceId().c_str());
+  //Serial.printf("Received an NMEA $%s%s packet: %s ...\r\n", packet.TalkerId().c_str(), packet.SentenceId().c_str(), packet[1].c_str());
 }
 
 void myRtcmCallback(RtcmPacket &packet)
 {
-  Serial.printf("Received an RTCM %d packet: ", packet.type);
-  for (int i=0; i<packet.bufferlen && i<10; ++i)
-    Serial.printf("%02X ", packet.buffer[i]);
-  Serial.println(packet.bufferlen > 10 ? "..." : "");
-  if (packet.type == 1005)
-  Serial.printf("ECEF: (%.4f,%.4f,%.4f)\r\n", myGNSS.getEcefX(), myGNSS.getEcefY(), myGNSS.getEcefZ());
+  Serial.printf("RTCM-%d ", packet.type);
+  // Serial.printf("ECEF: (%.4f,%.4f,%.4f)\r\n", myGNSS.getEcefX(), myGNSS.getEcefY(), myGNSS.getEcefZ());
 }
 
 void setup()
@@ -68,6 +65,7 @@ void setup()
     while (true);
   }
   Serial.println("LG290P detected!");
+
   myGNSS.nmeaSubscribe("GGA", myNmeaCallback);
   myGNSS.nmeaSubscribe("RMC", myNmeaCallback);
   myGNSS.rtcmSubscribe(1005, myRtcmCallback);
@@ -77,30 +75,46 @@ void setup()
 
 void loop()
 {
-    bool isRoverMode;
     Serial.println();
-    Serial.println("Here's the engine running in ROVER mode");
     myGNSS.setModeRover();
     myGNSS.save();
-    myGNSS.reset();
     Serial.println("Resetting device...");
-    busyWait(30);
-    myGNSS.getMode(isRoverMode);
-    Serial.printf("Mode reported as '%s'\r\n", isRoverMode ? "ROVER" : "BASE");
-    
+    Serial.println("Here's the engine running in ROVER mode");
+    myGNSS.reset();
+    monitorActivity(30);
+
     Serial.println();
-    Serial.println("Here's the engine running in BASE mode");
     myGNSS.setModeBase();
     myGNSS.save();
-    myGNSS.reset();
     Serial.println("Resetting device...");
-    busyWait(30);
-    myGNSS.getMode(isRoverMode);
-    Serial.printf("Mode reported as '%s'\r\n", isRoverMode ? "ROVER" : "BASE");
+    Serial.println("Here's the engine running in BASE mode");
+    myGNSS.reset();
+    monitorActivity(30);
 }
 
-void busyWait(int seconds)
+void monitorActivity(int seconds)
 {
-    for (unsigned long start = millis(); millis() - start < 1000 * seconds; )
-       myGNSS.update();
+  if (myGNSS.isConnected())
+  {
+    int ggaRate = 0, rmcRate = 0, svinstatusRate = 0, pvtRate = 0, plRate = 0, epeRate = 0, rtcm1005Rate = 0, rtcm107XRate = 0;
+    int mode;
+    myGNSS.getMessageRate("GGA", ggaRate);
+    myGNSS.getMessageRate("RMC", rmcRate);
+    myGNSS.getMessageRate("PQTMSVINSTATUS", svinstatusRate, 1);
+    myGNSS.getMessageRate("PQTMPVT", pvtRate, 1);
+    myGNSS.getMessageRate("PQTMPL", plRate, 1);
+    myGNSS.getMessageRate("PQTMEPE", epeRate, 2);
+    myGNSS.getMessageRate("RTCM3-1005", rtcm1005Rate);
+    myGNSS.getMessageRate("RTCM3-107X", rtcm107XRate);
+
+    myGNSS.getMode(mode);
+    Serial.printf("Mode reported as '%s'\r\n", mode == 1 ? "ROVER" : "BASE");
+    Serial.printf("Msgs enabled: GGA=%c RMC=%c, SVINSTATUS=%c, PVT=%c, MLP=%c EPE=%c 1005=%c 107X=%c\r\n",
+      ggaRate ? 'Y' : 'N', rmcRate ? 'Y' : 'N', svinstatusRate ? 'Y' : 'N', pvtRate ? 'Y' : 'N',
+      plRate ? 'Y' : 'N', epeRate ? 'Y' : 'N', rtcm1005Rate ? 'Y' : 'N', rtcm107XRate ? 'Y' : 'N');
+  }
+
+  for (unsigned long start = millis(); millis() - start < 1000 * seconds; )
+    myGNSS.update();
+  Serial.println();
 }

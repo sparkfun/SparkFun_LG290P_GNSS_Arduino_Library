@@ -221,10 +221,10 @@ class LG290P
   /** 
    * @brief Gets the device mode
    * @details Uses the LG290P "PQTMCFGRCVRMODE" command to get receiver mode
-   * @param isRoverMode set to true if devices is in Rover mode, false if Base mode
+   * @param mode set to 1 if device is in Rover mode, 2 if Base mode, 0 = unknown
    * @return true if the mode was acquired
    */
-  bool getMode(bool &isRoverMode);
+  bool getMode(int &mode);
 
   /** 
    * @brief Set the baud rate of the designated port
@@ -344,12 +344,23 @@ class LG290P
      * @brief Enables or sets the rate for a specific message.
      * @details Use 0 to disable the message or N for 1 message every N fixes.
      * @details Uses the PQTMCFGMSGRATE command to set message rate.
-     * @param msgName The name of the message.
+     * @param msgName The name of the message, e.g. "GGA", "RMCM3-1005", "RTCM2-107X".
      * @param rate The rate at which to send the message.
      * @param msgver (Optional) The message version for PQTM messages, default is -1.
      * @return true if successful, false otherwise.
      */
     bool setMessageRate(const char *msgName, int rate, int msgver = -1);
+
+    /**
+     * @brief Queries the broadcast rate for the specific message.
+     * @details Returns rate of 0 to indicated a disabled message or N for 1 message every N fixes.
+     * @details Uses the PQTMCFGMSGRATE command to get the message rate.
+     * @param msgName The name of the message, e.g. "GGA", "RMCM3-1005", "RTCM2-107X".
+     * @param rate The rate returned, if successful
+     * @param msgver (Optional) The message version for PQTM messages, default is -1.
+     * @return true if successful, false otherwise.
+     */
+    bool getMessageRate(const char *msgName, int &rate, int msgver = -1);
 
     /**
      * @brief Saves the current configuration.
