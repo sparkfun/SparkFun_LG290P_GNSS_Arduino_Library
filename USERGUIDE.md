@@ -106,6 +106,9 @@ This library provides an interface for controlling and configuring an LG290P GNS
 - **`bool setModeRover();`**  
   Set the device to rover mode.
 
+- **`bool getMode(bool &isRoverMode);`**  
+  Gets the device mode (Rover or Base).
+
 - **`bool setPortBaudrate(int port, uint32_t newBaud);`**  
   Set the baud rate of the specified port.
 

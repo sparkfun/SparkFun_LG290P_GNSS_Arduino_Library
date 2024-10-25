@@ -390,6 +390,18 @@ bool LG290P::setModeRover()
     return sendOkCommand("PQTMCFGRCVRMODE", ",W,1");
 }
 
+bool LG290P::getMode(bool &isRoverMode)
+{
+    bool ret = sendOkCommand("PQTMCFGRCVRMODE", ",R");
+    if (ret)
+    {
+        auto packet = getCommandResponse();
+        ret = ret && packet[1] == "OK";
+        isRoverMode = packet[2] == "1";
+    }
+    return ret;
+}
+
 bool LG290P::setPortBaudrate(int port, uint32_t newBaud)
 {
     char parms[50];

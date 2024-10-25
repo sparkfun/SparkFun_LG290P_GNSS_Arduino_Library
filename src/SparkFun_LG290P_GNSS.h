@@ -219,6 +219,14 @@ class LG290P
   bool setModeRover();
 
   /** 
+   * @brief Gets the device mode
+   * @details Uses the LG290P "PQTMCFGRCVRMODE" command to get receiver mode
+   * @param isRoverMode set to true if devices is in Rover mode, false if Base mode
+   * @return true if the mode was acquired
+   */
+  bool getMode(bool &isRoverMode);
+
+  /** 
    * @brief Set the baud rate of the designated port
    * @param port the LG290P UART to be configured (1, 2, or 3)
    * @param newBaud the new baud rate of the port

@@ -77,6 +77,7 @@ void setup()
 
 void loop()
 {
+    bool isRoverMode;
     Serial.println();
     Serial.println("Here's the engine running in ROVER mode");
     myGNSS.setModeRover();
@@ -84,6 +85,8 @@ void loop()
     myGNSS.reset();
     Serial.println("Resetting device...");
     busyWait(30);
+    myGNSS.getMode(isRoverMode);
+    Serial.printf("Mode reported as '%s'\r\n", isRoverMode ? "ROVER" : "BASE");
     
     Serial.println();
     Serial.println("Here's the engine running in BASE mode");
@@ -92,6 +95,8 @@ void loop()
     myGNSS.reset();
     Serial.println("Resetting device...");
     busyWait(30);
+    myGNSS.getMode(isRoverMode);
+    Serial.printf("Mode reported as '%s'\r\n", isRoverMode ? "ROVER" : "BASE");
 }
 
 void busyWait(int seconds)
