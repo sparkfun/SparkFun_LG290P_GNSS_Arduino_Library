@@ -33,18 +33,6 @@ int gnss_baud = 460800;
 LG290P myGNSS;
 HardwareSerial SerialGNSS(1); // Use UART1 on the ESP32
 
-void myNmeaCallback(NmeaPacket &packet)
-{
-  Serial.printf("$%s%s ", packet.TalkerId().c_str(), packet.SentenceId().c_str());
-  //Serial.printf("Received an NMEA $%s%s packet: %s ...\r\n", packet.TalkerId().c_str(), packet.SentenceId().c_str(), packet[1].c_str());
-}
-
-void myRtcmCallback(RtcmPacket &packet)
-{
-  Serial.printf("RTCM-%d ", packet.type);
-  // Serial.printf("ECEF: (%.4f,%.4f,%.4f)\r\n", myGNSS.getEcefX(), myGNSS.getEcefY(), myGNSS.getEcefZ());
-}
-
 void setup()
 {
   Serial.begin(115200);
@@ -64,6 +52,7 @@ void setup()
     Serial.println("LG290P failed to respond. Check ports and baud rates. Freezing...");
     while (true);
   }
+
   Serial.println("LG290P detected!");
 
   myGNSS.nmeaSubscribe("GGA", myNmeaCallback);
@@ -92,12 +81,22 @@ void loop()
     monitorActivity(30);
 }
 
+void myNmeaCallback(NmeaPacket &packet)
+{
+  Serial.printf("$%s%s ", packet.TalkerId().c_str(), packet.SentenceId().c_str());
+}
+
+void myRtcmCallback(RtcmPacket &packet)
+{
+  Serial.printf("RTCM-%d ", packet.type);
+}
+
 void monitorActivity(int seconds)
 {
   if (myGNSS.isConnected())
   {
     int ggaRate = 0, rmcRate = 0, svinstatusRate = 0, pvtRate = 0, plRate = 0, epeRate = 0, rtcm1005Rate = 0, rtcm107XRate = 0;
-    int mode;
+    int mode = 0;
     myGNSS.getMessageRate("GGA", ggaRate);
     myGNSS.getMessageRate("RMC", rmcRate);
     myGNSS.getMessageRate("PQTMSVINSTATUS", svinstatusRate, 1);
@@ -109,7 +108,7 @@ void monitorActivity(int seconds)
 
     myGNSS.getMode(mode);
     Serial.printf("Mode reported as '%s'\r\n", mode == 1 ? "ROVER" : "BASE");
-    Serial.printf("Msgs enabled: GGA=%c RMC=%c, SVINSTATUS=%c, PVT=%c, MLP=%c EPE=%c 1005=%c 107X=%c\r\n",
+    Serial.printf("Msgs enabled: GGA=%c RMC=%c, SVINSTATUS=%c, PVT=%c, PL=%c EPE=%c 1005=%c 107X=%c\r\n",
       ggaRate ? 'Y' : 'N', rmcRate ? 'Y' : 'N', svinstatusRate ? 'Y' : 'N', pvtRate ? 'Y' : 'N',
       plRate ? 'Y' : 'N', epeRate ? 'Y' : 'N', rtcm1005Rate ? 'Y' : 'N', rtcm107XRate ? 'Y' : 'N');
   }
