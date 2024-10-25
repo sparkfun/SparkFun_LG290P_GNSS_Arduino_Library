@@ -148,8 +148,8 @@ This library provides an interface for controlling and configuring an LG290P GNS
 - **`bool save();`**  
   Save the current configuration parameters to non-volatile memory.
 
-- **`bool factoryReset();`**  
-  Reset all settings to factory defaults.
+- **`bool factoryRestore();`**  
+  Reset all settings to factory defaults. Need subsequent reset to take effect.
 
 ## Resets and Engine Control
 

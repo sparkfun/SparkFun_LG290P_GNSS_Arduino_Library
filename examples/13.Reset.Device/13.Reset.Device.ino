@@ -76,7 +76,7 @@ void loop()
 
   // A true "factory reset" is accomplished by calling PQTMRESTOREPAR followed by a software reset
   Serial.println("Factory reset");
-  myGNSS.restoreParameters();
+  myGNSS.factoryRestore();
   myGNSS.reset();
   busyWait();
 }

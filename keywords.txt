@@ -56,7 +56,7 @@ getFixInterval	KEYWORD2
 setFixInterval	KEYWORD2
 setMessageRate	KEYWORD2
 save	KEYWORD2
-factoryReset	KEYWORD2
+factoryRestore	KEYWORD2
 
 reset	KEYWORD2
 coldStart	KEYWORD2

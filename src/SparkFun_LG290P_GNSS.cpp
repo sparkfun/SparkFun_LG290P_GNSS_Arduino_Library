@@ -613,7 +613,7 @@ bool LG290P::save()
     return sendOkCommand("PQTMSAVEPAR");
 }
 
-bool LG290P::factoryReset()
+bool LG290P::factoryRestore()
 {
     return sendOkCommand("PQTMRESTOREPAR");
 }
