@@ -237,7 +237,7 @@ void beginClient()
       } //End attempt to connect
     } //End connected == false
 
-    if (ntripClient.connected() == true)
+    if (ntripClient.connected())
     {
       uint8_t rtcmData[512 * 8]; //Most incoming data is around 500 bytes but may be larger
       rtcmCount = 0;
@@ -245,6 +245,7 @@ void beginClient()
       //Print any available RTCM data
       while (true)
       {
+#if false
         if (ntripClient.available())
         {
             //Serial.write(ntripClient.read()); //Pipe to serial port is fine but beware, it's a lot of binary data
@@ -252,15 +253,109 @@ void beginClient()
             if (rtcmCount == sizeof(rtcmData)) break;
         }
         myGNSS.update();
-      }
 
-      if (rtcmCount > 0)
+      static unsigned long lastUpdate = 0;
+      if (rtcmCount > 0 || millis() - lastUpdate > 1000)
       {
-        lastReceivedRTCM_ms = millis();
+        if (rtcmCount > 0)
+           lastReceivedRTCM_ms = millis();
+        lastUpdate = millis();
 
         SerialGNSS.write(rtcmData, rtcmCount);
+        rtcmCount = 0;
         // myGNSS.pushRawData(rtcmData, rtcmCount, false);
         Serial.printf("Lat/Long/Alt: %.8f/%.8f/%.2f\r\n", myGNSS.getLatitude(), myGNSS.getLongitude(), myGNSS.getAltitude());
+        Serial.printf("Horizontal Speed: %.2fm/s Course: %.2f degrees\r\n",
+                    myGNSS.getHorizontalSpeed(), myGNSS.getCourse());
+        Serial.printf("Date (yyyy/mm/dd): %04d/%02d/%02d Time (hh:mm:ss) %02d:%02d:%02d.%03d\r\n",
+                    myGNSS.getYear(), myGNSS.getMonth(), myGNSS.getDay(),
+                    myGNSS.getHour(), myGNSS.getMinute(), myGNSS.getSecond(), myGNSS.getMillisecond());
+        Serial.printf("Satellites in view: %d\r\n", myGNSS.getSatellitesInView());
+        Serial.printf("Fix type: %d - ", myGNSS.getFixType());
+        switch (myGNSS.getFixType())
+        {
+        default:
+            Serial.println("Unknown");
+            break;
+        case 0:
+            Serial.println("No fix");
+            break;
+        case 1:
+            Serial.println("3D Fix");
+            break;
+        case 2:
+            Serial.println("DGPS Fix");
+            break;
+        case 3:
+            Serial.println("GPS PPS Mode, fix valid");
+            break;
+        case 4:
+            Serial.println("RTK Fix");
+            break;
+        case 5:
+            Serial.println("RTK Float");
+            break;
+        }
+        Serial.println();
+      }
+#else
+        int processRtcm = ntripClient.available();
+        if (processRtcm)
+        {
+            uint8_t rtcmData[512];
+            lastReceivedRTCM_ms = millis();
+            for (size_t bytesToWrite = ntripClient.available(); bytesToWrite > 0; )
+            {
+                int count = std::min(sizeof rtcmData, bytesToWrite);
+                count = ntripClient.readBytes(rtcmData, count);
+                SerialGNSS.write(rtcmData, count);
+                bytesToWrite -= count;
+                myGNSS.update();
+            }
+        }
+        myGNSS.update();
+
+        static unsigned long lastUpdate = 0;
+        if (processRtcm || millis() - lastUpdate > 1000)
+        {
+            lastUpdate = millis();
+
+            Serial.printf("RTCM bytes in: %d\r\n", processRtcm);
+            Serial.printf("Lat/Long/Alt: %.8f/%.8f/%.2f\r\n", myGNSS.getLatitude(), myGNSS.getLongitude(), myGNSS.getAltitude());
+            Serial.printf("Horizontal Speed: %.2fm/s Course: %.2f degrees\r\n",
+                        myGNSS.getHorizontalSpeed(), myGNSS.getCourse());
+            Serial.printf("Date (yyyy/mm/dd): %04d/%02d/%02d Time (hh:mm:ss) %02d:%02d:%02d.%03d\r\n",
+                        myGNSS.getYear(), myGNSS.getMonth(), myGNSS.getDay(),
+                        myGNSS.getHour(), myGNSS.getMinute(), myGNSS.getSecond(), myGNSS.getMillisecond());
+            Serial.printf("Satellites in view: %d\r\n", myGNSS.getSatellitesInView());
+            Serial.printf("Fix type: %d - ", myGNSS.getFixType());
+            switch (myGNSS.getFixType())
+            {
+            default:
+                Serial.println("Unknown");
+                break;
+            case 0:
+                Serial.println("No fix");
+                break;
+            case 1:
+                Serial.println("3D Fix");
+                break;
+            case 2:
+                Serial.println("DGPS Fix");
+                break;
+            case 3:
+                Serial.println("GPS PPS Mode, fix valid");
+                break;
+            case 4:
+                Serial.println("RTK Fix");
+                break;
+            case 5:
+                Serial.println("RTK Float");
+                break;
+            }
+            Serial.println();
+        }
+#endif
       }
     }
 

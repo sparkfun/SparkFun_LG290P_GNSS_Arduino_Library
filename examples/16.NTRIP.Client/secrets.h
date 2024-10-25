@@ -1,6 +1,6 @@
 // Your WiFi credentials
-const char ssid[] = "Elan 448";
-const char password[] =  "pashaluxury";
+const char ssid[] = "HIE-EXPRESS";
+const char password[] =  "";
 
 // RTK2Go works well and is free
 const char casterHost[] = "rtk2go.com"; 
