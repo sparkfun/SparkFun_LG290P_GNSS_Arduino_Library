@@ -103,6 +103,23 @@ void setup()
   {
     Serial.printf("PPS: Not available\r\n");
   }
+
+  int mode;
+  if (myGNSS.getMode(mode))
+  {
+    Serial.printf("Current mode: %s\r\n", mode == 2 ? "BASE" : "ROVER");
+  }
+
+  const char * const msgs[] = {"GGA", "RMC", "PQTMEPE", "PQTMPL", "PQTMPVT", "PQTMSVINSTATUS" };
+  const int vers[] = { -1, -1, 2, 1, 1, 1 };
+  Serial.printf("Message rates: ");
+  for (int i=0; i<6; ++i)
+  {
+    int rate;
+    if (myGNSS.getMessageRate(msgs[i], rate, vers[i]))
+      Serial.printf("%s: %d  ", msgs[i], rate);
+  }
+  Serial.println();
 }
 
 void loop()
