@@ -53,6 +53,12 @@ void setup()
     while (true);
   }
   Serial.println("LG290P detected!");
+
+  // Ensure that device is in ROVER mode. (In BASE mode you can't really modify the fix interval.)
+  int mode;
+  myGNSS.getMode(mode);
+  if (mode == 2) // base mode?
+    myGNSS.setModeRover();
 }
 
 void loop()
