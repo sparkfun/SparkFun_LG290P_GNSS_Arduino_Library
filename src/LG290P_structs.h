@@ -6,22 +6,31 @@
 struct NmeaSnapshot
 {
     bool newDataAvailable = false;
+
     double latitude = 0;
     double longitude = 0;
     double altitude = 0;
-    double horizontalSpeed = 0;
-    uint16_t year = 0;
-    uint8_t month = 0;
-    uint8_t day = 0;
+
     uint8_t hour = 0;
     uint8_t minute = 0;
     uint8_t second = 0;
     uint32_t nanosecond = 0;
+    uint8_t leapSecond;
+
+    uint16_t year = 0;
+    uint8_t month = 0;
+    uint8_t day = 0;
+
     uint8_t satellitesUsed = 0;
     char quality = '0';
-    double hdop = 0;
     char fixStatus = 'N';
+    double hdop = 0;
+    double horizontalSpeed = 0;
     double course = 0;
+    uint32_t timeOfWeek = 0;
+
+    uint32_t geodalSeparation = 0;
+
     void clear() {} // TODO
 
 #if false
@@ -69,13 +78,13 @@ class NmeaPacket
      * @brief Processes a GGA sentence and updates the snapshot.
      * @param snapshot Pointer to the NmeaSnapshot to be updated.
      */
-    void processGGA(NmeaSnapshot *snapshot);
+    void processGGA(NmeaSnapshot &snapshot);
 
     /** 
      * @brief Processes an RMC sentence and updates the snapshot.
      * @param snapshot Pointer to the NmeaSnapshot to be updated.
      */
-    void processRMC(NmeaSnapshot *snapshot);
+    void processRMC(NmeaSnapshot &snapshot);
 
     /** 
      * @brief Parses a time string and extracts hour, minute, second, and nanoseconds.

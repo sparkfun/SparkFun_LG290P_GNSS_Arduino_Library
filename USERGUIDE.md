@@ -222,10 +222,10 @@ This library provides an interface for controlling and configuring an LG290P GNS
 - **`bool isNewSatelliteInfoAvailable();`**  
   Checks if new satellite information has been received since the last query.
 
-- **`uint16_t getSatellitesInView();`**  
+- **`uint16_t getSatellitesInViewCount();`**  
   Gets the number of satellites currently being tracked.
 
-- **`uint16_t getSatellitesUsed();`**  
+- **`uint16_t getSatellitesUsedCount();`**  
   Gets the number of satellites used for positioning.
 
 ## Survey Mode
@@ -256,8 +256,11 @@ This library provides an interface for controlling and configuring an LG290P GNS
 - **`double getHorizontalSpeed();`**  
   Retrieves the current horizontal speed in meters per second.
 
-- **`double getVerticalSpeed();`**  
-  Retrieves the current vertical speed in meters per second (not yet implemented).
+- **`uint8_t getfixQuality();`**  
+  Retrieves the fix quality (a number 0+)
+
+- **`char getfixStatus();`**  
+  Retrieves the fix status from RMC ('V' = void, 'A' = available)
 
 ## Date and Time Information
 

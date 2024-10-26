@@ -626,7 +626,7 @@ bool LG290P::rtcmUnsubscribeAll()
 
 void LG290P::clearAll()
 {
-    snapshot->clear();
+    snapshot.clear();
     satelliteReporting.clear();
     nmeaCounters.clear();
     rtcmCounters.clear();
@@ -898,21 +898,6 @@ bool LG290P::setSurveyFixedMode(double ecefX, double ecefY, double ecefZ, bool r
 
 // Main handler and RAM inits
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-#define CHECK_POINTER_BOOL(packetPointer, initPointer)                                                                 \
-    {                                                                                                                  \
-        if (packetPointer == nullptr)                                                                                  \
-            initPointer();                                                                                             \
-        if (packetPointer == nullptr)                                                                                  \
-            return false;                                                                                              \
-    }
-
-#define CHECK_POINTER_VOID(packetPointer, initPointer)                                                                 \
-    {                                                                                                                  \
-        if (packetPointer == nullptr)                                                                                  \
-            initPointer();                                                                                             \
-        if (packetPointer == nullptr)                                                                                  \
-            return;                                                                                                    \
-    }
 
 // Cracks an NMEA sentence into the applicable container
 // The sentence might be a normal NMEA one like $GPGGA or a custom one like $PQTMVER. In
@@ -938,14 +923,12 @@ void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
             {
                 if (id == "RMC")
                 {
-                    CHECK_POINTER_VOID(ptrLG290P->snapshot, ptrLG290P->initSnapshot); // Check that RAM has been allocated
                     lastUpdateGeodetic = millis(); // Update stale marker
                     nmea.processRMC(ptrLG290P->snapshot);
                 }
                 
                 if (id == "GGA")
                 {
-                    CHECK_POINTER_VOID(ptrLG290P->snapshot, ptrLG290P->initSnapshot); // Check that RAM has been allocated
                     lastUpdateGeodetic = millis(); // Update stale marker
                     nmea.processGGA(ptrLG290P->snapshot);
                 }
@@ -1142,28 +1125,13 @@ void LG290P::rtcmHandler(SEMP_PARSE_STATE *parse)
     }
 }
 
-// Allocate RAM for NMEA snapshot and initialize it
-bool LG290P::initSnapshot()
-{
-    snapshot = new NmeaSnapshot;
-    if (snapshot == nullptr)
-    {
-        debugPrintf("Pointer alloc fail");
-        return false;
-    }
-
-    return true;
-}
-
 // All the general gets and sets
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 bool LG290P::isNewSnapshotAvailable() 
 {
-    if (snapshot == nullptr)
-        return false;
-    bool r = snapshot->newDataAvailable;
-    snapshot->newDataAvailable = false;
+    bool r = snapshot.newDataAvailable;
+    snapshot.newDataAvailable = false;
     return r;
 }
 
@@ -1177,26 +1145,25 @@ bool LG290P::isNewSatelliteInfoAvailable()
 double LG290P::getLatitude()
 {
     ensurePvtEnabled();
-    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
-    return snapshot->latitude;
+    return snapshot.latitude;
 }
 
 double LG290P::getLongitude()
 {
-    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
-    return snapshot->longitude;
+    ensurePvtEnabled();
+    return snapshot.longitude;
 }
 
 double LG290P::getAltitude()
 {
-    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
-    return snapshot->altitude;
+    ensurePvtEnabled();
+    return snapshot.altitude;
 }
 
 double LG290P::getHorizontalSpeed()
 {
-    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
-    return snapshot->horizontalSpeed;
+    ensurePvtEnabled();
+    return snapshot.horizontalSpeed;
 }
 
 double LG290P::getEcefX()
@@ -1214,15 +1181,7 @@ double LG290P::getEcefZ()
     return rtcmSnapshot.ecefZ;
 }
 
-#if false
-double LG290P::getVerticalSpeed()
-{
-    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
-    return snapshot->verticalSpeed;
-}
-#endif
-
-uint16_t LG290P::getSatellitesInView()
+uint16_t LG290P::getSatellitesInViewCount()
 {
     uint16_t count = 0;
     for (auto &item : satelliteReporting)
@@ -1230,23 +1189,31 @@ uint16_t LG290P::getSatellitesInView()
     return count;
 }
 
-uint16_t LG290P::getSatellitesUsed()
+uint16_t LG290P::getSatellitesUsedCount()
 {
-    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
-    return snapshot->satellitesUsed;
+    ensurePvtEnabled();
+    return snapshot.satellitesUsed;
 }
 
-uint8_t LG290P::getFixType()
+// 0 = Fix not available or invalid.
+// 1 = GPS SPS Mode, fix valid.
+// 2 = Differential GPS, SPS Mode, or Satellite Based Augmentation. System (SBAS), fix valid.
+// 3 = GPS PPS Mode, fix valid.
+// 4 = Real Time Kinematic (RTK) System used in RTK mode with fixed integers.
+// 5 = Float RTK. Satellite system used in RTK mode, floating integers.
+uint8_t LG290P::getFixQuality()
 {
-    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
-    return (snapshot->quality - '0'); //Convert ASCII to uint8_t
+    ensurePvtEnabled();
+    return snapshot.quality - '0'; // Convert ASCII to uint8_t
+}
 
-    // 0 = Fix not available or invalid.
-    // 1 = GPS SPS Mode, fix valid.
-    // 2 = Differential GPS, SPS Mode, or Satellite Based Augmentation. System (SBAS), fix valid.
-    // 3 = GPS PPS Mode, fix valid.
-    // 4 = Real Time Kinematic (RTK) System used in RTK mode with fixed integers.
-    // 5 = Float RTK. Satellite system used in RTK mode, floating integers.
+
+// 'V' = Fix not available or invalid (void).
+// 'A' = Fix available
+char LG290P::getFixStatus()
+{
+    ensureRmcEnabled();
+    return snapshot.fixStatus;
 }
 
 // Return the number of millis since last update
@@ -1257,44 +1224,56 @@ uint32_t LG290P::getGeodeticAgeMs()
 
 uint16_t LG290P::getYear()
 {
-    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
-    return snapshot->year;
+    ensurePvtEnabled();
+    return snapshot.year;
 }
 
 uint8_t LG290P::getMonth()
 {
-    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
-    return snapshot->month;
+    ensurePvtEnabled();
+    return snapshot.month;
 }
 
 uint8_t LG290P::getDay()
 {
-    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
-    return snapshot->day;
+    ensurePvtEnabled();
+    return snapshot.day;
 }
 
 uint8_t LG290P::getHour()
 {
-    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
-    return snapshot->hour;
+    ensurePvtEnabled();
+    return snapshot.hour;
 }
 
 uint8_t LG290P::getMinute()
 {
-    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
-    return snapshot->minute;
+    ensurePvtEnabled();
+    return snapshot.minute;
 }
 
 uint8_t LG290P::getSecond()
 {
-    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
-    return snapshot->second;
+    ensurePvtEnabled();
+    return snapshot.second;
 }
 
 uint16_t LG290P::getMillisecond()
 {
-    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
-    return (uint16_t)(snapshot->nanosecond / 1000000);
+    ensurePvtEnabled();
+    return (uint16_t)(snapshot.nanosecond / 1000000);
+}
+
+double LG290P::getCourse()
+{
+    ensurePvtEnabled();
+    return snapshot.course;
+}
+
+double LG290P::getHdop()
+{
+    ensurePvtEnabled();
+    return snapshot.hdop;
 }
 
 NmeaPacket NmeaPacket::FromString(const std::string &str)
@@ -1375,31 +1354,31 @@ std::string NmeaPacket::SentenceId() const
     return fields[0].substr(0, 2) == "$G" ? fields[0].substr(3) : fields[0].substr(1);
 }
 
-void NmeaPacket::processGGA(NmeaSnapshot *snapshot)
+void NmeaPacket::processGGA(NmeaSnapshot &snapshot)
 {
     if (fields.size() >= 10)
     {
-        NmeaPacket::parseTime(fields[1], snapshot->hour, snapshot->minute, snapshot->second, snapshot->nanosecond);
-        NmeaPacket::parseLocation(fields[2], fields[3], fields[4], fields[5], snapshot->latitude, snapshot->longitude);
-        NmeaPacket::parseQuality(fields[6], snapshot->quality);
-        NmeaPacket::parseSatelliteCount(fields[7], snapshot->satellitesUsed);
-        NmeaPacket::parseHdop(fields[8].c_str(), snapshot->hdop);
-        NmeaPacket::parseAltitude(fields[9].c_str(), snapshot->altitude);
-        snapshot->newDataAvailable = true;
+        NmeaPacket::parseTime(fields[1], snapshot.hour, snapshot.minute, snapshot.second, snapshot.nanosecond);
+        NmeaPacket::parseLocation(fields[2], fields[3], fields[4], fields[5], snapshot.latitude, snapshot.longitude);
+        NmeaPacket::parseQuality(fields[6], snapshot.quality);
+        NmeaPacket::parseSatelliteCount(fields[7], snapshot.satellitesUsed);
+        NmeaPacket::parseHdop(fields[8].c_str(), snapshot.hdop);
+        NmeaPacket::parseAltitude(fields[9].c_str(), snapshot.altitude);
+        snapshot.newDataAvailable = true;
     }
 }
 
-void NmeaPacket::processRMC(NmeaSnapshot *snapshot)
+void NmeaPacket::processRMC(NmeaSnapshot &snapshot)
 {
     if (fields.size() >= 10)
     {
-        NmeaPacket::parseTime(fields[1], snapshot->hour, snapshot->minute, snapshot->second, snapshot->nanosecond);
-        NmeaPacket::parseFixStatus(fields[2], snapshot->fixStatus);
-        NmeaPacket::parseLocation(fields[3], fields[4], fields[5], fields[6], snapshot->latitude, snapshot->longitude);
-        NmeaPacket::parseSpeed(fields[7].c_str(), snapshot->horizontalSpeed);
-        NmeaPacket::parseCourse(fields[8].c_str(), snapshot->course);
-        NmeaPacket::parseDate(fields[9], snapshot->year, snapshot->month, snapshot->day);
-        snapshot->newDataAvailable = true;
+        NmeaPacket::parseTime(fields[1], snapshot.hour, snapshot.minute, snapshot.second, snapshot.nanosecond);
+        NmeaPacket::parseFixStatus(fields[2], snapshot.fixStatus);
+        NmeaPacket::parseLocation(fields[3], fields[4], fields[5], fields[6], snapshot.latitude, snapshot.longitude);
+        NmeaPacket::parseSpeed(fields[7].c_str(), snapshot.horizontalSpeed);
+        NmeaPacket::parseCourse(fields[8].c_str(), snapshot.course);
+        NmeaPacket::parseDate(fields[9], snapshot.year, snapshot.month, snapshot.day);
+        snapshot.newDataAvailable = true;
     }
 }
 
@@ -1505,12 +1484,6 @@ void NmeaPacket::parseHdop(const std::string &term, double &hdop)
 void NmeaPacket::parseAltitude(const std::string &term, double &altitude)
 {
     altitude = parseDecimal(term) / 100.0;
-}
-
-double LG290P::getCourse()
-{
-    CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
-    return snapshot->course;
 }
 
 #if false
@@ -1714,40 +1687,40 @@ bool LG290P::initVersion()
 double LG290P::getTrackGround()
 {
     CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
-    return snapshot->trackGround;
+    return snapshot.trackGround;
 }
 
 float LG290P::getLatitudeDeviation()
 {
     CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
-    return snapshot->latitudeDeviation;
+    return snapshot.latitudeDeviation;
 }
 float LG290P::getLongitudeDeviation()
 {
     CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
-    return snapshot->longitudeDeviation;
+    return snapshot.longitudeDeviation;
 }
 float LG290P::getAltitudeDeviation()
 {
     CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
-    return snapshot->heightDeviation;
+    return snapshot.heightDeviation;
 }
 float LG290P::getHorizontalSpeedDeviation()
 {
     CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
-    return snapshot->horizontalSpeedDeviation;
+    return snapshot.horizontalSpeedDeviation;
 }
 float LG290P::getVerticalSpeedDeviation()
 {
     CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
-    return snapshot->verticalSpeedDeviation;
+    return snapshot.verticalSpeedDeviation;
 }
 
 // 0 = Solution computed, 1 = Insufficient observation, 3 = No convergence, 4 = Covariance trace
 uint8_t LG290P::getSolutionStatus()
 {
     CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
-    return snapshot->solutionStatus;
+    return snapshot.solutionStatus;
 }
 
 // 0 = no fix, 1 = dead reckoning only, 2 = 2D-fix, 3 = 3D-fix, 4 = GNSS + dead reckoning combined, 5 = time only
@@ -1755,24 +1728,24 @@ uint8_t LG290P::getSolutionStatus()
 uint8_t LG290P::getPositionType()
 {
     CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
-    return snapshot->positionType;
+    return snapshot.positionType;
 }
 uint8_t LG290P::getVelocityType()
 {
     CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
-    return snapshot->velocityType;
+    return snapshot.velocityType;
 }
 
 uint8_t LG290P::getRTKSolution()
 {
     CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
-    return snapshot->rtkSolution;
+    return snapshot.rtkSolution;
 }
 
 uint8_t LG290P::getPseudorangeCorrection()
 {
     CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
-    return snapshot->pseudorangeCorrection;
+    return snapshot.pseudorangeCorrection;
 }
 
 double LG290P::getEcefX()

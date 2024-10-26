@@ -549,21 +549,28 @@ class LG290P
      * @details Information gleaned from GSV sentences
      * @return The number of satellites being tracked.
      */
-    uint16_t getSatellitesInView();
+    uint16_t getSatellitesInViewCount();
 
     /**
      * @brief Gets the number of satellites used for positioning.
      * @details Information gleaned from GGA sentence.
      * @return The number of satellites used.
      */
-    uint16_t getSatellitesUsed();
+    uint16_t getSatellitesUsedCount();
 
     /**
-     * @brief Gets the number fix type
+     * @brief Gets the number fix type 0+
      * @details Information gleaned from GGA sentence.
      * @return The fix type.
      */
-    uint8_t getFixType();
+    uint8_t getFixQuality();
+
+    /**
+     * @brief Gets the fix status (RMC 'A' or 'V')
+     * @details Information gleaned from RMC sentence.
+     * @return The fix status ('A' or 'V' for void).
+     */
+    char getFixStatus();
 
     /** Survey Mode **/
 
@@ -634,13 +641,6 @@ class LG290P
      */
     double getHorizontalSpeed();
 
-    /**
-     * @brief Gets the vertical speed of the device.
-     * @details Note: not yet implemented
-     * @return The vertical speed in meters per second.
-     */
-    double getVerticalSpeed();
-
     /** 
      * @brief Gets the year.
      * @return Year as a 16-bit unsigned integer.
@@ -683,6 +683,18 @@ class LG290P
      */
     uint16_t getMillisecond();
 
+    /**
+     * @brief Gets course/heading in degrees
+     * @return Course/heading in degrees
+     */
+    double getCourse();
+  
+    /**
+     * @brief Gets Horizontal Dilution of Precision
+     * @return HDOP
+     */
+    double getHdop();
+  
     /** 
      * @brief Gets the age of the latest NMEA geodetic report in milliseconds.
      * @return Number of milliseconds since the last report (GGA or RMC)
@@ -713,11 +725,7 @@ class LG290P
      */
     double getEcefZ();
 
-
-    double getTrackGround();
-    double getCourse();
-  
-  #if false // TODO?
+  #if false // TODO
 
     float getLatitudeDeviation();
     float getLongitudeDeviation();
@@ -801,7 +809,7 @@ class LG290P
     void nmeaHandler(SEMP_PARSE_STATE *parse);
     void rtcmHandler(SEMP_PARSE_STATE *parse);
     HardwareSerial *_hwSerialPort = nullptr;
-    NmeaSnapshot *snapshot = nullptr;
+    NmeaSnapshot snapshot;
     RtcmSnapshot rtcmSnapshot;
     bool initSnapshot();
     bool updateOnce();

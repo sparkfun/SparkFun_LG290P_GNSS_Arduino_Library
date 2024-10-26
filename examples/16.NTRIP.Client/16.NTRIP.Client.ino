@@ -270,7 +270,7 @@ void beginClient()
         Serial.printf("Date (yyyy/mm/dd): %04d/%02d/%02d Time (hh:mm:ss) %02d:%02d:%02d.%03d\r\n",
                     myGNSS.getYear(), myGNSS.getMonth(), myGNSS.getDay(),
                     myGNSS.getHour(), myGNSS.getMinute(), myGNSS.getSecond(), myGNSS.getMillisecond());
-        Serial.printf("Satellites in view: %d\r\n", myGNSS.getSatellitesInView());
+        Serial.printf("Satellites in view: %d\r\n", myGNSS.getSatellitesInViewCount());
         Serial.printf("Fix type: %d - ", myGNSS.getFixType());
         switch (myGNSS.getFixType())
         {
@@ -327,9 +327,9 @@ void beginClient()
             Serial.printf("Date (yyyy/mm/dd): %04d/%02d/%02d Time (hh:mm:ss) %02d:%02d:%02d.%03d\r\n",
                         myGNSS.getYear(), myGNSS.getMonth(), myGNSS.getDay(),
                         myGNSS.getHour(), myGNSS.getMinute(), myGNSS.getSecond(), myGNSS.getMillisecond());
-            Serial.printf("Satellites in view: %d\r\n", myGNSS.getSatellitesInView());
-            Serial.printf("Fix type: %d - ", myGNSS.getFixType());
-            switch (myGNSS.getFixType())
+            Serial.printf("Satellites in view: %d\r\n", myGNSS.getSatellitesInViewCount());
+            Serial.printf("Fix quality: %d - ", myGNSS.getFixQuality());
+            switch (myGNSS.getFixQuality())
             {
             default:
                 Serial.println("Unknown");

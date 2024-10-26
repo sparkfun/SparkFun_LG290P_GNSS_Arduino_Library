@@ -83,8 +83,8 @@ sendOkCommand	KEYWORD2
 
 getVisibleSats	KEYWORD2
 isNewSatelliteInfoAvailable	KEYWORD2
-getSatellitesInView	KEYWORD2
-getSatellitesUsed	KEYWORD2
+getSatellitesInViewCount	KEYWORD2
+getSatellitesUsedCount	KEYWORD2
 getFixType	KEYWORD2
 
 getSurveyInMode	KEYWORD2
@@ -96,7 +96,8 @@ getLatitude	KEYWORD2
 getLongitude	KEYWORD2
 getAltitude	KEYWORD2
 getHorizontalSpeed	KEYWORD2
-getVerticalSpeed	KEYWORD2
+getFixStatus	KEYWORD2
+getFixQuality	KEYWORD2
 
 getYear	KEYWORD2
 getMonth	KEYWORD2
