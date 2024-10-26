@@ -48,6 +48,9 @@ class LG290P
     typedef void (*nmeaCallback)(NmeaPacket &nmea);
     typedef void (*rtcmCallback)(RtcmPacket &rtcm);
     typedef struct { int elev, azimuth, prn, snr; char talker[3]; } satinfo;
+    typedef struct { int mode = -1, ggaRate = -1, rmcRate = -1, pvtRate = -1, plRate = -1, epeRate = -1, svinstatusRate = -1; } devstate;
+
+    devstate devState;
 
   public:
 
@@ -206,17 +209,19 @@ class LG290P
 
   /** 
    * @brief Set the device to "Base station" mode
+   * @param resetAfter true if device should save new setting and reset to make it 'take'
    * @details Uses the LG290P "PQTMCFGRCVRMODE" command to set receiver mode
    * @return true if the mode was set correctly
    */
-  bool setModeBase();
+  bool setModeBase(bool resetAfter = true);
 
   /** 
    * @brief Set the device to "Rover" mode
+   * @param resetAfter true if device should save new setting and reset to make it 'take'
    * @details Uses the LG290P "PQTMCFGRCVRMODE" command to set receiver mode
    * @return true if the mode was set correctly
    */
-  bool setModeRover();
+  bool setModeRover(bool resetAfter = true);
 
   /** 
    * @brief Gets the device mode
@@ -381,25 +386,25 @@ class LG290P
      * @brief Performs a software reset of the device.
      * @return true if successful, false otherwise.
      */
-    bool reset();
+    bool reset() { return genericReset("PQTMSRR"); }
 
     /**
      * @brief Performs a cold reset (complete reset) of the device.
      * @return true if successful, false otherwise.
      */
-    bool coldStart();
+    bool coldStart() { return genericReset("PQTCOLD"); }
 
     /**
      * @brief Performs a warm reset (partial reset) of the device.
      * @return true if successful, false otherwise.
      */
-    bool warmStart();
+    bool warmStart() { return genericReset("PQTMWARM"); }
 
     /**
      * @brief Performs a hot reset (minimal reset) of the device.
      * @return true if successful, false otherwise.
      */
-    bool hotStart();
+    bool hotStart() { return genericReset("PQTMHOT"); }
 
     /**
      * @brief Disables the GNSS engine.
@@ -580,9 +585,10 @@ class LG290P
      * @details Uses PQTMCFGSVIN command
      * @param positionTimes The number of position times to use.
      * @param accuracyLimit (Optional) The accuracy limit, default is 0.
+     * @param resetAfter (Optional) Reset the device afterwards for new setting to 'take'
      * @return true if the mode was successfully set, false otherwise.
      */
-    bool setSurveyInMode(int positionTimes, double accuracyLimit = 0);
+    bool setSurveyInMode(int positionTimes, double accuracyLimit = 0, bool resetAfter = true);
 
     /**
      * @brief Sets the device to "Fixed" survey mode with ECEF coordinates.
@@ -590,9 +596,10 @@ class LG290P
      * @param ecefX The ECEF X coordinate.
      * @param ecefY The ECEF Y coordinate.
      * @param ecefZ The ECEF Z coordinate.
+     * @param resetAfter (Optional) Reset the device afterwards for new setting to 'take'
      * @return true if the mode was successfully set, false otherwise.
      */
-    bool setSurveyFixedMode(double ecefX, double ecefY, double ecefZ);
+    bool setSurveyFixedMode(double ecefX, double ecefY, double ecefZ, bool resetAfter = true);
 
     /** Geodetic reporting **/
 
@@ -764,6 +771,16 @@ class LG290P
     // State management
     SEMP_PARSE_STATE *_sempParse; // State of the SparkFun Extensible Message Parser
     bool lg290PLibrarySemaphoreBlock = false; // Gets set to true when the Unicore library needs to interact directly
+    bool scanForMsgsEnabled();
+    void ensureMsgEnabled(bool enabled, const char *msg, int msgVer = -1);
+    void ensureGgaEnabled() { ensureMsgEnabled(devState.ggaRate, "GGA"); }
+    void ensureRmcEnabled() { ensureMsgEnabled(devState.rmcRate, "RMC"); }
+    void ensurePvtEnabled() { ensureMsgEnabled(devState.pvtRate, "PQTMPVT", 1); }
+    void ensurePlEnabled() { ensureMsgEnabled(devState.plRate, "PQTMPL", 1); }
+    void ensureEpeEnabled() { ensureMsgEnabled(devState.epeRate, "PQTMEPE", 2); }
+    void ensureSvinStatusEnabled() { ensureMsgEnabled(devState.svinstatusRate, "PQTMSVINSTATUS", 1); }
+    void clearAll();
+    bool genericReset(const char *resetCmd);
 
     // Debugging
     Print *_debugPort = nullptr; // The stream to send debug messages to if enabled. Usually Serial.

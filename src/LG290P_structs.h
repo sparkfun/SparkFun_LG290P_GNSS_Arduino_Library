@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-typedef struct
+struct NmeaSnapshot
 {
     bool newDataAvailable = false;
     double latitude = 0;
@@ -22,6 +22,7 @@ typedef struct
     double hdop = 0;
     char fixStatus = 'N';
     double course = 0;
+    void clear() {} // TODO
 
 #if false
     uint8_t timeStatus = 3; // 0 = valid, 3 = invalid
@@ -47,7 +48,7 @@ typedef struct
     uint8_t pseudorangeCorrection = 0;
 #endif
 
-} NmeaSnapshot;
+};
 
 typedef struct
 {

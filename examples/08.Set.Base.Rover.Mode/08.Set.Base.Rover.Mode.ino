@@ -57,6 +57,7 @@ void setup()
 
   myGNSS.nmeaSubscribe("GGA", myNmeaCallback);
   myGNSS.nmeaSubscribe("RMC", myNmeaCallback);
+  myGNSS.nmeaSubscribe("PQTMPVT", myNmeaCallback);
   myGNSS.rtcmSubscribe(1005, myRtcmCallback);
   myGNSS.rtcmSubscribe(1124, myRtcmCallback);
   myGNSS.rtcmSubscribe(1074, myRtcmCallback);
@@ -65,25 +66,23 @@ void setup()
 void loop()
 {
     Serial.println();
-    myGNSS.setModeRover();
-    myGNSS.save();
     Serial.println("Resetting device...");
+    myGNSS.setModeRover();
     Serial.println("Here's the engine running in ROVER mode");
-    myGNSS.reset();
     monitorActivity(30);
 
     Serial.println();
-    myGNSS.setModeBase();
-    myGNSS.save();
     Serial.println("Resetting device...");
+    myGNSS.setModeBase();
     Serial.println("Here's the engine running in BASE mode");
-    myGNSS.reset();
     monitorActivity(30);
 }
 
 void myNmeaCallback(NmeaPacket &packet)
 {
   Serial.printf("$%s%s ", packet.TalkerId().c_str(), packet.SentenceId().c_str());
+  if (packet.SentenceId() == "PQTMPVT")
+    Serial.printf("%f ", myGNSS.getLatitude());
 }
 
 void myRtcmCallback(RtcmPacket &packet)

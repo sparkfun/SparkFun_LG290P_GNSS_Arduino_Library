@@ -60,15 +60,12 @@ void setup()
   myGNSS.rtcmSubscribe(1005, MyRtmcCallback);
 
   Serial.println("Setting base station mode");
-  myGNSS.setModeBase();
+  myGNSS.setModeBase(false); // don't reset, because we're going to do it in setSurveyInMode()
 
   Serial.println("Setting 'Survey In' Mode");
   int secs = 60;
   Serial.printf("Give the device %d seconds to establish location.\r\n", secs);
   myGNSS.setSurveyInMode(secs);
-  myGNSS.save();
-  myGNSS.reset();
-  Serial.print("Waiting until device is back online... ");
   if (!myGNSS.isConnected())
   {
     Serial.println("reconnection failed; halting");

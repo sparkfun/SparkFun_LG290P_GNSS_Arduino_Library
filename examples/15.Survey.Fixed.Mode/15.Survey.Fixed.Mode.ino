@@ -57,13 +57,10 @@ void setup()
   myGNSS.rtcmSubscribe(1005, MyRtmcCallback);
 
   Serial.println("Setting base station mode");
-  myGNSS.setModeBase();
+  myGNSS.setModeBase(false); // don't reset, because we're going to do it in setSurveyFixedMode()
 
   Serial.println("Setting 'Survey' Mode fixed to top of Eiffel Tower");
   myGNSS.setSurveyFixedMode(4200944.016, 168364.025, 4780802.825);
-  myGNSS.save();
-  myGNSS.reset();
-  Serial.print("Waiting until device is back online... ");
   if (!myGNSS.isConnected())
   {
     Serial.println("reconnection failed; halting");

@@ -126,12 +126,11 @@ bool LG290P::begin(HardwareSerial &serialPort, Print *parserDebug, Print *parser
     }
 
     bool ok = isConnected();
-    ok = ok && setMessageRate("GGA", 1);
-    ok = ok && setMessageRate("RMC", 1);
-    ok = ok && setMessageRate("PQTMEPE", 1, 2);
-    ok = ok && setMessageRate("PQTMPVT", 1, 1);
-    ok = ok && setMessageRate("PQTMPL", 1, 1);
+    ok = ok && getMode(devState.mode);
+    ok = ok && scanForMsgsEnabled();
 
+    debugPrintf("Starting with %s mode, GGA %d RMC %d EPE %d PVT %d PL %d", 
+        devState.mode == 2 ? "BASE" : "ROVER", devState.ggaRate, devState.rmcRate, devState.epeRate, devState.pvtRate, devState.plRate);
     if (!ok)
     {
         sempStopParser(&_sempParse);
@@ -380,14 +379,20 @@ int LG290P::getRtcmCount(int packetType /* = -1 */)
     return sum;
 }
 
-bool LG290P::setModeBase()
+bool LG290P::setModeBase(bool resetAfter /* = true */)
 {
-    return sendOkCommand("PQTMCFGRCVRMODE", ",W,2");
+    bool ret = sendOkCommand("PQTMCFGRCVRMODE", ",W,2");
+    if (resetAfter)
+        ret = ret && save() && reset();
+    return ret;
 }
 
-bool LG290P::setModeRover()
+bool LG290P::setModeRover(bool resetAfter)
 {
-    return sendOkCommand("PQTMCFGRCVRMODE", ",W,1");
+    bool ret = sendOkCommand("PQTMCFGRCVRMODE", ",W,1");
+    if (resetAfter)
+        ret = ret && save() && reset();
+    return ret;
 }
 
 bool LG290P::getMode(int &mode)
@@ -519,14 +524,27 @@ bool LG290P::setFixInterval(uint16_t fixInterval)
 {
     char parms[50];
     snprintf(parms, sizeof parms, ",W,%d", fixInterval);
-    return sendOkCommand("PQTMCFGFIXRATE", parms);
+    return sendOkCommand("PQTMCFGFIXRATE", parms) && hotStart();
 }
 
 bool LG290P::setMessageRate(const char *msgName, int rate, int msgVer)
 {
     char parms[50];
     snprintf(parms, sizeof parms, msgVer == -1 ? ",W,%s,%d" : ",W,%s,%d,%d", msgName, rate, msgVer);
-    return sendOkCommand("PQTMCFGMSGRATE", parms);
+    bool ret = sendOkCommand("PQTMCFGMSGRATE", parms);
+
+    // We internally track whether certain important sentences are enabled
+    if (ret)
+    {
+        std::string str = msgName;
+        if (str == "GGA") devState.ggaRate = rate;
+        else if (str == "RMC") devState.rmcRate = rate;
+        else if (str == "PQTMPVT") devState.pvtRate = rate;
+        else if (str == "PQTMPL") devState.plRate = rate;
+        else if (str == "PQTMSVINSTATUS") devState.svinstatusRate = rate;
+        else if (str == "PQTMEPE") devState.epeRate = rate;
+    }
+    return ret;
 }
 
 bool LG290P::getMessageRate(const char *msgName, int &rate, int msgVer)
@@ -540,6 +558,22 @@ bool LG290P::getMessageRate(const char *msgName, int &rate, int msgVer)
         rate = atoi(packet[3].c_str());
     }
     return ret;
+}
+
+bool LG290P::scanForMsgsEnabled()
+{
+    bool ok = getMessageRate("GGA", devState.ggaRate);
+    ok = ok && getMessageRate("RMC", devState.rmcRate);
+    ok = ok && getMessageRate("PQTMEPE", devState.epeRate, 2);
+    ok = ok && getMessageRate("PQTMPVT", devState.pvtRate, 1);
+    ok = ok && getMessageRate("PQTMPL", devState.plRate, 1);
+    return ok;
+}
+
+void LG290P::ensureMsgEnabled(bool enabled, const char *msg, int msgVer /* = -1 */)
+{
+    if (!enabled)
+        setMessageRate(msg, 1, msgVer);
 }
 
 bool LG290P::nmeaSubscribe(const char *msgName, nmeaCallback callback)
@@ -590,24 +624,20 @@ bool LG290P::rtcmUnsubscribeAll()
     return true;
 }
 
-bool LG290P::reset()
+void LG290P::clearAll()
 {
-    return sendCommandNoResponse("PQTMSRR");
+    snapshot->clear();
+    satelliteReporting.clear();
+    nmeaCounters.clear();
+    rtcmCounters.clear();
 }
 
-bool LG290P::coldStart()
+bool LG290P::genericReset(const char *resetCmd)
 {
-    return sendCommandNoResponse("PQTMCOLD");
-}
+    clearAll();
 
-bool LG290P::warmStart()
-{
-    return sendCommandNoResponse("PQTMWARM");
-}
-
-bool LG290P::hotStart()
-{
-    return sendCommandNoResponse("PQTMHOT");
+    // Do a software reset, wait for reconnection, then rescan which messages are enabled
+    return sendCommandNoResponse(resetCmd) && isConnected() && scanForMsgsEnabled();
 }
 
 bool LG290P::setConstellations(bool enableGPS, bool enableGLONASS, bool enableGalileo, bool enableBDS,
@@ -616,11 +646,7 @@ bool LG290P::setConstellations(bool enableGPS, bool enableGLONASS, bool enableGa
     char parms[50];
     snprintf(parms, sizeof parms, ",W,%d,%d,%d,%d,%d,%d", enableGPS, enableGLONASS, 
         enableGalileo, enableBDS, enableQZSS, enableNavIC);
-    bool ret = sendOkCommand("PQTMCFGCNST", parms);
-
-    // Clear the reported satellites because removing a constellation might create orphans
-    if (ret) satelliteReporting.clear();
-    return ret;
+    return sendOkCommand("PQTMCFGCNST", parms) && save() && hotStart();
 }
 
 bool LG290P::disableEngine()
@@ -850,19 +876,24 @@ bool LG290P::getSurveyInMode(int &mode, int &positionTimes, double &accuracyLimi
     return ret;
 }
 
-bool LG290P::setSurveyInMode(int positionTimes, double accuracyLimit /* = 0 */)
+bool LG290P::setSurveyInMode(int positionTimes, double accuracyLimit /* = 0 */, bool resetAfter /* = true */)
 {
     char parms[50];
     snprintf(parms, sizeof parms, ",W,1,%d,%f,0.00,0.00,0.00", positionTimes, accuracyLimit);
-    return sendOkCommand("PQTMCFGSVIN", parms);
-    return true;
+    bool ok = sendOkCommand("PQTMCFGSVIN", parms);
+    if (resetAfter)
+        ok = ok && save() && reset();
+    return ok;
 }
 
-bool LG290P::setSurveyFixedMode(double ecefX, double ecefY, double ecefZ)
+bool LG290P::setSurveyFixedMode(double ecefX, double ecefY, double ecefZ, bool resetAfter /* = true */)
 {
     char parms[100];
     snprintf(parms, sizeof parms, ",W,2,0,0,%f,%f,%f", ecefX, ecefY, ecefZ);
-    return sendOkCommand("PQTMCFGSVIN", parms);
+    bool ok = sendOkCommand("PQTMCFGSVIN", parms);
+    if (resetAfter)
+        ok = ok && save() && reset();
+    return ok;
 }
 
 // Main handler and RAM inits
@@ -1145,6 +1176,7 @@ bool LG290P::isNewSatelliteInfoAvailable()
 
 double LG290P::getLatitude()
 {
+    ensurePvtEnabled();
     CHECK_POINTER_BOOL(snapshot, initSnapshot); // Check that RAM has been allocated
     return snapshot->latitude;
 }

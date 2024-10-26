@@ -83,10 +83,6 @@ void loop()
 
 void busyWait()
 {
-  // Delay 2 seconds to allow the message to be seen
-  for (unsigned long start = millis(); millis() - start < 1000 * 2; )
-    myGNSS.update();
-
   // For at least 10 seconds, but no more than 60, display lat/long until we have a fix
   for (unsigned long start = millis(); millis() - start < 1000 * 60; )
   {
