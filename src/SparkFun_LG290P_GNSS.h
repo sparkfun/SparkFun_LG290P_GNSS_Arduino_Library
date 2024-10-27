@@ -20,6 +20,7 @@
 #include <map>
 #include <list>
 #include <string>
+#include <set>
 
 typedef enum
 {
@@ -47,10 +48,12 @@ class LG290P
 {
     typedef void (*nmeaCallback)(NmeaPacket &nmea);
     typedef void (*rtcmCallback)(RtcmPacket &rtcm);
-    typedef struct { int elev, azimuth, prn, snr; char talker[3]; } satinfo;
-    typedef struct { int mode = -1, ggaRate = -1, rmcRate = -1, pvtRate = -1, plRate = -1, epeRate = -1, svinstatusRate = -1; } devstate;
-
-    devstate devState;
+    struct satinfo 
+    { 
+      int elev, azimuth, prn, snr; char talker[3]; 
+      bool operator<(const satinfo& other) const { return prn < other.prn; }
+    };
+    struct { int mode = -1, ggaRate = -1, rmcRate = -1, pvtRate = -1, plRate = -1, epeRate = -1, svinstatusRate = -1; } devState;
 
   public:
 
@@ -869,9 +872,11 @@ class LG290P
     void clearBuffer();
 
     // Satellite reporting
-    std::map<std::string /* talker id */, std::list<satinfo>> satelliteStaging;
-    std::map<std::string /* talker id */, std::list<satinfo>> satelliteReporting;
+    std::map<std::string /* talker id */, unsigned long /* millis */> satelliteUpdateTime;
+    std::map<std::string /* talker id */, std::set<satinfo>> satelliteStaging;    // Staging the GSV reports for each Talker
+    std::map<std::string /* talker id */, std::set<satinfo>> satelliteReporting;
     bool hasNewSatellites = false;
+    unsigned long lastSatUpdate = 0UL;
 };
 
 #endif //_SPARKFUN_LG290P_GNSS_ARDUINO_LIBRARY_H

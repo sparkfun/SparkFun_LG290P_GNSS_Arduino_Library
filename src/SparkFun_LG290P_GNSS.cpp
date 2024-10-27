@@ -856,7 +856,7 @@ std::list<LG290P::satinfo> LG290P::getVisibleSats(const char *talker /* = nullpt
     {
         auto item = satelliteReporting.find(talker);
         if (item != satelliteReporting.end())
-            ret = item->second;
+            ret.insert(ret.end(), item->second.begin(), item->second.end());
     }
     return ret;
 }
@@ -940,11 +940,18 @@ void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
                     uint16_t msgNo = (uint16_t)strtoul(nmea[2].c_str(), NULL, 10);
                     uint16_t svsInView = (uint16_t)strtoul(nmea[3].c_str(), NULL, 10);
                     std::string talker = nmea.TalkerId();
+                    unsigned long now = millis();
+                    auto &thisSet = satelliteStaging[talker];
 
-                    if (msgNo == 1)
+                    // should we publish the latest batch of satellites for this talker id?
+                    if (msgNo == 1 && now - satelliteUpdateTime[talker] > 900)
                     {
-                        satelliteStaging[talker].clear();
+                        hasNewSatellites = true;
+                        satelliteReporting[talker] = thisSet;
+                        thisSet.clear();
+                        satelliteUpdateTime[talker] = now;
                     }
+                    
                     // log_d("GSV: count: %d no: %d in view: %d", msgCount, msgNo, svsInView);
                     for (int i = 0; i < 4 && 4 * (msgNo - 1) + i < svsInView; ++i)
                     {
@@ -954,13 +961,7 @@ void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
                         sat.azimuth = (uint16_t)strtoul(nmea[6 + 4 * i].c_str(), NULL, 10);
                         sat.snr = (uint16_t)strtoul(nmea[7 + 4 * i].c_str(), NULL, 10);
                         strncpy(sat.talker, talker.substr(0, 2).c_str(), sizeof sat.talker);
-                        satelliteStaging[talker].push_back(sat);
-                    }
-                    
-                    if (msgNo == msgCount)
-                    {
-                        satelliteReporting[talker] = satelliteStaging[talker];
-                        hasNewSatellites = true;
+                        thisSet.insert(sat);
                     }
                 }
             }

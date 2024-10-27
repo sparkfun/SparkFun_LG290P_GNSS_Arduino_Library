@@ -60,12 +60,12 @@ struct NmeaSnapshot
 #endif
 };
 
-typedef struct
+struct RtcmSnapshot
 {
     double ecefX;
     double ecefY;
     double ecefZ;
-} RtcmSnapshot;
+};
 
 struct EpeDomain
 {
