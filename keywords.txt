@@ -112,6 +112,7 @@ getHour	KEYWORD2
 getMinute	KEYWORD2
 getSecond	KEYWORD2
 getMillisecond	KEYWORD2
+getLeapSeconds	KEYWORD2
 
 getEcefX    KEYWORD2
 getEcefY    KEYWORD2
