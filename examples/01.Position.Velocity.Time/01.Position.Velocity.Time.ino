@@ -71,16 +71,21 @@ void loop()
     static int linecount = 0;
     if (linecount++ % 20 == 0)
     {
+      // Every 20th line draw the helpful header
       char *headings[] = { "Date", "Time", "Latitude", "Longitude", "Altitude", "Speed", "North", "East", "Down", "Sat", "SIV", "Fix-Quality", "HDOP", "PDOP", "Leap", "Sep" };
       int widths[] = {      10,     8,      12,         13,          8,          7,       7,       7,      7,      3,     3,     11,            5,      5,     4,       7    };
       int items = sizeof widths / sizeof widths[0];
       Serial.println();
+
+      // Header
       for (int i=0; i<items; ++i)
       {
         char buf[10]; sprintf(buf, "%%-%ds ", widths[i]);
         Serial.printf(buf, headings[i]);
       }
       Serial.println();
+
+      // Dashes
       for (int i=0; i<items; ++i)
       {
         std::string dashes(widths[i], '-');
@@ -89,6 +94,7 @@ void loop()
       Serial.println();
     }
 
+    // Fix quality requires some special formatting
     char qualbuf[32];
     char *qualities[] = { "No-Fix", "3D-Fix", "DGPS-Fix", "GPS-PPS", "RTK-Fix", "RTK-Flt" };
     int qual = myGNSS.getFixQuality();

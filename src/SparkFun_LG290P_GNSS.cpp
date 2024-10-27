@@ -627,10 +627,11 @@ bool LG290P::rtcmUnsubscribeAll()
 void LG290P::clearAll()
 {
     snapshot.clear();
-    satelliteReporting.clear();
+    satelliteDomain.clear();
     nmeaCounters.clear();
     rtcmCounters.clear();
-    epe.clear();    
+    epeDomain.clear();
+    plDomain.clear();
 }
 
 bool LG290P::genericReset(const char *resetCmd)
@@ -849,13 +850,13 @@ std::list<LG290P::satinfo> LG290P::getVisibleSats(const char *talker /* = nullpt
     // Get all the satellites visible?
     if (talker == nullptr)
     {
-        for (auto &item : satelliteReporting)
+        for (auto &item : satelliteDomain)
             ret.insert(ret.end(), item.second.begin(), item.second.end());
     }
     else 
     {
-        auto item = satelliteReporting.find(talker);
-        if (item != satelliteReporting.end())
+        auto item = satelliteDomain.find(talker);
+        if (item != satelliteDomain.end())
             ret.insert(ret.end(), item->second.begin(), item->second.end());
     }
     return ret;
@@ -947,7 +948,7 @@ void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
                     if (msgNo == 1 && now - satelliteUpdateTime[talker] > 900)
                     {
                         hasNewSatellites = true;
-                        satelliteReporting[talker] = thisSet;
+                        satelliteDomain[talker] = thisSet;
                         thisSet.clear();
                         satelliteUpdateTime[talker] = now;
                     }
@@ -991,7 +992,7 @@ void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
         else if (id == "PQTMPVT")
         {   
             lastUpdateGeodetic = millis(); // Update stale marker
-            NmeaSnapshot &ss = ptrLG290P->snapshot;
+            PvtDomain &ss = ptrLG290P->snapshot;
             ss.timeOfWeek = atoi(nmea[2].c_str());
             uint32_t d = atoi(nmea[3].c_str());
             ss.year = d / 10000;
@@ -1029,16 +1030,23 @@ void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
         else if (id == "PQTMEPE")
         {
             // handle 5 components of Horizontal Position Accuracy
-            epe.errorNorth = atof(nmea[2].c_str());
-            epe.errorEast = atof(nmea[3].c_str());
-            epe.errorDown = atof(nmea[4].c_str());
-            epe.error2D = atof(nmea[5].c_str());
-            epe.error3D = atof(nmea[6].c_str());
+            epeDomain.errorNorth = atof(nmea[2].c_str());
+            epeDomain.errorEast = atof(nmea[3].c_str());
+            epeDomain.errorDown = atof(nmea[4].c_str());
+            epeDomain.error2D = atof(nmea[5].c_str());
+            epeDomain.error3D = atof(nmea[6].c_str());
         }
 
         else if (id == "PQTMPL")
         {
-            // todo
+            plDomain.probUncertainty = atof(nmea[3].c_str());
+            plDomain.protectionLevelNorth = atof(nmea[6].c_str());
+            plDomain.protectionLevelEast = atof(nmea[7].c_str());
+            plDomain.protectionLevelDown = atof(nmea[8].c_str());
+            plDomain.protectionLevelNorthVelocity = atof(nmea[9].c_str());
+            plDomain.protectionLevelEastVelocity = atof(nmea[10].c_str());
+            plDomain.protectionLevelDownVelocity = atof(nmea[11].c_str());
+            plDomain.protectionLevelTime = atof(nmea[14].c_str());
         }
 
 #if false
@@ -1124,9 +1132,9 @@ void LG290P::rtcmHandler(SEMP_PARSE_STATE *parse)
 
         if (packet.type == 1005)
         {
-            rtcmSnapshot.ecefX = packet.extract_38bit_signed(34) / 10000.0;
-            rtcmSnapshot.ecefY = packet.extract_38bit_signed(74) / 10000.0;
-            rtcmSnapshot.ecefZ = packet.extract_38bit_signed(114) / 10000.0;
+            rtcmDomain.ecefX = packet.extract_38bit_signed(34) / 10000.0;
+            rtcmDomain.ecefY = packet.extract_38bit_signed(74) / 10000.0;
+            rtcmDomain.ecefZ = packet.extract_38bit_signed(114) / 10000.0;
             lastUpdateEcef = millis();
         }
 
@@ -1182,23 +1190,23 @@ double LG290P::getHorizontalSpeed()
 
 double LG290P::getEcefX()
 {
-    return rtcmSnapshot.ecefX;
+    return rtcmDomain.ecefX;
 }
 
 double LG290P::getEcefY()
 {
-    return rtcmSnapshot.ecefY;
+    return rtcmDomain.ecefY;
 }
 
 double LG290P::getEcefZ()
 {
-    return rtcmSnapshot.ecefZ;
+    return rtcmDomain.ecefZ;
 }
 
 uint16_t LG290P::getSatellitesInViewCount()
 {
     uint16_t count = 0;
-    for (auto &item : satelliteReporting)
+    for (auto &item : satelliteDomain)
         count += item.second.size();
     return count;
 }
@@ -1215,9 +1223,11 @@ uint16_t LG290P::getSatellitesUsedCount()
 // 3 = GPS PPS Mode, fix valid.
 // 4 = Real Time Kinematic (RTK) System used in RTK mode with fixed integers.
 // 5 = Float RTK. Satellite system used in RTK mode, floating integers.
+// Note: this function is unique in using the "quality" field from GGA rathern then PQTMPVT.
+// PQTMPVT has a more limited response: only 0-3.
 uint8_t LG290P::getFixQuality()
 {
-    ensurePvtEnabled();
+    ensureGgaEnabled();
     return snapshot.quality - '0'; // Convert ASCII to uint8_t
 }
 
@@ -1379,7 +1389,7 @@ std::string NmeaPacket::SentenceId() const
     return fields[0].substr(0, 2) == "$G" ? fields[0].substr(3) : fields[0].substr(1);
 }
 
-void NmeaPacket::processGGA(NmeaSnapshot &snapshot)
+void NmeaPacket::processGGA(PvtDomain &snapshot)
 {
     if (fields.size() >= 10)
     {
@@ -1393,7 +1403,7 @@ void NmeaPacket::processGGA(NmeaSnapshot &snapshot)
     }
 }
 
-void NmeaPacket::processRMC(NmeaSnapshot &snapshot)
+void NmeaPacket::processRMC(PvtDomain &snapshot)
 {
     if (fields.size() >= 10)
     {

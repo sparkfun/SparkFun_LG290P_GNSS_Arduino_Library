@@ -14,8 +14,10 @@ This library provides an interface for controlling and configuring an LG290P GNS
   - [Command Handling](#command-handling)
   - [Satellite Information](#satellite-information)
   - [Survey Mode](#survey-mode)
-  - [Geodetic Reporting](#geodetic-reporting)
-  - [Date and Time Information](#date-and-time-information)
+  - [PVT Domain Reporting](#pvt-domain-reporting)
+  - [Date and Time Information (PVT)](#date-and-time-information-pvt)
+  - [EPE Error Domain](#epe-error-domain)
+  - [PL Protection Level Domain](#pl-protection-level-domain)
 
 ## Handshaking and Client Interface
 
@@ -239,7 +241,7 @@ This library provides an interface for controlling and configuring an LG290P GNS
 - **`bool setSurveyFixedMode(double ecefX, double ecefY, double ecefZ);`**  
   Sets the device to Fixed survey mode using ECEF coordinates.
 
-## Geodetic Reporting
+## PVT Domain Reporting
 
 - **`bool isNewSnapshotAvailable();`**  
   Checks if new geodetic snapshot data (location, time, date, fix, etc.) is available.
@@ -283,7 +285,7 @@ This library provides an interface for controlling and configuring an LG290P GNS
 - **`double getDownVelocity();`**
   Retrieves the Down velocity in meters per second
 
-## Date and Time Information
+## Date and Time Information (PVT)
 
 - **`uint16_t getYear();`**  
   Retrieves the current year.
@@ -311,3 +313,46 @@ This library provides an interface for controlling and configuring an LG290P GNS
 
 - **`uint32_t getEcefAgeMs();`**  
   Retrieves the age of the last RTCM 1005 report in milliseconds.
+
+## EPE Error Domain
+
+- **`double getNorthError();`**  
+  Returns the Estimated North Positioning Error in meters.
+
+- **`double getEastError();`**  
+  Returns the Estimated East Positioning Error in meters.
+
+- **`double getDownError();`**  
+  Returns the Estimated Down Positioning Error in meters.
+
+- **`double get2DError();`**  
+  Returns the Estimated 2D Positioning Error in meters.
+
+- **`double get3DError();`**  
+  Returns the Estimated 3D Positioning Error in meters.
+
+## PL Protection Level Domain
+
+- **`double getProbUncertainty();`**  
+  Returns the Probability of Uncertainty Level per Epoch from PQTMPL in %.
+
+- **`double getProtLevelNorth();`**  
+  Returns the Protection Level of North Position from PQTMPL in mm.
+
+- **`double getProtLevelEast();`**  
+  Returns the Protection Level of East Position from PQTMPL in mm.
+
+- **`double getProtLevelDown();`**  
+  Returns the Protection Level of Down Position from PQTMPL in mm.
+
+- **`double getProtLevelNorthVelocity();`**  
+  Returns the Protection Level of North Velocity from PQTMPL in mm/s.
+
+- **`double getProtLevelEastVelocity();`**  
+  Returns the Protection Level of East Velocity from PQTMPL in mm/s.
+
+- **`double getProtLevelDownVelocity();`**  
+  Returns the Protection Level of Down Velocity from PQTMPL in mm/s.
+
+- **`double getProtLevelTime();`**  
+  Returns the Protection Level of Time from PQTMPL in ns.

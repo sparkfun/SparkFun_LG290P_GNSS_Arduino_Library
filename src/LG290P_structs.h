@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-struct NmeaSnapshot
+struct PvtDomain
 {
     bool newDataAvailable = false;
 
@@ -33,7 +33,7 @@ struct NmeaSnapshot
     double groundSpeed = 0;
     double heading = 0;
 
-    void clear() { *this = NmeaSnapshot(); } // TODO
+    void clear() { *this = PvtDomain(); }
 
 #if false
     uint8_t timeStatus = 3; // 0 = valid, 3 = invalid
@@ -60,11 +60,12 @@ struct NmeaSnapshot
 #endif
 };
 
-struct RtcmSnapshot
+struct RtcmDomain
 {
     double ecefX;
     double ecefY;
     double ecefZ;
+    void clear() { *this = RtcmDomain(); }
 };
 
 struct EpeDomain
@@ -77,6 +78,19 @@ struct EpeDomain
     void clear() { *this = EpeDomain(); }
 };
 
+struct PlDomain
+{
+    double probUncertainty = 0;
+    double protectionLevelNorth = 0;
+    double protectionLevelEast = 0;
+    double protectionLevelDown = 0;
+    double protectionLevelNorthVelocity = 0;
+    double protectionLevelEastVelocity = 0;
+    double protectionLevelDownVelocity = 0;
+    double protectionLevelTime = 0;
+    void clear() { *this = PlDomain(); }
+};
+
 class NmeaPacket
 {
     friend class LG290P;
@@ -87,15 +101,15 @@ class NmeaPacket
 
     /** 
      * @brief Processes a GGA sentence and updates the snapshot.
-     * @param snapshot Pointer to the NmeaSnapshot to be updated.
+     * @param snapshot Reference to the NmeaSnapshot to be updated.
      */
-    void processGGA(NmeaSnapshot &snapshot);
+    void processGGA(PvtDomain &snapshot);
 
     /** 
      * @brief Processes an RMC sentence and updates the snapshot.
-     * @param snapshot Pointer to the NmeaSnapshot to be updated.
+     * @param snapshot Reference to the NmeaSnapshot to be updated.
      */
-    void processRMC(NmeaSnapshot &snapshot);
+    void processRMC(PvtDomain &snapshot);
 
     /** 
      * @brief Parses a time string and extracts hour, minute, second, and nanoseconds.

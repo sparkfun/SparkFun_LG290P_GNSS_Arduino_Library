@@ -770,11 +770,83 @@ class LG290P
      */
     double getEcefZ();
 
-    double getNorthError() { ensureEpeEnabled(); return epe.errorNorth; }
-    double getEastError() { ensureEpeEnabled(); return epe.errorEast; }
-    double getDownError() { ensureEpeEnabled(); return epe.errorDown; }
-    double get2DError() { ensureEpeEnabled(); return epe.error2D; }
-    double get3DError() { ensureEpeEnabled(); return epe.error3D; }
+    /**
+     * @brief Returns the Estimated North Positioning Error
+     * @return Error in meters
+     */
+    double getNorthError() { ensureEpeEnabled(); return epeDomain.errorNorth; }
+
+    /**
+     * @brief Returns the Estimated East Positioning Error
+     * @return Error in meters
+     */
+    double getEastError() { ensureEpeEnabled(); return epeDomain.errorEast; }
+
+    /**
+     * @brief Returns the Estimated Down Positioning Error
+     * @return Error in meters
+     */
+    double getDownError() { ensureEpeEnabled(); return epeDomain.errorDown; }
+
+    /**
+     * @brief Returns the Estimated 2D Positioning Error
+     * @return Error in meters
+     */
+    double get2DError() { ensureEpeEnabled(); return epeDomain.error2D; }
+
+    /**
+     * @brief Returns the Estimated 3D Positioning Error
+     * @return Error in meters
+     */
+    double get3DError() { ensureEpeEnabled(); return epeDomain.error3D; }
+
+    /**
+     * @brief Returns the Probability of Uncertainty Level per Epoch from PQTMPL
+     * @return Probability in %
+     */
+    double getProbUncertainty() { ensurePlEnabled(); return plDomain.probUncertainty; }
+
+    /**
+     * @brief Returns the Protection Level of North Position from PQTMPL
+     * @return mm
+     */
+    double getProtLevelNorth() { ensurePlEnabled(); return plDomain.protectionLevelNorth; }
+
+    /**
+     * @brief Returns the Protection Level of East Position from PQTMPL
+     * @return mm
+     */
+    double getProtLevelEast() { ensurePlEnabled(); return plDomain.protectionLevelEast; }
+
+    /**
+     * @brief Returns the Protection Level of Down Position from PQTMPL
+     * @return mm
+     */
+    double getProtLevelDown() { ensurePlEnabled(); return plDomain.protectionLevelDown; }
+
+    /**
+     * @brief Returns the Protection Level of North Velocity from PQTMPL
+     * @return mm/s
+     */
+    double getProtLevelNorthVelocity() { ensurePlEnabled(); return plDomain.protectionLevelNorthVelocity; }
+
+    /**
+     * @brief Returns the Protection Level of East Velocity from PQTMPL
+     * @return mm/s
+     */
+    double getProtLevelEastVelocity() { ensurePlEnabled(); return plDomain.protectionLevelEastVelocity; }
+
+    /**
+     * @brief Returns the Protection Level of Down Velocity from PQTMPL
+     * @return mm/s
+     */
+    double getProtLevelDownVelocity() { ensurePlEnabled(); return plDomain.protectionLevelDownVelocity; }
+
+    /**
+     * @brief Returns the Protection Level of Time from PQTMPL
+     * @return ns
+     */
+    double getProtLevelTime() { ensurePlEnabled(); return plDomain.protectionLevelTime; }
 
   #if false // TODO
 
@@ -859,10 +931,10 @@ class LG290P
     void nmeaHandler(SEMP_PARSE_STATE *parse);
     void rtcmHandler(SEMP_PARSE_STATE *parse);
     HardwareSerial *_hwSerialPort = nullptr;
-    NmeaSnapshot snapshot;
-    RtcmSnapshot rtcmSnapshot;
-    EpeDomain epe;
-    bool initSnapshot();
+    PvtDomain snapshot;
+    RtcmDomain rtcmDomain;
+    EpeDomain epeDomain;
+    PlDomain plDomain;
     bool updateOnce();
 
     // Serial port utilities
@@ -874,7 +946,7 @@ class LG290P
     // Satellite reporting
     std::map<std::string /* talker id */, unsigned long /* millis */> satelliteUpdateTime;
     std::map<std::string /* talker id */, std::set<satinfo>> satelliteStaging;    // Staging the GSV reports for each Talker
-    std::map<std::string /* talker id */, std::set<satinfo>> satelliteReporting;
+    std::map<std::string /* talker id */, std::set<satinfo>> satelliteDomain;
     bool hasNewSatellites = false;
     unsigned long lastSatUpdate = 0UL;
 };
