@@ -98,6 +98,12 @@ getAltitude	KEYWORD2
 getHorizontalSpeed	KEYWORD2
 getFixStatus	KEYWORD2
 getFixQuality	KEYWORD2
+getHdop	KEYWORD2
+getPdop	KEYWORD2
+getGeoidalSeparation	KEYWORD2
+getNorthVelocity	KEYWORD2
+getEastVelocity	KEYWORD2
+getDownVelocity	KEYWORD2
 
 getYear	KEYWORD2
 getMonth	KEYWORD2

@@ -60,20 +60,20 @@ void loop()
 {
   busyWait(10);
   Serial.println();
-  Serial.println("*** Enable and subscribe to PVT and ODO sentences ***");
-  myGNSS.nmeaSubscribe("PQTMPVT", MyPqtmCallback);
-  myGNSS.setMessageRate("PQTMPVT", 1, 1);
+  Serial.println("*** Enable and subscribe to PL and ODO sentences ***");
+  myGNSS.nmeaSubscribe("PQTMPL", MyPqtmCallback);
+  myGNSS.setMessageRate("PQTMPL", 1, 1);
   myGNSS.nmeaSubscribe("PQTMODO", MyPqtmCallback);
   myGNSS.setMessageRate("PQTMODO", 1, 1);
   busyWait(10);
   Serial.println();
-  Serial.println("*** Disable PVT and ODO sentences but continue subscribing ***");
-  myGNSS.setMessageRate("PQTMPVT", 0, 1);
+  Serial.println("*** Disable PL and ODO sentences but continue subscribing ***");
+  myGNSS.setMessageRate("PQTMPL", 0, 1);
   myGNSS.setMessageRate("PQTMODO", 0, 1);
   busyWait(10);
   Serial.println();
-  Serial.println("*** Unsubscribe from PVT and ODO sentences too ***");
-  myGNSS.nmeaUnsubscribe("PQTMPVT");
+  Serial.println("*** Unsubscribe from PL and ODO sentences too ***");
+  myGNSS.nmeaUnsubscribe("PQTMPL");
   myGNSS.nmeaUnsubscribe("PQTMODO");
 }
 

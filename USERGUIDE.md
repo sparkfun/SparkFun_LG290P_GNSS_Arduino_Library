@@ -259,8 +259,29 @@ This library provides an interface for controlling and configuring an LG290P GNS
 - **`uint8_t getfixQuality();`**  
   Retrieves the fix quality (a number 0+)
 
-- **`char getfixStatus();`**  
+- **`char getfixStatus();`**
   Retrieves the fix status from RMC ('V' = void, 'A' = available)
+
+- **`char getHdop();`**
+  Retrieves HDOP
+
+- **`char getPdop();`**
+  Retrieves PDOP
+
+- **`uint32_t getTimeOfWeek();`**
+  Retrieves the number of milliseconds since Sunday midnight UTC
+
+- **`double getGeoidalSeparation();`**
+  Retrieves the Geoidal Separation in meters
+
+- **`double getNorthVelocity();`**
+  Retrieves the North velocity in meters per second
+
+- **`double getEastVelocity();`**
+  Retrieves the East velocity in meters per second
+
+- **`double getDownVelocity();`**
+  Retrieves the Down velocity in meters per second
 
 ## Date and Time Information
 

@@ -683,6 +683,12 @@ class LG290P
      */
     uint16_t getMillisecond();
 
+    /** 
+     * @brief Gets the leap second.
+     * @return Leap second as a 16-bit unsigned integer.
+     */
+    uint16_t getLeapSecond();
+
     /**
      * @brief Gets course/heading in degrees
      * @return Course/heading in degrees
@@ -694,7 +700,43 @@ class LG290P
      * @return HDOP
      */
     double getHdop();
+
+    /**
+     * @brief Gets Position Dilution of Precision
+     * @return PDOP
+     */
+    double getPdop();
+
+    /**
+     * @brief Gets time of week
+     * @return Milliseconds since the beginning of the week.
+     */
+    uint32_t getTimeOfWeek() { ensurePvtEnabled(); return snapshot.timeOfWeek; }
   
+    /**
+     * @brief Gets geoidal separation (the difference between the WGS84 earth ellipsoid surface and the mean-sea-level surface).
+     * @return Geoidal separation in meters.
+     */
+    double getGeoidalSeparation() { ensurePvtEnabled(); return snapshot.geoidalSeparation; }
+
+    /**
+     * @brief Gets North velocity
+     * @return North velocity in meters per second
+     */
+    double getNorthVelocity() { ensurePvtEnabled(); return snapshot.nvelocity; }
+
+    /**
+     * @brief Gets East velocity
+     * @return East velocity in meters per second
+     */
+    double getEastVelocity() { ensurePvtEnabled(); return snapshot.evelocity; }
+
+    /**
+     * @brief Gets Down velocity
+     * @return Down velocity in meters per second
+     */
+    double getDownVelocity() { ensurePvtEnabled(); return snapshot.dvelocity; }
+
     /** 
      * @brief Gets the age of the latest NMEA geodetic report in milliseconds.
      * @return Number of milliseconds since the last report (GGA or RMC)

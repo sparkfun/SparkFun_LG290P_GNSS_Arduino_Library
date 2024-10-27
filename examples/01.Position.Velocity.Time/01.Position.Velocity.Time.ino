@@ -56,6 +56,8 @@ void setup()
     while (true);
   }
   Serial.println("LG290P detected!");
+  myGNSS.setMessageRate("GGA", 0);
+  myGNSS.setFixInterval(1000);
 }
 
 void loop()
@@ -69,39 +71,42 @@ void loop()
     // The 'get' methods are updated whenever new data is parsed with the update() call.
     // By default, this data is updated once per second.
     Serial.printf("Lat/Long/Alt: %.8f/%.8f/%.2f\r\n", myGNSS.getLatitude(), myGNSS.getLongitude(), myGNSS.getAltitude());
-    Serial.printf("Horizontal Speed: %.2fm/s Course: %.2f degrees\r\n",
+    Serial.printf("Horizontal Speed: %.2f m/s  Course: %.2f degrees\r\n",
                   myGNSS.getHorizontalSpeed(), myGNSS.getCourse());
-    Serial.printf("Date (yyyy/mm/dd): %04d/%02d/%02d Time (hh:mm:ss) %02d:%02d:%02d.%03d\r\n",
+    Serial.printf("Date (yyyy/mm/dd): %04d/%02d/%02d Time (hh:mm:ss) %02d:%02d:%02d.%03d Leap Seconds: %d\r\n",
                   myGNSS.getYear(), myGNSS.getMonth(), myGNSS.getDay(),
-                  myGNSS.getHour(), myGNSS.getMinute(), myGNSS.getSecond(), myGNSS.getMillisecond());
+                  myGNSS.getHour(), myGNSS.getMinute(), myGNSS.getSecond(), myGNSS.getMillisecond(),
+                  myGNSS.getLeapSecond());
     Serial.printf("Satellites in view: %d\r\n", myGNSS.getSatellitesInViewCount());
     Serial.printf("Fix quality: %d - ", myGNSS.getFixQuality());
     switch (myGNSS.getFixQuality())
     {
       default:
-        Serial.print("Unknown");
+        Serial.println("Unknown");
         break;
       case 0:
-        Serial.print("No fix");
+        Serial.println("No fix");
         break;
       case 1:
-        Serial.print("3D Fix");
+        Serial.println("3D Fix");
         break;
       case 2:
-        Serial.print("DGPS Fix");
+        Serial.println("DGPS Fix");
         break;
       case 3:
-        Serial.print("GPS PPS Mode, fix valid");
+        Serial.println("GPS PPS Mode, fix valid");
         break;
       case 4:
-        Serial.print("RTK Fix");
+        Serial.println("RTK Fix");
         break;
       case 5:
-        Serial.print("RTK Float");
+        Serial.println("RTK Float");
         break;
     }
-    Serial.println();
-
+    Serial.printf("HDOP: %.2f  PDOP: %.2f\r\n", myGNSS.getHdop(), myGNSS.getPdop());
+    Serial.printf("Time of Week: %lu\r\n", myGNSS.getTimeOfWeek());
+    Serial.printf("Geoidal Separation: %.2f\r\n", myGNSS.getGeoidalSeparation());
+    Serial.printf("Velocity (N/E/D): (%.2f,%.2f,%.2f)\r\n", myGNSS.getNorthVelocity(), myGNSS.getEastVelocity(), myGNSS.getDownVelocity());
     Serial.println();
   }
 }

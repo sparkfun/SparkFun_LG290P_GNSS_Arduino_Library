@@ -927,13 +927,13 @@ void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
                     nmea.processRMC(ptrLG290P->snapshot);
                 }
                 
-                if (id == "GGA")
+                else if (id == "GGA")
                 {
                     lastUpdateGeodetic = millis(); // Update stale marker
                     nmea.processGGA(ptrLG290P->snapshot);
                 }
 
-                if (id == "GSV")
+                else if (id == "GSV")
                 {
                     uint16_t msgCount = (uint16_t)strtoul(nmea[1].c_str(), NULL, 10);
                     uint16_t msgNo = (uint16_t)strtoul(nmea[2].c_str(), NULL, 10);
@@ -987,20 +987,32 @@ void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
         }
 
         else if (id == "PQTMPVT")
-        {
-            // YYYYMMDD [3]
-            // hhmmss.sss [4]
-            // leap seconds [8]
-            // lat [9]
-            // lon [10]
-            // alt [11]
-            // nvelocity [13]
-            // evelocity [14]
-            // dvelocity [15]
-            // speed [16]
-            // heading [17]
-            // HDOP [18]
-            // PDOP [19]
+        {   
+            lastUpdateGeodetic = millis(); // Update stale marker
+            NmeaSnapshot &ss = ptrLG290P->snapshot;
+            ss.timeOfWeek = atoi(nmea[2].c_str());
+            uint32_t d = atoi(nmea[3].c_str());
+            ss.year = d / 10000;
+            ss.month = (d / 100) % 100;
+            ss.day = d % 100;
+            NmeaPacket::parseTime(nmea[4], ss.hour, ss.minute, ss.second, ss.nanosecond);
+            // 5 is reserved
+            // 6 is fix type -- maybe don't use because more limited than GGA
+            ss.quality = nmea[6].empty() ? '0' : nmea[6][0];
+            ss.satellitesUsed = atoi(nmea[7].c_str());
+            ss.leapSeconds = atoi(nmea[8].c_str());
+            ss.latitude = atof(nmea[9].c_str());
+            ss.longitude = atof(nmea[10].c_str());
+            ss.altitude = atof(nmea[11].c_str());
+            ss.geoidalSeparation = atof(nmea[12].c_str());
+            ss.nvelocity = atof(nmea[13].c_str());
+            ss.evelocity = atof(nmea[14].c_str());
+            ss.dvelocity = atof(nmea[15].c_str());
+            ss.groundSpeed = atof(nmea[16].c_str());
+            ss.course = atof(nmea[17].c_str());
+            ss.hdop = atof(nmea[18].c_str());
+            ss.pdop = atof(nmea[19].c_str());
+            snapshot.newDataAvailable = true;
         }
 
         else if (id == "PQTMSVNSTATUS")
@@ -1163,7 +1175,7 @@ double LG290P::getAltitude()
 double LG290P::getHorizontalSpeed()
 {
     ensurePvtEnabled();
-    return snapshot.horizontalSpeed;
+    return snapshot.groundSpeed;
 }
 
 double LG290P::getEcefX()
@@ -1206,7 +1218,6 @@ uint8_t LG290P::getFixQuality()
     ensurePvtEnabled();
     return snapshot.quality - '0'; // Convert ASCII to uint8_t
 }
-
 
 // 'V' = Fix not available or invalid (void).
 // 'A' = Fix available
@@ -1264,6 +1275,12 @@ uint16_t LG290P::getMillisecond()
     return (uint16_t)(snapshot.nanosecond / 1000000);
 }
 
+uint16_t LG290P::getLeapSecond()
+{
+    ensurePvtEnabled();
+    return snapshot.leapSeconds;
+}
+
 double LG290P::getCourse()
 {
     ensurePvtEnabled();
@@ -1274,6 +1291,12 @@ double LG290P::getHdop()
 {
     ensurePvtEnabled();
     return snapshot.hdop;
+}
+
+double LG290P::getPdop()
+{
+    ensurePvtEnabled();
+    return snapshot.pdop;
 }
 
 NmeaPacket NmeaPacket::FromString(const std::string &str)
@@ -1375,7 +1398,7 @@ void NmeaPacket::processRMC(NmeaSnapshot &snapshot)
         NmeaPacket::parseTime(fields[1], snapshot.hour, snapshot.minute, snapshot.second, snapshot.nanosecond);
         NmeaPacket::parseFixStatus(fields[2], snapshot.fixStatus);
         NmeaPacket::parseLocation(fields[3], fields[4], fields[5], fields[6], snapshot.latitude, snapshot.longitude);
-        NmeaPacket::parseSpeed(fields[7].c_str(), snapshot.horizontalSpeed);
+        NmeaPacket::parseSpeed(fields[7].c_str(), snapshot.groundSpeed);
         NmeaPacket::parseCourse(fields[8].c_str(), snapshot.course);
         NmeaPacket::parseDate(fields[9], snapshot.year, snapshot.month, snapshot.day);
         snapshot.newDataAvailable = true;

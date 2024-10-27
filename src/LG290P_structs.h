@@ -15,7 +15,7 @@ struct NmeaSnapshot
     uint8_t minute = 0;
     uint8_t second = 0;
     uint32_t nanosecond = 0;
-    uint8_t leapSecond;
+    uint8_t leapSeconds;
 
     uint16_t year = 0;
     uint8_t month = 0;
@@ -25,11 +25,13 @@ struct NmeaSnapshot
     char quality = '0';
     char fixStatus = 'N';
     double hdop = 0;
-    double horizontalSpeed = 0;
+    double pdop = 0;
     double course = 0;
     uint32_t timeOfWeek = 0;
-
-    uint32_t geodalSeparation = 0;
+    double geoidalSeparation = 0;
+    double nvelocity = 0, evelocity = 0, dvelocity = 0;
+    double groundSpeed = 0;
+    double heading = 0;
 
     void clear() {} // TODO
 
