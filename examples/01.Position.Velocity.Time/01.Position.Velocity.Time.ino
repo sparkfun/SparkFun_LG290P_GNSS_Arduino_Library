@@ -56,7 +56,7 @@ void setup()
     while (true);
   }
   Serial.println("LG290P detected!");
-  myGNSS.setMessageRate("GGA", 0);
+  myGNSS.setMessageRate("GGA", 1);
   myGNSS.setFixInterval(1000);
 }
 
@@ -68,45 +68,38 @@ void loop()
   {
     lastCheck = millis();
 
-    // The 'get' methods are updated whenever new data is parsed with the update() call.
-    // By default, this data is updated once per second.
-    Serial.printf("Lat/Long/Alt: %.8f/%.8f/%.2f\r\n", myGNSS.getLatitude(), myGNSS.getLongitude(), myGNSS.getAltitude());
-    Serial.printf("Horizontal Speed: %.2f m/s  Course: %.2f degrees\r\n",
-                  myGNSS.getHorizontalSpeed(), myGNSS.getCourse());
-    Serial.printf("Date (yyyy/mm/dd): %04d/%02d/%02d Time (hh:mm:ss) %02d:%02d:%02d.%03d Leap Seconds: %d\r\n",
-                  myGNSS.getYear(), myGNSS.getMonth(), myGNSS.getDay(),
-                  myGNSS.getHour(), myGNSS.getMinute(), myGNSS.getSecond(), myGNSS.getMillisecond(),
-                  myGNSS.getLeapSecond());
-    Serial.printf("Satellites in view: %d\r\n", myGNSS.getSatellitesInViewCount());
-    Serial.printf("Fix quality: %d - ", myGNSS.getFixQuality());
-    switch (myGNSS.getFixQuality())
+    static int linecount = 0;
+    if (linecount++ % 20 == 0)
     {
-      default:
-        Serial.println("Unknown");
-        break;
-      case 0:
-        Serial.println("No fix");
-        break;
-      case 1:
-        Serial.println("3D Fix");
-        break;
-      case 2:
-        Serial.println("DGPS Fix");
-        break;
-      case 3:
-        Serial.println("GPS PPS Mode, fix valid");
-        break;
-      case 4:
-        Serial.println("RTK Fix");
-        break;
-      case 5:
-        Serial.println("RTK Float");
-        break;
+      char *headings[] = { "Date", "Time", "Latitude", "Longitude", "Altitude", "Speed", "North", "East", "Down", "Sat", "SIV", "Fix-Quality", "HDOP", "PDOP", "Leap", "Sep" };
+      int widths[] = {      10,     8,      12,         13,          8,          7,       7,       7,      7,      3,     3,     11,            5,      5,     4,       7    };
+      int items = sizeof widths / sizeof widths[0];
+      Serial.println();
+      for (int i=0; i<items; ++i)
+      {
+        char buf[10]; sprintf(buf, "%%-%ds ", widths[i]);
+        Serial.printf(buf, headings[i]);
+      }
+      Serial.println();
+      for (int i=0; i<items; ++i)
+      {
+        std::string dashes(widths[i], '-');
+        Serial.printf("%s%s", dashes.c_str(), i == items - 1 ? "" : "-");
+      }
+      Serial.println();
     }
-    Serial.printf("HDOP: %.2f  PDOP: %.2f\r\n", myGNSS.getHdop(), myGNSS.getPdop());
-    Serial.printf("Time of Week: %lu\r\n", myGNSS.getTimeOfWeek());
-    Serial.printf("Geoidal Separation: %.2f\r\n", myGNSS.getGeoidalSeparation());
-    Serial.printf("Velocity (N/E/D): (%.2f,%.2f,%.2f)\r\n", myGNSS.getNorthVelocity(), myGNSS.getEastVelocity(), myGNSS.getDownVelocity());
-    Serial.println();
+
+    char qualbuf[32];
+    char *qualities[] = { "No-Fix", "3D-Fix", "DGPS-Fix", "GPS-PPS", "RTK-Fix", "RTK-Flt" };
+    int qual = myGNSS.getFixQuality();
+    snprintf(qualbuf, sizeof qualbuf, "%s(%d)", (qual >= 0 && qual <= 5) ? qualities[qual] : "Unknown", qual);
+
+    Serial.printf("%02d/%02d/%04d %02d:%02d:%02d %-12.8f %-13.8f %-8.2f %-7.2f %-7.2f %-7.2f %-7.2f %-3d %-3d %-11s %-5.2f %-5.2f %-4d %-7.2f\r\n",
+      myGNSS.getDay(), myGNSS.getMonth(), myGNSS.getYear(),
+      myGNSS.getHour(), myGNSS.getMinute(), myGNSS.getSecond(),
+      myGNSS.getLatitude(), myGNSS.getLongitude(),
+      myGNSS.getAltitude(), myGNSS.getHorizontalSpeed(), myGNSS.getNorthVelocity(), myGNSS.getEastVelocity(), myGNSS.getDownVelocity(),
+      myGNSS.getSatellitesUsedCount(), myGNSS.getSatellitesInViewCount(), qualbuf, myGNSS.getHdop(), myGNSS.getPdop(),
+      myGNSS.getLeapSeconds(), myGNSS.getGeoidalSeparation());
   }
 }

@@ -997,8 +997,8 @@ void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
             ss.day = d % 100;
             NmeaPacket::parseTime(nmea[4], ss.hour, ss.minute, ss.second, ss.nanosecond);
             // 5 is reserved
-            // 6 is fix type -- maybe don't use because more limited than GGA
-            ss.quality = nmea[6].empty() ? '0' : nmea[6][0];
+            // 6 is fix type -- maybe don't use because more limited than GGA?
+            // ss.quality = nmea[6].empty() ? '0' : nmea[6][0];
             ss.satellitesUsed = atoi(nmea[7].c_str());
             ss.leapSeconds = atoi(nmea[8].c_str());
             ss.latitude = atof(nmea[9].c_str());
@@ -1275,7 +1275,7 @@ uint16_t LG290P::getMillisecond()
     return (uint16_t)(snapshot.nanosecond / 1000000);
 }
 
-uint16_t LG290P::getLeapSecond()
+uint16_t LG290P::getLeapSeconds()
 {
     ensurePvtEnabled();
     return snapshot.leapSeconds;

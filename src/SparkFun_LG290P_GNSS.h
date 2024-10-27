@@ -687,7 +687,7 @@ class LG290P
      * @brief Gets the leap second.
      * @return Leap second as a 16-bit unsigned integer.
      */
-    uint16_t getLeapSecond();
+    uint16_t getLeapSeconds();
 
     /**
      * @brief Gets course/heading in degrees
