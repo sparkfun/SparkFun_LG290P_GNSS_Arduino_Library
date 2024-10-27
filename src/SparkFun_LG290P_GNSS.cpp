@@ -630,6 +630,7 @@ void LG290P::clearAll()
     satelliteReporting.clear();
     nmeaCounters.clear();
     rtcmCounters.clear();
+    epe.clear();    
 }
 
 bool LG290P::genericReset(const char *resetCmd)
@@ -1027,11 +1028,11 @@ void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
         else if (id == "PQTMEPE")
         {
             // handle 5 components of Horizontal Position Accuracy
-            // North [2]
-            // East [3]
-            // Down [4]
-            // 2D [5]
-            // 3D [6]
+            epe.errorNorth = atof(nmea[2].c_str());
+            epe.errorEast = atof(nmea[3].c_str());
+            epe.errorDown = atof(nmea[4].c_str());
+            epe.error2D = atof(nmea[5].c_str());
+            epe.error3D = atof(nmea[6].c_str());
         }
 
         else if (id == "PQTMPL")

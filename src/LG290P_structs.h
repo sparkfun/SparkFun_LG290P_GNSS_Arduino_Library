@@ -33,7 +33,7 @@ struct NmeaSnapshot
     double groundSpeed = 0;
     double heading = 0;
 
-    void clear() {} // TODO
+    void clear() { *this = NmeaSnapshot(); } // TODO
 
 #if false
     uint8_t timeStatus = 3; // 0 = valid, 3 = invalid
@@ -58,7 +58,6 @@ struct NmeaSnapshot
     uint8_t rtkSolution = 0;
     uint8_t pseudorangeCorrection = 0;
 #endif
-
 };
 
 typedef struct
@@ -67,6 +66,16 @@ typedef struct
     double ecefY;
     double ecefZ;
 } RtcmSnapshot;
+
+struct EpeDomain
+{
+    double errorNorth = 0;
+    double errorEast = 0;
+    double errorDown = 0;
+    double error2D = 0;
+    double error3D = 0;
+    void clear() { *this = EpeDomain(); }
+};
 
 class NmeaPacket
 {

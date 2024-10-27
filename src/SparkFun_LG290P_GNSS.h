@@ -767,6 +767,12 @@ class LG290P
      */
     double getEcefZ();
 
+    double getNorthError() { ensureEpeEnabled(); return epe.errorNorth; }
+    double getEastError() { ensureEpeEnabled(); return epe.errorEast; }
+    double getDownError() { ensureEpeEnabled(); return epe.errorDown; }
+    double get2DError() { ensureEpeEnabled(); return epe.error2D; }
+    double get3DError() { ensureEpeEnabled(); return epe.error3D; }
+
   #if false // TODO
 
     float getLatitudeDeviation();
@@ -810,7 +816,6 @@ class LG290P
     // Sentence and packet counters
     std::map<std::string, int> nmeaCounters;
     std::map<int, int> rtcmCounters;
-    void clearCounters() { nmeaCounters.clear(); rtcmCounters.clear(); }
 
     // Subscriptions
     std::map<std::string, nmeaCallback> nmeaSubscriptions;
@@ -853,6 +858,7 @@ class LG290P
     HardwareSerial *_hwSerialPort = nullptr;
     NmeaSnapshot snapshot;
     RtcmSnapshot rtcmSnapshot;
+    EpeDomain epe;
     bool initSnapshot();
     bool updateOnce();
 
