@@ -100,7 +100,6 @@ void LG290P::printParserConfiguration(Print *print)
     sempPrintParserConfiguration(_sempParse, print);
 }
 
-
 bool LG290P::badNmeaChecksum(SEMP_PARSE_STATE *parse)
 {
     return false;
@@ -180,12 +179,64 @@ bool LG290P::update()
 
     lg290PLibrarySemaphoreBlock = true; // Allow external tasks to control serial hardware
 
+    newData = serialAvailable(); // Check if new data needs parsing
+
     while (serialAvailable())
-        newData = updateOnce();
+        update(serialRead()); // Pass character from Serial stream to parser
 
     lg290PLibrarySemaphoreBlock = false; // Allow external tasks to control serial hardware
 
     return newData;
+}
+
+// Process a buffer of bytes. Allows a stream outside of library to feed the library.
+bool LG290P::update(char* incomingBuffer, uint16_t bufferLength)
+{
+    bool newData = false;
+
+    lg290PLibrarySemaphoreBlock = true; // Allow external tasks to control serial hardware
+
+    newData = serialAvailable(); // Check if new data needs parsing
+
+    for (int x = 0; x < bufferLength; x++)
+        update(incomingBuffer[x]);
+
+    lg290PLibrarySemaphoreBlock = false; // Allow external tasks to control serial hardware
+
+    return newData;
+}
+
+// Process a given byte into the SEMP
+// LG290PProcessMessage() is called once the parser completes on a line
+bool LG290P::update(byte incoming)
+{
+    const char *endName;
+    const char *startName = nullptr;
+    SEMP_PARSE_ROUTINE startState;
+
+    // Get the current state and state name
+    if (_printParserTransitions)
+    {
+        startState = _sempParse->state;
+        startName = LG290PGetStateName(_sempParse);
+    }
+
+    // Update the parser state based on the incoming byte
+    sempParseNextByte(_sempParse, incoming);
+
+    // Get the current state name
+    if (_printParserTransitions)
+    {
+        endName = LG290PGetStateName(_sempParse);
+
+        // Display the parser state transition
+        debugPrintf("LG290P Lib: 0x%02x (%c), crc: 0x%08x, state: %s --> %s", incoming,
+                    ((incoming >= ' ') && (incoming < 0x7f)) ? incoming : '.', _sempParse->crc, startName, endName);
+    }
+
+    (void)startState; // Fix pesky warning-as-error
+
+    return true;
 }
 
 // Enable the display of parser transitions
@@ -198,45 +249,6 @@ void LG290P::enablePrintParserTransitions()
 void LG290P::disablePrintParserTransitions()
 {
     _printParserTransitions = false;
-}
-
-// Checks for new data once
-// LG290PProcessMessage() is called once the parser completes on a line
-bool LG290P::updateOnce()
-{
-    const char *endName;
-    const char *startName = nullptr;
-    SEMP_PARSE_ROUTINE startState;
-
-    if (serialAvailable())
-    {
-        uint8_t incoming = serialRead();
-
-        // Get the current state and state name
-        if (_printParserTransitions)
-        {
-            startState = _sempParse->state;
-            startName = LG290PGetStateName(_sempParse);
-        }
-
-        // Update the parser state based on the incoming byte
-        sempParseNextByte(_sempParse, incoming);
-
-        // Get the current state name
-        if (_printParserTransitions)
-        {
-            endName = LG290PGetStateName(_sempParse);
-
-            // Display the parser state transition
-            debugPrintf("LG290P Lib: 0x%02x (%c), crc: 0x%08x, state: %s --> %s", incoming,
-                        ((incoming >= ' ') && (incoming < 0x7f)) ? incoming : '.', _sempParse->crc, startName, endName);
-        }
-        return true;
-    }
-
-    (void)startState; // Fix pesky warning-as-error
-
-    return false;
 }
 
 // Display the contents of a buffer
@@ -325,7 +337,7 @@ void LG290P::LG290PProcessMessage(SEMP_PARSE_STATE *parse, uint16_t type)
         {
         case LG290P_NMEA_PARSER_INDEX:
             ptrLG290P->debugPrintf("LG290P Lib: Valid NMEA Sentence: %s, 0x%04x (%d) bytes",
-                                  sempNmeaGetSentenceName(parse), parse->length, parse->length);
+                                   sempNmeaGetSentenceName(parse), parse->length, parse->length);
             break;
 
         case LG290P_RTCM_PARSER_INDEX:
@@ -421,7 +433,8 @@ bool LG290P::setBaudrate(uint32_t newBaud)
     return sendOkCommand("PQTMCFGUART", parms);
 }
 
-bool LG290P::getPortInfo(int port, uint32_t &newBaud, uint8_t &databits, uint8_t &parity, uint8_t &stop, uint8_t &flowControl)
+bool LG290P::getPortInfo(int port, uint32_t &newBaud, uint8_t &databits, uint8_t &parity, uint8_t &stop,
+                         uint8_t &flowControl)
 {
     char parms[50];
     snprintf(parms, sizeof parms, ",R,%d", port);
@@ -467,7 +480,7 @@ bool LG290P::getPPS(bool &enabled, uint16_t &duration, bool &alwaysOutput, bool 
 }
 
 bool LG290P::getConstellations(bool &enableGPS, bool &enableGLONASS, bool &enableGalileo, bool &enableBDS,
-      bool &enableQZSS, bool &enableNavIC)
+                               bool &enableQZSS, bool &enableNavIC)
 {
     bool ret = sendCommand("PQTMCFGCNST", ",R");
     if (ret)
@@ -641,8 +654,8 @@ bool LG290P::genericReset(const char *resetCmd)
     return sendCommandNoResponse(resetCmd) && isConnected() && scanForMsgsEnabled();
 }
 
-bool LG290P::setConstellations(bool enableGPS, bool enableGLONASS, bool enableGalileo, bool enableBDS,
-      bool enableQZSS, bool enableNavIC)
+bool LG290P::setConstellations(bool enableGPS, bool enableGLONASS, bool enableGalileo, bool enableBDS, bool enableQZSS,
+                               bool enableNavIC)
 {
     char parms[50];
     snprintf(parms, sizeof parms, ",W,%d,%d,%d,%d,%d,%d", enableGPS, enableGLONASS, 
@@ -669,7 +682,6 @@ bool LG290P::factoryRestore()
 {
     return sendOkCommand("PQTMRESTOREPAR");
 }
-
 
 // Abstraction of the serial interface
 // Useful if we ever need to support SoftwareSerial
@@ -745,7 +757,7 @@ bool LG290P::transmit(const char *command, const char *parms)
 
     // Calculate NMEA checksum
     uint8_t chk = 0;
-    for (int i=1; i<cmd.length(); ++i)
+    for (int i = 1; i < cmd.length(); ++i)
         chk ^= cmd[i];
 
     // Append checksum
@@ -757,7 +769,7 @@ bool LG290P::transmit(const char *command, const char *parms)
     debugPrintf("...transmit '%s'", cmd.c_str());
     _hwSerialPort->print(cmd.c_str());
     _hwSerialPort->print("\r\n");
-    
+
     return true;
 }
 
@@ -786,7 +798,7 @@ bool LG290P::sendCommand(const char *command, const char *parms, uint16_t maxWai
     // Feed the parser until we see a response to the command
     for (unsigned long start = millis(); millis() - start < maxWaitMs;)
     {
-        updateOnce(); // Will call LG290PProcessMessage()
+        update(); // Will call LG290PProcessMessage()
 
         if (commandResponse == LG290P_RESULT_RESPONSE_COMMAND_OK)
         {
@@ -852,7 +864,7 @@ std::list<LG290P::satinfo> LG290P::getVisibleSats(const char *talker /* = nullpt
         for (auto &item : satelliteReporting)
             ret.insert(ret.end(), item.second.begin(), item.second.end());
     }
-    else 
+    else
     {
         auto item = satelliteReporting.find(talker);
         if (item != satelliteReporting.end())
@@ -861,7 +873,8 @@ std::list<LG290P::satinfo> LG290P::getVisibleSats(const char *talker /* = nullpt
     return ret;
 }
 
-bool LG290P::getSurveyInMode(int &mode, int &positionTimes, double &accuracyLimit, double &ecefX, double &ecefY, double &ecefZ)
+bool LG290P::getSurveyInMode(int &mode, int &positionTimes, double &accuracyLimit, double &ecefX, double &ecefY,
+                             double &ecefZ)
 {
     bool ret = sendOkCommand("PQTMCFGSVIN", ",R");
     if (ret)
@@ -908,7 +921,7 @@ void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
     // Is this a command response?
     std::string sentence = (const char *)parse->buffer;
     if (sentence.substr(sentence.length() - 2) == "\r\n")
-    // if (sentence.ends_with("\r\n"))
+        // if (sentence.ends_with("\r\n"))
         sentence.erase(sentence.size() - 2);
 
     NmeaPacket nmea = NmeaPacket::FromString(sentence);
@@ -1054,7 +1067,7 @@ void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
     if (id != "")
     {
         nmeaCounters[id]++;
-        
+
         // Is there a callback registered for this id?
         auto iterator = nmeaSubscriptions.find(id);
         if (iterator != nmeaSubscriptions.end())
@@ -1063,7 +1076,7 @@ void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
 
     // Is there a general callback registered?
     if (nmeaAllSubscribe != nullptr)
-        nmeaAllSubscribe(nmea); //call it!
+        nmeaAllSubscribe(nmea); // call it!
 }
 
 int64_t RtcmPacket::extract_38bit_signed(int bit_offset)
@@ -1072,9 +1085,9 @@ int64_t RtcmPacket::extract_38bit_signed(int bit_offset)
     int64_t value = 0;
     int byte_offset = bit_offset / 8;
     int bit_in_byte = bit_offset % 8;
-    
+
     // We need to grab up to 6 bytes and mask out the unused 2 bits.
-    for (int i=0; i<6; ++i)
+    for (int i = 0; i < 6; ++i)
     {
       value <<= 8;
       value |= (int64_t)(payload[byte_offset + i]);
@@ -1082,15 +1095,16 @@ int64_t RtcmPacket::extract_38bit_signed(int bit_offset)
 
     // Shift right to discard the unwanted bits and align to 38-bit value
     value >>= (10 - bit_in_byte);
-    
+
     // Mask to keep only 38 bits
-    value &= 0x3FFFFFFFFFLL;  // 38-bit mask (0x3FFFFFFFFF is 38 ones in binary)
+    value &= 0x3FFFFFFFFFLL; // 38-bit mask (0x3FFFFFFFFF is 38 ones in binary)
 
     // Check if the sign bit (38th bit) is set and extend the sign for 64-bit int
-    if (value & (1LL << 37)) {
-        value |= ~((1LL << 38) - 1);  // Extend the sign
+    if (value & (1LL << 37))
+    {
+        value |= ~((1LL << 38) - 1); // Extend the sign
     }
-    
+
     return value;
 }
 
@@ -1142,7 +1156,7 @@ void LG290P::rtcmHandler(SEMP_PARSE_STATE *parse)
 // All the general gets and sets
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-bool LG290P::isNewSnapshotAvailable() 
+bool LG290P::isNewSnapshotAvailable()
 {
     bool r = snapshot.newDataAvailable;
     snapshot.newDataAvailable = false;
@@ -1312,7 +1326,8 @@ NmeaPacket NmeaPacket::FromString(const std::string &str)
 
     while (true)
     {
-        std::string token = delimiterPos != std::string::npos ? str.substr(start, delimiterPos - start) : str.substr(start);
+        std::string token =
+            delimiterPos != std::string::npos ? str.substr(start, delimiterPos - start) : str.substr(start);
         s.fields.push_back(token);
         for (auto c : token.substr(s.fields.size() == 1 && s.fields[0].substr(0, 1) == "$" ? 1 : 0))
             calculatedChksum ^= c;
@@ -1365,7 +1380,8 @@ std::string NmeaPacket::ToString() const
 
 std::string NmeaPacket::TalkerId() const
 {
-    if (!IsValid()) return "";
+    if (!IsValid())
+        return "";
 
     // If proper NMEA, separate Talker and Sentence Ids
     return fields[0].substr(0, 2) == "$G" ? fields[0].substr(1, 2) : "";
@@ -1373,7 +1389,8 @@ std::string NmeaPacket::TalkerId() const
 
 std::string NmeaPacket::SentenceId() const
 {
-    if (!IsValid()) return "";
+    if (!IsValid())
+        return "";
 
     // If proper NMEA, separate Talker and Sentence Ids
     return fields[0].substr(0, 2) == "$G" ? fields[0].substr(3) : fields[0].substr(1);
@@ -1442,7 +1459,8 @@ void NmeaPacket::parseDate(const std::string &term, uint16_t &year, uint8_t &mon
     day = v / 10000;
 }
 
-void NmeaPacket::parseLocation(const std::string &termLat, const std::string &termNS, const std::string &termLong, const std::string &termEW, double &latitude, double &longitude)
+void NmeaPacket::parseLocation(const std::string &termLat, const std::string &termNS, const std::string &termLong,
+                               const std::string &termEW, double &latitude, double &longitude)
 {
     parseDegrees(termLat.c_str(), termNS.c_str(), latitude);
     parseDegrees(termLong.c_str(), termEW.c_str(), longitude);
@@ -1472,7 +1490,7 @@ void NmeaPacket::parseDegrees(const char *degTerm, const char *nsewTerm, double 
     negative = *nsewTerm == 'W' || *nsewTerm == 'S';
     angle = deg + billionths / 1000000000.0;
     if (negative)
-        angle = -angle; 
+        angle = -angle;
 }
 
 void NmeaPacket::parseQuality(const std::string &term, char &quality)
@@ -2094,7 +2112,7 @@ bool LG290P::isConfigurationPresent(const char *stringToFind, uint16_t maxWaitMs
             return (false);
         }
 
-        updateOnce(); // Will call LG290PProcessMessage() and configHandler()
+        update(); // Will call LG290PProcessMessage() and configHandler()
 
         if (configStringFound == true)
         {
