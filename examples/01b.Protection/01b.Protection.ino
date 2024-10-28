@@ -5,7 +5,7 @@
   Date: 29 September 2024
   License: MIT. Please see LICENSE.md for more information.
 
-  This example shows how to query a LG290P GNSS module for its position and estimated position errors.
+  This example shows how to query a LG290P GNSS module for its protection levels.
   These examples are targeted for an ESP32 platform but any platform that has multiple
   serial UARTs should be compatible.
 

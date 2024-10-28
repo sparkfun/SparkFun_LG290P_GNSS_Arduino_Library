@@ -714,31 +714,31 @@ class LG290P
      * @brief Gets time of week
      * @return Milliseconds since the beginning of the week.
      */
-    uint32_t getTimeOfWeek() { ensurePvtEnabled(); return snapshot.timeOfWeek; }
+    uint32_t getTimeOfWeek() { ensurePvtEnabled(); return pvtDomain.timeOfWeek; }
   
     /**
      * @brief Gets geoidal separation (the difference between the WGS84 earth ellipsoid surface and the mean-sea-level surface).
      * @return Geoidal separation in meters.
      */
-    double getGeoidalSeparation() { ensurePvtEnabled(); return snapshot.geoidalSeparation; }
+    double getGeoidalSeparation() { ensurePvtEnabled(); return pvtDomain.geoidalSeparation; }
 
     /**
      * @brief Gets North velocity
      * @return North velocity in meters per second
      */
-    double getNorthVelocity() { ensurePvtEnabled(); return snapshot.nvelocity; }
+    double getNorthVelocity() { ensurePvtEnabled(); return pvtDomain.nvelocity; }
 
     /**
      * @brief Gets East velocity
      * @return East velocity in meters per second
      */
-    double getEastVelocity() { ensurePvtEnabled(); return snapshot.evelocity; }
+    double getEastVelocity() { ensurePvtEnabled(); return pvtDomain.evelocity; }
 
     /**
      * @brief Gets Down velocity
      * @return Down velocity in meters per second
      */
-    double getDownVelocity() { ensurePvtEnabled(); return snapshot.dvelocity; }
+    double getDownVelocity() { ensurePvtEnabled(); return pvtDomain.dvelocity; }
 
     /** 
      * @brief Gets the age of the latest NMEA geodetic report in milliseconds.
@@ -883,7 +883,7 @@ class LG290P
 
   private:
     // Update times
-    unsigned long lastUpdateGeodetic = 0;
+    unsigned long lastUpdatePvtDomain = 0;
     unsigned long lastUpdateEcef = 0;
     unsigned long lastUpdateDateTime = 0;
     unsigned long lastUpdateVersion = 0;
@@ -931,7 +931,7 @@ class LG290P
     void nmeaHandler(SEMP_PARSE_STATE *parse);
     void rtcmHandler(SEMP_PARSE_STATE *parse);
     HardwareSerial *_hwSerialPort = nullptr;
-    PvtDomain snapshot;
+    PvtDomain pvtDomain;
     RtcmDomain rtcmDomain;
     EpeDomain epeDomain;
     PlDomain plDomain;

@@ -353,6 +353,7 @@ void LG290P::LG290PProcessMessage(SEMP_PARSE_STATE *parse, uint16_t type)
 // Commands
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+// Statistics (counting packets of various types that arrived)
 int LG290P::getNmeaCount(const char *sentenceId /* = nullptr */)
 {
     if (sentenceId != nullptr)
@@ -401,7 +402,7 @@ bool LG290P::getMode(int &mode)
     if (ret)
     {
         auto packet = getCommandResponse();
-        ret = ret && packet[1] == "OK";
+        ret = packet[1] == "OK";
         mode = atoi(packet[2].c_str());
     }
     return ret;
@@ -414,6 +415,7 @@ bool LG290P::setPortBaudrate(int port, uint32_t newBaud)
     return sendOkCommand("PQTMCFGUART", parms);
 }
 
+// Set baud rate on current port
 bool LG290P::setBaudrate(uint32_t newBaud)
 {
     char parms[50];
@@ -429,7 +431,7 @@ bool LG290P::getPortInfo(int port, uint32_t &newBaud, uint8_t &databits, uint8_t
     if (ret)
     {
         auto packet = getCommandResponse();
-        ret = ret && packet[1] == "OK";
+        ret = packet[1] == "OK";
         newBaud = atol(packet[3].c_str());
         databits = atoi(packet[4].c_str());
         parity = atoi(packet[5].c_str());
@@ -457,7 +459,7 @@ bool LG290P::getPPS(bool &enabled, uint16_t &duration, bool &alwaysOutput, bool 
     if (ret)
     {
         auto packet = getCommandResponse();
-        ret = ret && packet[1] == "OK" && packet[2] == "1";
+        ret = packet[1] == "OK" && packet[2] == "1";
         enabled = packet[3] == "1";
         duration = atoi(packet[4].c_str());
         alwaysOutput = packet[5] == "1";
@@ -473,6 +475,7 @@ bool LG290P::getConstellations(bool &enableGPS, bool &enableGLONASS, bool &enabl
     if (ret)
     {
         auto packet = getCommandResponse();
+        ret = packet[1] == "OK";
         enableGPS = packet[2] == "1";
         enableGLONASS = packet[3] == "1";
         enableGalileo = packet[4] == "1";
@@ -489,7 +492,7 @@ bool LG290P::getSerialNumber(std::string &serial)
     if (ret)
     {
         auto packet = getCommandResponse();
-        ret = ret && packet[1] == "OK";
+        ret = packet[1] == "OK";
         serial = packet[3];
     }
     return ret;
@@ -514,7 +517,7 @@ bool LG290P::getFixInterval(uint16_t &fixInterval)
     if (ret)
     {
         auto packet = getCommandResponse();
-        ret = ret && packet[1] == "OK";
+        ret = packet[1] == "OK";
         fixInterval = atoi(packet[2].c_str());
     }
     return ret;
@@ -626,7 +629,7 @@ bool LG290P::rtcmUnsubscribeAll()
 
 void LG290P::clearAll()
 {
-    snapshot.clear();
+    pvtDomain.clear();
     satelliteDomain.clear();
     nmeaCounters.clear();
     rtcmCounters.clear();
@@ -853,6 +856,8 @@ std::list<LG290P::satinfo> LG290P::getVisibleSats(const char *talker /* = nullpt
         for (auto &item : satelliteDomain)
             ret.insert(ret.end(), item.second.begin(), item.second.end());
     }
+
+    // ... or just the ones from a specific Talker?
     else 
     {
         auto item = satelliteDomain.find(talker);
@@ -925,14 +930,14 @@ void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
             {
                 if (id == "RMC")
                 {
-                    lastUpdateGeodetic = millis(); // Update stale marker
-                    nmea.processRMC(ptrLG290P->snapshot);
+                    lastUpdatePvtDomain = millis(); // Update stale marker
+                    nmea.processRMC(ptrLG290P->pvtDomain);
                 }
                 
                 else if (id == "GGA")
                 {
-                    lastUpdateGeodetic = millis(); // Update stale marker
-                    nmea.processGGA(ptrLG290P->snapshot);
+                    lastUpdatePvtDomain = millis(); // Update stale marker
+                    nmea.processGGA(ptrLG290P->pvtDomain);
                 }
 
                 else if (id == "GSV")
@@ -991,31 +996,31 @@ void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
 
         else if (id == "PQTMPVT")
         {   
-            lastUpdateGeodetic = millis(); // Update stale marker
-            PvtDomain &ss = ptrLG290P->snapshot;
-            ss.timeOfWeek = atoi(nmea[2].c_str());
+            lastUpdatePvtDomain = millis(); // Update stale marker
+            PvtDomain &pvt = ptrLG290P->pvtDomain;
+            pvt.timeOfWeek = atoi(nmea[2].c_str());
             uint32_t d = atoi(nmea[3].c_str());
-            ss.year = d / 10000;
-            ss.month = (d / 100) % 100;
-            ss.day = d % 100;
-            NmeaPacket::parseTime(nmea[4], ss.hour, ss.minute, ss.second, ss.nanosecond);
+            pvt.year = d / 10000;
+            pvt.month = (d / 100) % 100;
+            pvt.day = d % 100;
+            NmeaPacket::parseTime(nmea[4], pvt.hour, pvt.minute, pvt.second, pvt.nanosecond);
             // 5 is reserved
             // 6 is fix type -- maybe don't use because more limited than GGA?
-            // ss.quality = nmea[6].empty() ? '0' : nmea[6][0];
-            ss.satellitesUsed = atoi(nmea[7].c_str());
-            ss.leapSeconds = atoi(nmea[8].c_str());
-            ss.latitude = atof(nmea[9].c_str());
-            ss.longitude = atof(nmea[10].c_str());
-            ss.altitude = atof(nmea[11].c_str());
-            ss.geoidalSeparation = atof(nmea[12].c_str());
-            ss.nvelocity = atof(nmea[13].c_str());
-            ss.evelocity = atof(nmea[14].c_str());
-            ss.dvelocity = atof(nmea[15].c_str());
-            ss.groundSpeed = atof(nmea[16].c_str());
-            ss.course = atof(nmea[17].c_str());
-            ss.hdop = atof(nmea[18].c_str());
-            ss.pdop = atof(nmea[19].c_str());
-            snapshot.newDataAvailable = true;
+            // pvt.quality = nmea[6].empty() ? '0' : nmea[6][0];
+            pvt.satellitesUsed = atoi(nmea[7].c_str());
+            pvt.leapSeconds = atoi(nmea[8].c_str());
+            pvt.latitude = atof(nmea[9].c_str());
+            pvt.longitude = atof(nmea[10].c_str());
+            pvt.altitude = atof(nmea[11].c_str());
+            pvt.geoidalSeparation = atof(nmea[12].c_str());
+            pvt.nvelocity = atof(nmea[13].c_str());
+            pvt.evelocity = atof(nmea[14].c_str());
+            pvt.dvelocity = atof(nmea[15].c_str());
+            pvt.groundSpeed = atof(nmea[16].c_str());
+            pvt.course = atof(nmea[17].c_str());
+            pvt.hdop = atof(nmea[18].c_str());
+            pvt.pdop = atof(nmea[19].c_str());
+            pvtDomain.newDataAvailable = true;
         }
 
         else if (id == "PQTMSVNSTATUS")
@@ -1152,8 +1157,8 @@ void LG290P::rtcmHandler(SEMP_PARSE_STATE *parse)
 
 bool LG290P::isNewSnapshotAvailable() 
 {
-    bool r = snapshot.newDataAvailable;
-    snapshot.newDataAvailable = false;
+    bool r = pvtDomain.newDataAvailable;
+    pvtDomain.newDataAvailable = false;
     return r;
 }
 
@@ -1167,25 +1172,25 @@ bool LG290P::isNewSatelliteInfoAvailable()
 double LG290P::getLatitude()
 {
     ensurePvtEnabled();
-    return snapshot.latitude;
+    return pvtDomain.latitude;
 }
 
 double LG290P::getLongitude()
 {
     ensurePvtEnabled();
-    return snapshot.longitude;
+    return pvtDomain.longitude;
 }
 
 double LG290P::getAltitude()
 {
     ensurePvtEnabled();
-    return snapshot.altitude;
+    return pvtDomain.altitude;
 }
 
 double LG290P::getHorizontalSpeed()
 {
     ensurePvtEnabled();
-    return snapshot.groundSpeed;
+    return pvtDomain.groundSpeed;
 }
 
 double LG290P::getEcefX()
@@ -1214,7 +1219,7 @@ uint16_t LG290P::getSatellitesInViewCount()
 uint16_t LG290P::getSatellitesUsedCount()
 {
     ensurePvtEnabled();
-    return snapshot.satellitesUsed;
+    return pvtDomain.satellitesUsed;
 }
 
 // 0 = Fix not available or invalid.
@@ -1223,12 +1228,12 @@ uint16_t LG290P::getSatellitesUsedCount()
 // 3 = GPS PPS Mode, fix valid.
 // 4 = Real Time Kinematic (RTK) System used in RTK mode with fixed integers.
 // 5 = Float RTK. Satellite system used in RTK mode, floating integers.
-// Note: this function is unique in using the "quality" field from GGA rathern then PQTMPVT.
+// Note: this function is unique in using the "quality" field from GGA rather than PQTMPVT.
 // PQTMPVT has a more limited response: only 0-3.
 uint8_t LG290P::getFixQuality()
 {
     ensureGgaEnabled();
-    return snapshot.quality - '0'; // Convert ASCII to uint8_t
+    return pvtDomain.quality - '0'; // Convert ASCII to uint8_t
 }
 
 // 'V' = Fix not available or invalid (void).
@@ -1236,79 +1241,79 @@ uint8_t LG290P::getFixQuality()
 char LG290P::getFixStatus()
 {
     ensureRmcEnabled();
-    return snapshot.fixStatus;
+    return pvtDomain.fixStatus;
 }
 
 // Return the number of millis since last update
 uint32_t LG290P::getGeodeticAgeMs()
 {
-    return millis() - lastUpdateGeodetic;
+    return millis() - lastUpdatePvtDomain;
 }
 
 uint16_t LG290P::getYear()
 {
     ensurePvtEnabled();
-    return snapshot.year;
+    return pvtDomain.year;
 }
 
 uint8_t LG290P::getMonth()
 {
     ensurePvtEnabled();
-    return snapshot.month;
+    return pvtDomain.month;
 }
 
 uint8_t LG290P::getDay()
 {
     ensurePvtEnabled();
-    return snapshot.day;
+    return pvtDomain.day;
 }
 
 uint8_t LG290P::getHour()
 {
     ensurePvtEnabled();
-    return snapshot.hour;
+    return pvtDomain.hour;
 }
 
 uint8_t LG290P::getMinute()
 {
     ensurePvtEnabled();
-    return snapshot.minute;
+    return pvtDomain.minute;
 }
 
 uint8_t LG290P::getSecond()
 {
     ensurePvtEnabled();
-    return snapshot.second;
+    return pvtDomain.second;
 }
 
 uint16_t LG290P::getMillisecond()
 {
     ensurePvtEnabled();
-    return (uint16_t)(snapshot.nanosecond / 1000000);
+    return (uint16_t)(pvtDomain.nanosecond / 1000000);
 }
 
 uint16_t LG290P::getLeapSeconds()
 {
     ensurePvtEnabled();
-    return snapshot.leapSeconds;
+    return pvtDomain.leapSeconds;
 }
 
 double LG290P::getCourse()
 {
     ensurePvtEnabled();
-    return snapshot.course;
+    return pvtDomain.course;
 }
 
 double LG290P::getHdop()
 {
     ensurePvtEnabled();
-    return snapshot.hdop;
+    return pvtDomain.hdop;
 }
 
 double LG290P::getPdop()
 {
     ensurePvtEnabled();
-    return snapshot.pdop;
+    return pvtDomain.pdop;
 }
 
 NmeaPacket NmeaPacket::FromString(const std::string &str)
