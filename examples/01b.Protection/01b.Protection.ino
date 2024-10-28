@@ -56,8 +56,6 @@ void setup()
     while (true);
   }
   Serial.println("LG290P detected!");
-  myGNSS.setMessageRate("GGA", 1);
-  myGNSS.setFixInterval(1000);
 }
 
 void loop()
@@ -72,8 +70,8 @@ void loop()
     if (linecount++ % 20 == 0)
     {
       // Every 20th line draw the helpful header
-      char *headings[] = { "Date", "Time", "Latitude", "Longitude", "Altitude", "Err", "North", "East", "Down", "2D", "3D", "Sat", "SIV", "Fix-Quality" };
-      int widths[] = {      10,     8,      12,         13,          8,          3,     7,       7,      7,      7,     7,   3,     3,     11 };
+      char *headings[] = { "Date", "Time", "Latitude", "Longitude", "Altitude", "Prot", "North", "East", "Down", "NVelo", "EVelo", "DVelo", "Time", "Sat", "SIV", "Fix-Quality" };
+      int widths[] = {      10,     8,      12,         13,          8,          4,      8,       8,      8,      7,        7,       7,       7,       3,     3,     11 };
       int items = sizeof widths / sizeof widths[0];
       Serial.println();
 
@@ -100,11 +98,12 @@ void loop()
     int qual = myGNSS.getFixQuality();
     snprintf(qualbuf, sizeof qualbuf, "%s(%d)", (qual >= 0 && qual <= 5) ? qualities[qual] : "Unknown", qual);
 
-    Serial.printf("%02d/%02d/%04d %02d:%02d:%02d %-12.8f %-13.8f %-8.2f %3s %-7.2f %-7.2f %-7.2f %-7.2f %-7.2f %-3d %-3d %-11s\r\n",
+    Serial.printf("%02d/%02d/%04d %02d:%02d:%02d %-12.8f %-13.8f %-8.2f %4s %-8.2f %-8.2f %-8.2f %-7.2f %-7.2f %-7.2f %-7.2f %-3d %-3d %-11s\r\n",
       myGNSS.getDay(), myGNSS.getMonth(), myGNSS.getYear(),
       myGNSS.getHour(), myGNSS.getMinute(), myGNSS.getSecond(),
       myGNSS.getLatitude(), myGNSS.getLongitude(),
-      myGNSS.getAltitude(), "", myGNSS.getNorthError(), myGNSS.getEastError(), myGNSS.getDownError(), myGNSS.get2DError(),
-      myGNSS.get3DError(), myGNSS.getSatellitesUsedCount(), myGNSS.getSatellitesInViewCount(), qualbuf);
+      myGNSS.getAltitude(), "", myGNSS.getProtLevelNorth(), myGNSS.getProtLevelEast(), myGNSS.getProtLevelEast(), 
+      myGNSS.getProtLevelNorthVelocity(), myGNSS.getProtLevelEastVelocity(), myGNSS.getProtLevelDownVelocity(),
+      myGNSS.getProtLevelTime(), myGNSS.getSatellitesUsedCount(), myGNSS.getSatellitesInViewCount(), qualbuf);
   }
 }

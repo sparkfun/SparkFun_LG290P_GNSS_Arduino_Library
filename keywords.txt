@@ -121,6 +121,21 @@ getEcefZ    KEYWORD2
 getGeodeticAgeMs	KEYWORD2
 getEcefAgeMs	KEYWORD2
 
+getNorthError	KEYWORD2
+getEastError	KEYWORD2
+getDownError	KEYWORD2
+get2DError	KEYWORD2
+get3DError	KEYWORD2
+
+getProbUncertainty	KEYWORD2
+getProtLevelNorth	KEYWORD2
+getProtLevelEast	KEYWORD2
+getProtLevelDown	KEYWORD2
+getProtLevelNorthVelocity	KEYWORD2
+getProtLevelEastVelocity	KEYWORD2
+getProtLevelDownVelocity	KEYWORD2
+getProtLevelTime	KEYWORD2
+
 #######################################
 # Constants (LITERAL1)
 #######################################
