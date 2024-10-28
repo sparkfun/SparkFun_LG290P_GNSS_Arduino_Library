@@ -190,7 +190,7 @@ bool LG290P::update()
 }
 
 // Process a buffer of bytes. Allows a stream outside of library to feed the library.
-bool LG290P::update(char* incomingBuffer, uint16_t bufferLength)
+bool LG290P::update(uint8_t* incomingBuffer, uint16_t bufferLength)
 {
     bool newData = false;
 

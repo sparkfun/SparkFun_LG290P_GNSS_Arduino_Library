@@ -96,7 +96,7 @@ class LG290P
    * @brief Process a buffer of bytes. Allows a stream outside of library to feed the library.
    * @return true if any incoming bytes were processed, false if none
    */
-  bool update(char* incomingBuffer, uint16_t bufferLength);
+  bool update(uint8_t* incomingBuffer, uint16_t bufferLength);
 
   /** Debugging **/
 
@@ -943,10 +943,10 @@ class LG290P
     void nmeaHandler(SEMP_PARSE_STATE *parse);
     void rtcmHandler(SEMP_PARSE_STATE *parse);
     HardwareSerial *_hwSerialPort = nullptr;
-    NmeaSnapshot snapshot;
-    RtcmSnapshot rtcmSnapshot;
-    EpeDomain epe;
-    bool initSnapshot();
+    PvtDomain snapshot;
+    RtcmDomain rtcmDomain;
+    EpeDomain epeDomain;
+    PlDomain plDomain;
 
     // Serial port utilities
     uint16_t serialAvailable();
