@@ -422,14 +422,14 @@ bool LG290P::getMode(int &mode)
 bool LG290P::setPortBaudrate(int port, uint32_t newBaud)
 {
     char parms[50];
-    snprintf(parms, sizeof parms, ",W,%d,%lu", port, newBaud);
+    snprintf(parms, sizeof parms, ",W,%d,%d", port, newBaud);
     return sendOkCommand("PQTMCFGUART", parms);
 }
 
 bool LG290P::setBaudrate(uint32_t newBaud)
 {
     char parms[50];
-    snprintf(parms, sizeof parms, ",W,%lu", newBaud);
+    snprintf(parms, sizeof parms, ",W,%d", newBaud);
     return sendOkCommand("PQTMCFGUART", parms);
 }
 
@@ -950,7 +950,6 @@ void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
 
                 else if (id == "GSV")
                 {
-                    uint16_t msgCount = (uint16_t)strtoul(nmea[1].c_str(), NULL, 10);
                     uint16_t msgNo = (uint16_t)strtoul(nmea[2].c_str(), NULL, 10);
                     uint16_t svsInView = (uint16_t)strtoul(nmea[3].c_str(), NULL, 10);
                     std::string talker = nmea.TalkerId();
