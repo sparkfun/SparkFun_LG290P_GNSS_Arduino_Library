@@ -81,10 +81,22 @@ class LG290P
   bool isBlocking();
 
   /** 
-   * @brief Must be called often and regularly to process the incoming byte stream
+   * @brief Process any byes sitting in Serial stream given at begin(). Must be called often and regularly.
    * @return true if any incoming bytes were processed, false if none
    */
   bool update();
+
+  /** 
+   * @brief Process a given byte. Allows a stream outside of library to feed the library.
+   * @return true if any incoming bytes were processed, false if none
+   */
+  bool update(byte incoming);
+
+  /** 
+   * @brief Process a buffer of bytes. Allows a stream outside of library to feed the library.
+   * @return true if any incoming bytes were processed, false if none
+   */
+  bool update(uint8_t* incomingBuffer, uint16_t bufferLength);
 
   /** Debugging **/
 
@@ -562,7 +574,7 @@ class LG290P
     uint16_t getSatellitesUsedCount();
 
     /**
-     * @brief Gets the number fix type 0+
+     * @brief Gets the fix type 0+
      * @details Information gleaned from GGA sentence.
      * @return The fix type.
      */
@@ -935,7 +947,6 @@ class LG290P
     RtcmDomain rtcmDomain;
     EpeDomain epeDomain;
     PlDomain plDomain;
-    bool updateOnce();
 
     // Serial port utilities
     uint16_t serialAvailable();
