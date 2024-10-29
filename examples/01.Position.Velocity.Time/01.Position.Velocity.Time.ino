@@ -72,7 +72,7 @@ void loop()
     if (linecount++ % 20 == 0)
     {
       // Every 20th line draw the helpful header
-      char *headings[] = { "Date", "Time", "Latitude", "Longitude", "Altitude", "Speed", "North", "East", "Down", "Sat", "SIV", "Fix-Quality", "HDOP", "PDOP", "Leap", "Sep" };
+      const char *headings[] = { "Date", "Time", "Latitude", "Longitude", "Altitude", "Speed", "North", "East", "Down", "Sat", "SIV", "Fix-Quality", "HDOP", "PDOP", "Leap", "Sep" };
       int widths[] = {      10,     8,      12,         13,          8,          7,       7,       7,      7,      3,     3,     11,            5,      5,     4,       7    };
       int items = sizeof widths / sizeof widths[0];
       Serial.println();
@@ -96,7 +96,7 @@ void loop()
 
     // Fix quality requires some special formatting
     char qualbuf[32];
-    char *qualities[] = { "No-Fix", "3D-Fix", "DGPS-Fix", "GPS-PPS", "RTK-Fix", "RTK-Flt" };
+    const char *qualities[] = { "No-Fix", "3D-Fix", "DGPS-Fix", "GPS-PPS", "RTK-Fix", "RTK-Flt" };
     int qual = myGNSS.getFixQuality();
     snprintf(qualbuf, sizeof qualbuf, "%s(%d)", (qual >= 0 && qual <= 5) ? qualities[qual] : "Unknown", qual);
 
