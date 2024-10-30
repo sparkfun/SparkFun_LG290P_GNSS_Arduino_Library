@@ -1,5 +1,5 @@
 /*
-  Displaying satellites in view
+  Setting "Survey In" Mode
   By: Nathan Seidle + Mikal Hart
   SparkFun Electronics
   Date: 29 September 2024
@@ -31,6 +31,7 @@ int gnss_baud = 460800;
 
 LG290P myGNSS;
 HardwareSerial SerialGNSS(1); // Use UART1 on the ESP32
+int mode;
 
 void setup()
 {
@@ -53,19 +54,14 @@ void setup()
   }
   Serial.println("LG290P detected!");
 
-  Serial.println("Subscribing to PQTMSVINSTATUS message");
-  myGNSS.nmeaSubscribe("PQTMSVINSTATUS", MyPqtmCallback);
-
-  Serial.println("Subscribing to RTCM #1005 message");
-  myGNSS.rtcmSubscribe(1005, MyRtmcCallback);
-
+  // You MUST be in BASE mode to set Survey In Mode
   Serial.println("Setting base station mode");
-  myGNSS.setModeBase(false); // don't reset, because we're going to do it in setSurveyInMode()
-
-  Serial.println("Setting 'Survey In' Mode");
+  verify(myGNSS.setModeBase(false)); // don't reset, because setSurveyInMode() is going to do it
+  
+  Serial.println("Turn on 'Survey In' Mode");
   int secs = 60;
   Serial.printf("Give the device %d seconds to establish location.\r\n", secs);
-  myGNSS.setSurveyInMode(secs);
+  verify(myGNSS.setSurveyInMode(secs));
   if (!myGNSS.isConnected())
   {
     Serial.println("reconnection failed; halting");
@@ -73,33 +69,32 @@ void setup()
   }
   Serial.println("Online!");
 
-  Serial.println("Enabling PQTMSVINSTATUS messages");
-  myGNSS.setMessageRate("PQTMSVINSTATUS", 1, 1);
+  verify(myGNSS.getMode(mode));
 }
 
+unsigned long lastUpdate = 0;
 
 void loop()
 {
   myGNSS.update(); // Regularly call to parse any new data
+  if (millis() - lastUpdate >= 1000)
+  {
+    lastUpdate = millis();
+    int svinStatus = myGNSS.getSurveyInStatus();
+    const char *status = svinStatus == 1 ? "In Progress" : svinStatus == 2 ? "Valid" : "Unknown/Invalid";
+    Serial.printf("%02d:%02d:%02d: Mode = '%s' Status = '%s' (%d/%d) (%.4f,%.4f,%.4f) Mean Accuracy = %.4f\r\n",
+      myGNSS.getHour(), myGNSS.getMinute(), myGNSS.getSecond(), mode == 2 ? "BASE" : "ROVER", status,
+      myGNSS.getSurveyInObservations(), myGNSS.getSurveyInCfgDuration(),
+      myGNSS.getSurveyInMeanX(), myGNSS.getSurveyInMeanY(), myGNSS.getSurveyInMeanZ(), 
+      myGNSS.getSurveyInMeanAccuracy());
+  }
 }
 
-void MyRtmcCallback(RtcmPacket &rtcm)
+void verify(bool event)
 {
-  Serial.printf("Received an RTCM %d packet.  ECEF: (%.4f,%.4f,%.4f)\r\n", rtcm.type, myGNSS.getEcefX(), myGNSS.getEcefY(), myGNSS.getEcefZ());
-}
-
-void MyPqtmCallback(NmeaPacket &nmea)
-{
-  std::string tow = nmea[2];
-  std::string validity = nmea[3] == "0" ? "Invalid" : nmea[3] == "1" ? "In-progress" : "Valid";
-  std::string posCount = nmea[6];
-  std::string total = nmea[7];
-  std::string ecefX = nmea[8];
-  std::string ecefY = nmea[9];
-  std::string ecefZ = nmea[10];
-  std::string accuracy = nmea[11];
-
-  Serial.printf("PQTMSVINSTATUS: Week time: %s  Validity: '%s'  Pos: %s/%s  ECEF: (%s,%s,%s)  Accuracy: %sm\r\n",
-    tow.c_str(), validity.c_str(), posCount.c_str(), total.c_str(), ecefX.c_str(), 
-    ecefY.c_str(), ecefZ.c_str(), accuracy.c_str());
+  if (!event)
+  {
+    Serial.println("Operation failed: freezing!");
+    while (true);
+  }
 }

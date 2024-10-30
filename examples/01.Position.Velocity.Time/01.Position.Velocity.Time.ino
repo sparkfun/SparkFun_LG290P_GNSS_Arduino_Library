@@ -56,8 +56,6 @@ void setup()
     while (true);
   }
   Serial.println("LG290P detected!");
-  myGNSS.setMessageRate("GGA", 1);
-  myGNSS.setFixInterval(1000);
 }
 
 void loop()
@@ -109,3 +107,4 @@ void loop()
       myGNSS.getLeapSeconds(), myGNSS.getGeoidalSeparation());
   }
 }
+

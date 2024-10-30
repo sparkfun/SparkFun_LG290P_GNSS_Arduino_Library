@@ -860,6 +860,14 @@ class LG290P
      */
     double getProtLevelTime() { ensurePlEnabled(); return plDomain.protectionLevelTime; }
 
+    int getSurveyInStatus() { ensureSvinStatusEnabled(); return svinStatusDomain.validity; }
+    int getSurveyInObservations() { ensureSvinStatusEnabled(); return svinStatusDomain.observations; }
+    int getSurveyInCfgDuration() { ensureSvinStatusEnabled(); return svinStatusDomain.cfgDur; }
+    double getSurveyInMeanX() { ensureSvinStatusEnabled(); return svinStatusDomain.meanX; }
+    double getSurveyInMeanY() { ensureSvinStatusEnabled(); return svinStatusDomain.meanY; }
+    double getSurveyInMeanZ() { ensureSvinStatusEnabled(); return svinStatusDomain.meanZ; }
+    double getSurveyInMeanAccuracy() { ensureSvinStatusEnabled(); return svinStatusDomain.meanAcc; }
+
   #if false // TODO
 
     float getLatitudeDeviation();
@@ -915,12 +923,12 @@ class LG290P
     bool lg290PLibrarySemaphoreBlock = false; // Gets set to true when the Unicore library needs to interact directly
     bool scanForMsgsEnabled();
     void ensureMsgEnabled(bool enabled, const char *msg, int msgVer = -1);
-    void ensureGgaEnabled() { ensureMsgEnabled(devState.ggaRate, "GGA"); }
-    void ensureRmcEnabled() { ensureMsgEnabled(devState.rmcRate, "RMC"); }
-    void ensurePvtEnabled() { ensureMsgEnabled(devState.pvtRate, "PQTMPVT", 1); }
-    void ensurePlEnabled() { ensureMsgEnabled(devState.plRate, "PQTMPL", 1); }
-    void ensureEpeEnabled() { ensureMsgEnabled(devState.epeRate, "PQTMEPE", 2); }
-    void ensureSvinStatusEnabled() { ensureMsgEnabled(devState.svinstatusRate, "PQTMSVINSTATUS", 1); }
+    void ensureGgaEnabled() { ensureMsgEnabled(devState.ggaRate > 0, "GGA"); }
+    void ensureRmcEnabled() { ensureMsgEnabled(devState.rmcRate > 0, "RMC"); }
+    void ensurePvtEnabled() { ensureMsgEnabled(devState.pvtRate > 0, "PQTMPVT", 1); }
+    void ensurePlEnabled() { ensureMsgEnabled(devState.plRate > 0, "PQTMPL", 1); }
+    void ensureEpeEnabled() { ensureMsgEnabled(devState.epeRate > 0, "PQTMEPE", 2); }
+    void ensureSvinStatusEnabled() { ensureMsgEnabled(devState.svinstatusRate > 0, "PQTMSVINSTATUS", 1); }
     void clearAll();
     bool genericReset(const char *resetCmd);
 
@@ -947,6 +955,7 @@ class LG290P
     RtcmDomain rtcmDomain;
     EpeDomain epeDomain;
     PlDomain plDomain;
+    SvinStatusDomain svinStatusDomain;
 
     // Serial port utilities
     uint16_t serialAvailable();

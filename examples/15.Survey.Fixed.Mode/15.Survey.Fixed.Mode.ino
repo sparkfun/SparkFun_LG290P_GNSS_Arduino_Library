@@ -1,11 +1,12 @@
 /*
-  Displaying satellites in view
+  Setting "Survey Fixed" Mode
   By: Nathan Seidle + Mikal Hart
   SparkFun Electronics
   Date: 29 September 2024
   License: MIT. Please see LICENSE.md for more information.
 
-  This example shows how enable the fixed survey in modes.
+  This example shows how enable the fixed survey mode, where you define the BASE station's
+  location by supplying setSurveyFixedMode with some ECEF coordinates.
 
   These examples are targeted for an ESP32 platform but any platform that has multiple
   serial UARTs should be compatible.
@@ -31,13 +32,14 @@ int gnss_baud = 460800;
 
 LG290P myGNSS;
 HardwareSerial SerialGNSS(1); // Use UART1 on the ESP32
+int mode;
 
 void setup()
 {
   Serial.begin(115200);
   delay(250);
   Serial.println();
-  Serial.println("SparkFun Survey Fixed Mode example");
+  Serial.println("SparkFun Survey In Mode example");
   Serial.println("Initializing device...");
 
   // We must start the serial port before using it in the library
@@ -53,29 +55,45 @@ void setup()
   }
   Serial.println("LG290P detected!");
 
-  Serial.println("Subscribing to RTCM #1005 message");
-  myGNSS.rtcmSubscribe(1005, MyRtmcCallback);
-
+  // You MUST be in BASE mode to set Survey In Mode
   Serial.println("Setting base station mode");
-  myGNSS.setModeBase(false); // don't reset, because we're going to do it in setSurveyFixedMode()
-
+  verify(myGNSS.setModeBase(false)); // don't reset, because setSurveyInMode() is going to do it
+  
   Serial.println("Setting 'Survey' Mode fixed to top of Eiffel Tower");
-  myGNSS.setSurveyFixedMode(4200944.016, 168364.025, 4780802.825);
+  verify(myGNSS.setSurveyFixedMode(4200944.016, 168364.025, 4780802.825));
   if (!myGNSS.isConnected())
   {
     Serial.println("reconnection failed; halting");
     while (true);
   }
   Serial.println("Online!");
+
+  verify(myGNSS.getMode(mode));
 }
 
+unsigned long lastUpdate = 0;
 
 void loop()
 {
   myGNSS.update(); // Regularly call to parse any new data
+  if (millis() - lastUpdate >= 1000)
+  {
+    lastUpdate = millis();
+    int svinStatus = myGNSS.getSurveyInStatus();
+    const char *status = svinStatus == 1 ? "In Progress" : svinStatus == 2 ? "Valid" : "Unknown/Invalid";
+    Serial.printf("%02d:%02d:%02d: Mode = '%s' Status = '%s' (%d/%d) (%.4f,%.4f,%.4f) Mean Accuracy = %.4f\r\n",
+      myGNSS.getHour(), myGNSS.getMinute(), myGNSS.getSecond(), mode == 2 ? "BASE" : "ROVER", status,
+      myGNSS.getSurveyInObservations(), myGNSS.getSurveyInCfgDuration(),
+      myGNSS.getSurveyInMeanX(), myGNSS.getSurveyInMeanY(), myGNSS.getSurveyInMeanZ(), 
+      myGNSS.getSurveyInMeanAccuracy());
+  }
 }
 
-void MyRtmcCallback(RtcmPacket &rtcm)
+void verify(bool event)
 {
-  Serial.printf("Received an RTCM %d packet.  ECEF: (%.4f,%.4f,%.4f)\r\n", rtcm.type, myGNSS.getEcefX(), myGNSS.getEcefY(), myGNSS.getEcefZ());
+  if (!event)
+  {
+    Serial.println("Operation failed: freezing!");
+    while (true);
+  }
 }

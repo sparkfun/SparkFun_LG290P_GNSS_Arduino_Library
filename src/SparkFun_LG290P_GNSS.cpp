@@ -128,8 +128,9 @@ bool LG290P::begin(HardwareSerial &serialPort, Print *parserDebug, Print *parser
     ok = ok && getMode(devState.mode);
     ok = ok && scanForMsgsEnabled();
 
-    debugPrintf("Starting with %s mode, GGA %d RMC %d EPE %d PVT %d PL %d", 
-        devState.mode == 2 ? "BASE" : "ROVER", devState.ggaRate, devState.rmcRate, devState.epeRate, devState.pvtRate, devState.plRate);
+    debugPrintf("Starting with %s mode, GGA %d RMC %d EPE %d PVT %d PL %d SVIN %d", 
+        devState.mode == 2 ? "BASE" : "ROVER", devState.ggaRate, devState.rmcRate, devState.epeRate, 
+        devState.pvtRate, devState.plRate, devState.svinstatusRate);
     if (!ok)
     {
         sempStopParser(&_sempParse);
@@ -405,6 +406,11 @@ bool LG290P::setModeRover(bool resetAfter)
     bool ret = sendOkCommand("PQTMCFGRCVRMODE", ",W,1");
     if (resetAfter)
         ret = ret && save() && reset();
+    if (ret)
+    {
+        // In Rover mode the SVINSTATUS messages don't work, so clear the domain.
+        svinStatusDomain.clear();
+    }
     return ret;
 }
 
@@ -583,13 +589,19 @@ bool LG290P::scanForMsgsEnabled()
     ok = ok && getMessageRate("PQTMEPE", devState.epeRate, 2);
     ok = ok && getMessageRate("PQTMPVT", devState.pvtRate, 1);
     ok = ok && getMessageRate("PQTMPL", devState.plRate, 1);
+
+    // this is a special message. getMessageRate might fail if in ROVER mode
+    getMessageRate("PQTMSVINSTATUS", devState.svinstatusRate, 1);
     return ok;
 }
 
 void LG290P::ensureMsgEnabled(bool enabled, const char *msg, int msgVer /* = -1 */)
 {
     if (!enabled)
+    {
+        debugPrintf("Forcing enable of %s sentence", msg);
         setMessageRate(msg, 1, msgVer);
+    }
 }
 
 bool LG290P::nmeaSubscribe(const char *msgName, nmeaCallback callback)
@@ -648,6 +660,7 @@ void LG290P::clearAll()
     rtcmCounters.clear();
     epeDomain.clear();
     plDomain.clear();
+    svinStatusDomain.clear();
 }
 
 bool LG290P::genericReset(const char *resetCmd)
@@ -1035,13 +1048,15 @@ void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
             pvtDomain.newDataAvailable = true;
         }
 
-        else if (id == "PQTMSVNSTATUS")
+        else if (id == "PQTMSVINSTATUS")
         {
-            // handle MeanAcc
-            // MeanX [8]
-            // MeanY [9]
-            // MeanZ [10]
-            // MeanAcc [11]
+            svinStatusDomain.validity = atoi(nmea[3].c_str());
+            svinStatusDomain.observations = atoi(nmea[6].c_str());
+            svinStatusDomain.cfgDur = atoi(nmea[7].c_str());
+            svinStatusDomain.meanX = atof(nmea[8].c_str());
+            svinStatusDomain.meanY = atof(nmea[9].c_str());
+            svinStatusDomain.meanZ = atof(nmea[10].c_str());
+            svinStatusDomain.meanAcc = atof(nmea[11].c_str());
         }
 
         else if (id == "PQTMEPE")

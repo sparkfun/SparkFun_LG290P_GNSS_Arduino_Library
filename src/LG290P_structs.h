@@ -91,6 +91,18 @@ struct PlDomain
     void clear() { *this = PlDomain(); }
 };
 
+struct SvinStatusDomain
+{
+    int validity = 0;
+    int observations = 0;
+    int cfgDur = 0;
+    double meanX = 0;
+    double meanY = 0;
+    double meanZ = 0;
+    double meanAcc = 0;
+    void clear() { *this = SvinStatusDomain(); }
+};
+
 class NmeaPacket
 {
     friend class LG290P;
