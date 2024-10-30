@@ -42,6 +42,8 @@ clearRtcmCount	KEYWORD2
 
 setModeBase	KEYWORD2
 setModeRover	KEYWORD2
+ensureModeBase	KEYWORD2
+ensureModeRover	KEYWORD2
 getMode	KEYWORD2
 
 setPortBaudrate	KEYWORD2

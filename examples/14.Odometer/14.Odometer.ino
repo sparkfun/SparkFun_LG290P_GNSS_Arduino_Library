@@ -58,7 +58,6 @@ void setup()
   myGNSS.nmeaSubscribe("PQTMODO", MyPqtmCallback);  
   myGNSS.setMessageRate("PQTMODO", 1, 1);
   myGNSS.sendCommand("$PQTMCFGODO", ",W,1,0"); // enable odo
-  myGNSS.setFixInterval(1000);
 }
 
 void MyPqtmCallback(NmeaPacket &nmea)

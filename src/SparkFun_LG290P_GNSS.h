@@ -239,6 +239,20 @@ class LG290P
   bool setModeRover(bool resetAfter = true);
 
   /** 
+   * @brief Set the device to "Base station" mode, but only if it's not already
+   * @details Uses the LG290P "PQTMCFGRCVRMODE" command to set receiver mode
+   * @return true if the mode was set correctly
+   */
+  bool ensureModeBase() { return devState.mode == 2 || setModeBase(); }
+
+  /** 
+   * @brief Set the device to "Rover" mode, but only if it's not already
+   * @details Uses the LG290P "PQTMCFGRCVRMODE" command to set receiver mode
+   * @return true if the mode was set correctly
+   */
+  bool ensureModeRover() { return devState.mode == 1 || setModeRover(); }
+
+  /** 
    * @brief Gets the device mode
    * @details Uses the LG290P "PQTMCFGRCVRMODE" command to get receiver mode
    * @param mode set to 1 if device is in Rover mode, 2 if Base mode, 0 = unknown

@@ -103,13 +103,19 @@ This library provides an interface for controlling and configuring an LG290P GNS
 ## Device Configuration
 
 - **`bool setModeBase(bool resetAfter = true);`**  
-  Set the device to base mode, optionally doing the necessary reset afterwards.
+  Set the device to BASE mode, optionally doing the necessary reset afterwards.
 
 - **`bool setModeRover(bool resetAfter = true);`**  
-  Set the device to rover mode, optionally doing the necessary reset afterwards.
+  Set the device to ROVER mode, optionally doing the necessary reset afterwards.
+
+- **`bool ensureModeBase();`**  
+  Set the device to BASE mode, if it's not already in that mode.
+
+- **`bool ensureModeRover(bool resetAfter = true);`**  
+  Set the device to ROVER mode, if it's not already in that mode.
 
 - **`bool getMode(int &mode);`**  
-  Gets the device mode (Rover=1 or Base=2).
+  Gets the device mode (ROVER=1 or BASE=2).
 
 - **`bool setPortBaudrate(int port, uint32_t newBaud);`**  
   Set the baud rate of the specified port.

@@ -47,7 +47,7 @@ void setup()
     while (true);
   }
   Serial.println("LG290P detected!");
-  Serial.println("Watch the PPS LED flash.");
+  Serial.println("Watch the PPS LED flash!");
   Serial.println();
 }
 

@@ -52,6 +52,9 @@ void setup()
     while (true);
   }
   Serial.println("LG290P detected!");
+
+  // This example will only work if the device is in ROVER mode
+  myGNSS.ensureModeRover();
 }
 
 void loop()
