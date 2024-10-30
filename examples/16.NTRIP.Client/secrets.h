@@ -1,5 +1,5 @@
 // Your WiFi credentials
-const char ssid[] = "HIE-EXPRESS";
+const char ssid[] = "Sonesta Guest";
 const char password[] =  "";
 
 // RTK2Go works well and is free
