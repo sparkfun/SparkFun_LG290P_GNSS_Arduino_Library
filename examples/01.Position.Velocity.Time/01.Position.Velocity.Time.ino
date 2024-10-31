@@ -69,45 +69,54 @@ void loop()
   {
     lastCheck = millis();
 
-    static int linecount = 0;
-    if (linecount++ % 20 == 0)
-    {
-      // Every 20th line draw the helpful header
-      const char *headings[] = { "Date", "Time", "Latitude", "Longitude", "Altitude", "Speed", "North", "East", "Down", "Sat", "SIV", "Fix-Quality", "HDOP", "PDOP", "Leap", "Sep" };
-      int widths[] = {      10,     8,      12,         13,          8,          7,       7,       7,      7,      3,     3,     11,            5,      5,     4,       7    };
-      int items = sizeof widths / sizeof widths[0];
-      Serial.println();
-
-      // Header
-      for (int i=0; i<items; ++i)
-      {
-        char buf[10]; sprintf(buf, "%%-%ds ", widths[i]);
-        Serial.printf(buf, headings[i]);
-      }
-      Serial.println();
-
-      // Dashes
-      for (int i=0; i<items; ++i)
-      {
-        std::string dashes(widths[i], '-');
-        Serial.printf("%s%s", dashes.c_str(), i == items - 1 ? "" : "-");
-      }
-      Serial.println();
-    }
-
-    // Fix quality requires some special formatting
-    char qualbuf[32];
-    const char *qualities[] = { "No-Fix", "3D-Fix", "DGPS-Fix", "GPS-PPS", "RTK-Fix", "RTK-Flt" };
-    int qual = myGNSS.getFixQuality();
-    snprintf(qualbuf, sizeof qualbuf, "%s(%d)", (qual >= 0 && qual <= 5) ? qualities[qual] : "Unknown", qual);
-
-    Serial.printf("%02d/%02d/%04d %02d:%02d:%02d %-12.8f %-13.8f %-8.2f %-7.2f %-7.2f %-7.2f %-7.2f %-3d %-3d %-11s %-5.2f %-5.2f %-4d %-7.2f\r\n",
-      myGNSS.getDay(), myGNSS.getMonth(), myGNSS.getYear(),
-      myGNSS.getHour(), myGNSS.getMinute(), myGNSS.getSecond(),
-      myGNSS.getLatitude(), myGNSS.getLongitude(),
-      myGNSS.getAltitude(), myGNSS.getHorizontalSpeed(), myGNSS.getNorthVelocity(), myGNSS.getEastVelocity(), myGNSS.getDownVelocity(),
-      myGNSS.getSatellitesUsedCount(), myGNSS.getSatellitesInViewCount(), qualbuf, myGNSS.getHdop(), myGNSS.getPdop(),
-      myGNSS.getLeapSeconds(), myGNSS.getGeoidalSeparation());
+    displayData();
   }
 }
 
+void displayData()
+{
+  // Every 20th line draw the helpful header
+  static int linecount = 0;
+  if (linecount++ % 20 == 0)
+  {
+    displayHeader();
+  }
+
+  // Fix quality requires some special formatting
+  char qualbuf[32];
+  const char *qualities[] = { "No-Fix", "3D-Fix", "DGPS-Fix", "GPS-PPS", "RTK-Fix", "RTK-Flt" };
+  int qual = myGNSS.getFixQuality();
+  snprintf(qualbuf, sizeof qualbuf, "%s(%d)", (qual >= 0 && qual <= 5) ? qualities[qual] : "Unknown", qual);
+
+  Serial.printf("%02d/%02d/%04d %02d:%02d:%02d %-12.8f %-13.8f %-8.2f %-7.2f %-7.2f %-7.2f %-7.2f %-3d %-3d %-11s %-5.2f %-5.2f %-4d %-7.2f\r\n",
+    myGNSS.getDay(), myGNSS.getMonth(), myGNSS.getYear(),
+    myGNSS.getHour(), myGNSS.getMinute(), myGNSS.getSecond(),
+    myGNSS.getLatitude(), myGNSS.getLongitude(),
+    myGNSS.getAltitude(), myGNSS.getHorizontalSpeed(), myGNSS.getNorthVelocity(), myGNSS.getEastVelocity(), myGNSS.getDownVelocity(),
+    myGNSS.getSatellitesUsedCount(), myGNSS.getSatellitesInViewCount(), qualbuf, myGNSS.getHdop(), myGNSS.getPdop(),
+    myGNSS.getLeapSeconds(), myGNSS.getGeoidalSeparation());
+}
+
+void displayHeader()
+{
+  const char *headings[] = { "Date", "Time", "Latitude", "Longitude", "Altitude", "Speed", "North", "East", "Down", "Sat", "SIV", "Fix-Quality", "HDOP", "PDOP", "Leap", "Sep" };
+  int widths[] =           {  10,     8,      12,         13,          8,          7,       7,       7,      7,      3,     3,     11,            5,      5,     4,       7    };
+  int items = sizeof widths / sizeof widths[0];
+  Serial.println();
+
+  // Header
+  for (int i=0; i<items; ++i)
+  {
+    char buf[10]; sprintf(buf, "%%-%ds ", widths[i]);
+    Serial.printf(buf, headings[i]);
+  }
+  Serial.println();
+
+  // Dashes
+  for (int i=0; i<items; ++i)
+  {
+    std::string dashes(widths[i], '-');
+    Serial.printf("%s%s", dashes.c_str(), i == items - 1 ? "" : "-");
+  }
+  Serial.println();
+}
