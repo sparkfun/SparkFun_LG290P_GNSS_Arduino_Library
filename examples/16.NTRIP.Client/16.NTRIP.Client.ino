@@ -97,7 +97,7 @@ void loop()
   if (Serial.available())
   {
     beginClient();
-    while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+    while (Serial.available()) Serial.read(); // Empty buffer of any newline chars
   }
 
   Serial.println(F("Press any key to start NTRIP Client."));
@@ -105,19 +105,19 @@ void loop()
   delay(1000);
 }
 
-//Connect to NTRIP Caster, receive RTCM, and push to ZED module over I2C
+// Connect to NTRIP Caster, receive RTCM, and push to its output to the LG290P over serial
 void beginClient()
 {
   WiFiClient ntripClient;
   long rtcmCount = 0;
 
   Serial.println(F("Subscribing to Caster. Press key to stop"));
-  delay(10); //Wait for any serial to arrive
-  while (Serial.available()) Serial.read(); //Flush
+  delay(10); // Wait for any serial to arrive
+  while (Serial.available()) Serial.read(); // Flush
 
   while (Serial.available() == 0)
   {
-    //Connect if we are not already. Limit to 5s between attempts.
+    // Connect if we are not already. Limit to 5s between attempts.
     if (ntripClient.connected() == false)
     {
       Serial.print(F("Opening socket to "));
@@ -131,7 +131,7 @@ void beginClient()
       else
       {
         Serial.printf("Connected to %s: %d\r\n", casterHost, casterPort);
-        Serial.print("Requesting NTRIP Data from mount point %s\r\n", mountPoint);
+        Serial.printf("Requesting NTRIP Data from mount point %s\r\n", mountPoint);
 
         const int SERVER_BUFFER_SIZE  = 512;
         char serverRequest[SERVER_BUFFER_SIZE + 1];
