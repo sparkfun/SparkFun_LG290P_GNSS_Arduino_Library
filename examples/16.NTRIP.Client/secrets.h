@@ -1,6 +1,6 @@
 // Your WiFi credentials
-const char ssid[] = "Sonesta Guest";
-const char password[] =  "";
+const char ssid[] = "HoustonHartFamily";
+const char password[] =  "xiwxj#g2%esc";
 
 // RTK2Go works well and is free
 const char casterHost[] = "rtk2go.com"; 
@@ -10,9 +10,9 @@ const char casterUserPW[] = "";
 // const char mountPoint[] = "VMAX-LAND-1"; // The mount point you want to get data from
 const char mountPoint[] = "bldr_SparkFun1"; // The mount point you want to get data from
 
-//Emlid Caster also works well and is free
-//const char casterHost[] = "caster.emlid.com";
-//const uint16_t casterPort = 2101;
-//const char casterUser[] = "u99696"; //User name and pw must be obtained through their web portal
-//const char casterUserPW[] = "466zez";
-//const char mountPoint[] = "MP1979"; //The mount point you want to get data from
+// Emlid Caster also works well and is free
+// const char casterHost[] = "caster.emlid.com";
+// const uint16_t casterPort = 2101;
+// const char casterUser[] = "u99696"; // User name and pw must be obtained through their web portal
+// const char casterUserPW[] = "466zez";
+// const char mountPoint[] = "MP1979"; // The mount point you want to get data from

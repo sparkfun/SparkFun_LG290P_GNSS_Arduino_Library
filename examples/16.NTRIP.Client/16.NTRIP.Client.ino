@@ -265,7 +265,7 @@ void displayData()
   int qual = myGNSS.getFixQuality();
   snprintf(qualbuf, sizeof qualbuf, "%s(%d)", (qual >= 0 && qual <= 5) ? qualities[qual] : "Unknown", qual);
 
-  Serial.printf("%02d/%02d/%04d %02d:%02d:%02d %-12.8f %-13.8f %-8.2f %-7.2f %-7.2f %-7.2f %-7.2f %-3d %-3d %-11s %-5.2f %-5.2f %-7.2f %-7.2f\r\n",
+  Serial.printf("%02d/%02d/%04d %02d:%02d:%02d %-12.8f %-13.8f %-8.2f %-7.2f %-7.2f %-7.2f %-7.2f %-3d %-3d %-11s %-5.2f %-5.2f %-7.3f %-7.3f\r\n",
     myGNSS.getDay(), myGNSS.getMonth(), myGNSS.getYear(),
     myGNSS.getHour(), myGNSS.getMinute(), myGNSS.getSecond(),
     myGNSS.getLatitude(), myGNSS.getLongitude(),
