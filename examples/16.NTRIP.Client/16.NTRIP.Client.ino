@@ -265,19 +265,18 @@ void displayData()
   int qual = myGNSS.getFixQuality();
   snprintf(qualbuf, sizeof qualbuf, "%s(%d)", (qual >= 0 && qual <= 5) ? qualities[qual] : "Unknown", qual);
 
-  Serial.printf("%02d/%02d/%04d %02d:%02d:%02d %-12.8f %-13.8f %-8.2f %-7.2f %-7.2f %-7.2f %-7.2f %-3d %-3d %-11s %-5.2f %-5.2f %-7.3f %-7.3f\r\n",
+  Serial.printf("%02d/%02d/%04d %02d:%02d:%02d %-12.8f %-13.8f %-8.2f %-3d %-3d %-11s %-5.2f %-5.2f %-7.3f %-7.3f %-7.3f %-7.3f %-7.3f\r\n",
     myGNSS.getDay(), myGNSS.getMonth(), myGNSS.getYear(),
     myGNSS.getHour(), myGNSS.getMinute(), myGNSS.getSecond(),
-    myGNSS.getLatitude(), myGNSS.getLongitude(),
-    myGNSS.getAltitude(), myGNSS.getHorizontalSpeed(), myGNSS.getNorthVelocity(), myGNSS.getEastVelocity(), myGNSS.getDownVelocity(),
+    myGNSS.getLatitude(), myGNSS.getLongitude(), myGNSS.getAltitude(), 
     myGNSS.getSatellitesUsedCount(), myGNSS.getSatellitesInViewCount(), qualbuf, myGNSS.getHdop(), myGNSS.getPdop(),
-    myGNSS.get2DError(), myGNSS.get3DError());
+    myGNSS.getNorthError(), myGNSS.getEastError(), myGNSS.getDownError(), myGNSS.get2DError(), myGNSS.get3DError());
 }
 
 void displayHeader()
 {
-  const char *headings[] = { "Date", "Time", "Latitude", "Longitude", "Altitude", "Speed", "North", "East", "Down", "Sat", "SIV", "Fix-Quality", "HDOP", "PDOP", "2D Err", "3D Err" };
-  int widths[] =           {  10,     8,      12,         13,          8,          7,       7,       7,      7,      3,     3,     11,            5,      5,      7,      7    };
+  const char *headings[] = { "Date", "Time", "Latitude", "Longitude", "Altitude", "Sat", "SIV", "Fix-Quality", "HDOP", "PDOP", "N Err", "E Err", "D Err", "2D Err", "3D Err" };
+  int widths[] =           {  10,     8,      12,         13,          8,          3,     3,     11,            5,      5,      7,       7,       7,       7,      7    };
   int items = sizeof widths / sizeof widths[0];
   Serial.println();
 
