@@ -1188,6 +1188,7 @@ void LG290P::rtcmHandler(SEMP_PARSE_STATE *parse)
 
 bool LG290P::isNewSnapshotAvailable()
 {
+    ensurePvtEnabled();
     bool r = pvtDomain.newDataAvailable;
     pvtDomain.newDataAvailable = false;
     return r;
@@ -1195,6 +1196,7 @@ bool LG290P::isNewSnapshotAvailable()
 
 bool LG290P::isNewSatelliteInfoAvailable()
 {
+    ensureGsvEnabled();
     bool r = hasNewSatellites;
     hasNewSatellites = false;
     return r;
