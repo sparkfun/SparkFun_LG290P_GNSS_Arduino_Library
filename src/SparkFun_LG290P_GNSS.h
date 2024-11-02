@@ -53,7 +53,7 @@ class LG290P
       int elev, azimuth, prn, snr; char talker[3]; 
       bool operator<(const satinfo& other) const { return prn < other.prn; }
     };
-    struct { int mode = -1, ggaRate = -1, rmcRate = -1, pvtRate = -1, plRate = -1, epeRate = -1, svinstatusRate = -1; } devState;
+    struct { int mode = -1, ggaRate = -1, rmcRate = -1, pvtRate = -1, plRate = -1, epeRate = -1, svinstatusRate = -1, gsvRate = -1;} devState;
 
   public:
 
@@ -943,6 +943,7 @@ class LG290P
     void ensurePlEnabled() { ensureMsgEnabled(devState.plRate > 0, "PQTMPL", 1); }
     void ensureEpeEnabled() { ensureMsgEnabled(devState.epeRate > 0, "PQTMEPE", 2); }
     void ensureSvinStatusEnabled() { ensureMsgEnabled(devState.svinstatusRate > 0, "PQTMSVINSTATUS", 1); }
+    void ensureGsvEnabled() { ensureMsgEnabled(devState.gsvRate > 0, "GSV"); }
     void clearAll();
     bool genericReset(const char *resetCmd);
 

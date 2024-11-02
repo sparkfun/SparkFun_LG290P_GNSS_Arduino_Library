@@ -128,9 +128,9 @@ bool LG290P::begin(HardwareSerial &serialPort, Print *parserDebug, Print *parser
     ok = ok && getMode(devState.mode);
     ok = ok && scanForMsgsEnabled();
 
-    debugPrintf("Starting with %s mode, GGA %d RMC %d EPE %d PVT %d PL %d SVIN %d", 
+    debugPrintf("Starting with %s mode, GGA %d RMC %d EPE %d PVT %d PL %d SVIN %d GSV %d", 
         devState.mode == 2 ? "BASE" : "ROVER", devState.ggaRate, devState.rmcRate, devState.epeRate, 
-        devState.pvtRate, devState.plRate, devState.svinstatusRate);
+        devState.pvtRate, devState.plRate, devState.svinstatusRate, devState.gsvRate);
     if (!ok)
     {
         sempStopParser(&_sempParse);
@@ -565,6 +565,7 @@ bool LG290P::setMessageRate(const char *msgName, int rate, int msgVer)
         else if (str == "PQTMPL") devState.plRate = rate;
         else if (str == "PQTMSVINSTATUS") devState.svinstatusRate = rate;
         else if (str == "PQTMEPE") devState.epeRate = rate;
+        else if (str == "GSV") devState.gsvRate = rate;
     }
     return ret;
 }
@@ -589,6 +590,7 @@ bool LG290P::scanForMsgsEnabled()
     ok = ok && getMessageRate("PQTMEPE", devState.epeRate, 2);
     ok = ok && getMessageRate("PQTMPVT", devState.pvtRate, 1);
     ok = ok && getMessageRate("PQTMPL", devState.plRate, 1);
+    ok = ok && getMessageRate("GSV", devState.gsvRate);
 
     // this is a special message. getMessageRate might fail if in ROVER mode
     getMessageRate("PQTMSVINSTATUS", devState.svinstatusRate, 1);
@@ -874,6 +876,8 @@ bool LG290P::sendOkCommand(const char *command, const char *parms, uint16_t maxW
 std::list<LG290P::satinfo> LG290P::getVisibleSats(const char *talker /* = nullptr */)
 {
     std::list<LG290P::satinfo> ret;
+
+    ensureGsvEnabled();
 
     // Get all the satellites visible?
     if (talker == nullptr)
