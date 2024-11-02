@@ -1,6 +1,6 @@
 // Your WiFi credentials
-const char ssid[] = "HoustonHartFamily";
-const char password[] =  "xiwxj#g2%esc";
+const char ssid[] = "SpectrumSetup-43";
+const char password[] =  "museumurban840";
 
 // RTK2Go works well and is free
 const char casterHost[] = "rtk2go.com"; 

@@ -946,7 +946,6 @@ void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
     NmeaPacket nmea = NmeaPacket::FromString(sentence);
     auto id = nmea.SentenceId();
 
-
     // Do $PQTM strings later
     if (sentence.substr(0, 2) != "$P")
     {
@@ -1409,20 +1408,20 @@ std::string NmeaPacket::ToString() const
 
 std::string NmeaPacket::TalkerId() const
 {
-    if (!IsValid())
+    if (!IsValid() || fields[0].empty() || fields[0][0] != '$')
         return "";
 
-    // If proper NMEA, separate Talker and Sentence Ids
-    return fields[0].substr(0, 2) == "$G" ? fields[0].substr(1, 2) : "";
+    // The Talker Id is the first two letters following the $ (four if PQTM)
+    return fields[0].substr(0, 5) == "$PQTM" ? "" : fields[0].substr(1, 2);
 }
 
 std::string NmeaPacket::SentenceId() const
 {
-    if (!IsValid())
+    if (!IsValid() || fields[0].empty() || fields[0][0] != '$')
         return "";
 
-    // If proper NMEA, separate Talker and Sentence Ids
-    return fields[0].substr(0, 2) == "$G" ? fields[0].substr(3) : fields[0].substr(1);
+    // The Sentence Id is everything after the Talker Id, unless it's a PQTM 
+    return fields[0].substr(0, 5) == "$PQTM" ? fields[0].substr(1) : fields[0].length() >= 3 ? fields[0].substr(3) : "";
 }
 
 void NmeaPacket::processGGA(PvtDomain &snapshot)

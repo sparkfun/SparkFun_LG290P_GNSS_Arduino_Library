@@ -68,7 +68,7 @@ void setup()
   // Increase buffer size to handle high baud rate streams
   SerialGNSS.setRxBufferSize(4096);
   SerialGNSS.begin(gnss_baud, SERIAL_8N1, pin_UART1_RX, pin_UART1_TX);
-  
+
   myGNSS.enableDebugging(Serial); // Print all debug to Serial
   if (myGNSS.begin(SerialGNSS) == false)     // Give the serial port over to the library
   {
