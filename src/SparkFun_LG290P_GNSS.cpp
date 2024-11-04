@@ -129,7 +129,7 @@ bool LG290P::begin(HardwareSerial &serialPort, Print *parserDebug, Print *parser
     ok = ok && scanForMsgsEnabled();
 
     debugPrintf("Starting with %s mode, GGA %d RMC %d EPE %d PVT %d PL %d SVIN %d GSV %d", 
-        devState.mode == 2 ? "BASE" : "ROVER", devState.ggaRate, devState.rmcRate, devState.epeRate, 
+        devState.mode == BASEMODE ? "BASE" : "ROVER", devState.ggaRate, devState.rmcRate, devState.epeRate, 
         devState.pvtRate, devState.plRate, devState.svinstatusRate, devState.gsvRate);
     if (!ok)
     {
@@ -398,6 +398,8 @@ bool LG290P::setModeBase(bool resetAfter /* = true */)
     bool ret = sendOkCommand("PQTMCFGRCVRMODE", ",W,2");
     if (resetAfter)
         ret = ret && save() && reset();
+    if (ret)
+        devState.mode = BASEMODE;
     return ret;
 }
 
@@ -410,6 +412,7 @@ bool LG290P::setModeRover(bool resetAfter)
     {
         // In Rover mode the SVINSTATUS messages don't work, so clear the domain.
         svinStatusDomain.clear();
+        devState.mode = ROVERMODE;
     }
     return ret;
 }

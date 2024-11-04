@@ -54,6 +54,7 @@ class LG290P
       bool operator<(const satinfo& other) const { return prn < other.prn; }
     };
     struct { int mode = -1, ggaRate = -1, rmcRate = -1, pvtRate = -1, plRate = -1, epeRate = -1, svinstatusRate = -1, gsvRate = -1;} devState;
+    enum { ROVERMODE = 1, BASEMODE = 2 };
 
   public:
 
@@ -243,14 +244,14 @@ class LG290P
    * @details Uses the LG290P "PQTMCFGRCVRMODE" command to set receiver mode
    * @return true if the mode was set correctly
    */
-  bool ensureModeBase() { return devState.mode == 2 || setModeBase(); }
+  bool ensureModeBase() { return devState.mode == BASEMODE || setModeBase(); }
 
   /** 
    * @brief Set the device to "Rover" mode, but only if it's not already
    * @details Uses the LG290P "PQTMCFGRCVRMODE" command to set receiver mode
    * @return true if the mode was set correctly
    */
-  bool ensureModeRover() { return devState.mode == 1 || setModeRover(); }
+  bool ensureModeRover() { return devState.mode == ROVERMODE || setModeRover(); }
 
   /** 
    * @brief Gets the device mode
