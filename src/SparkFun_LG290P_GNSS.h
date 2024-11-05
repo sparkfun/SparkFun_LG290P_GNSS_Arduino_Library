@@ -55,6 +55,7 @@ class LG290P
     };
     struct { int mode = -1, ggaRate = -1, rmcRate = -1, pvtRate = -1, plRate = -1, epeRate = -1, svinstatusRate = -1, gsvRate = -1;} devState;
     enum { ROVERMODE = 1, BASEMODE = 2 };
+    enum { SURVEYDISABLED = 0, SURVEYIN = 1, SURVEYFIXED = 2 };
 
   public:
 
@@ -615,7 +616,14 @@ class LG290P
      * @param ecefZ Reference to a double for the ECEF Z coordinate.
      * @return true if the mode settings were successfully retrieved, false otherwise.
      */
-    bool getSurveyInMode(int &mode, int &positionTimes, double &accuracyLimit, double &ecefX, double &ecefY, double &ecefZ);
+    bool getSurveyInDetails(int &mode, int &positionTimes, double &accuracyLimit, double &ecefX, double &ecefY, double &ecefZ);
+
+    /**
+     * @brief Gets the current survey mode.
+     * @details Uses PQTMCFGSVIN command
+     * @return the Survey In mode: 0 = Disabled, 1 = Survey In, 2 = Fixed
+     */
+    uint8_t getSurveyInMode();
 
     /**
      * @brief Sets the device to "Survey-In" mode.
@@ -638,8 +646,15 @@ class LG290P
      */
     bool setSurveyFixedMode(double ecefX, double ecefY, double ecefZ, bool resetAfter = true);
 
-    /** Geodetic reporting **/
+    /**
+     * @brief Disables Survey In or Survey Fixed mode
+     * @details Uses PQTMCFGSVIN command
+     * @param resetAfter (Optional) Reset the device afterwards for new setting to 'take'
+     * @return true if the mode was successfully set, false otherwise.
+     */
+    bool disableSurveyInMode(bool resetAfter = true);
 
+    /** Geodetic reporting **/
     /**
      * @brief Checks if new snapshot data (location, time, date, fix, etc.) is available.
      * @details set to true whenever GGA or RMC sentence arrives

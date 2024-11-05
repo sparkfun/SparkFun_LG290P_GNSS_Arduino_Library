@@ -899,7 +899,7 @@ std::list<LG290P::satinfo> LG290P::getVisibleSats(const char *talker /* = nullpt
     return ret;
 }
 
-bool LG290P::getSurveyInMode(int &mode, int &positionTimes, double &accuracyLimit, double &ecefX, double &ecefY,
+bool LG290P::getSurveyInDetails(int &mode, int &positionTimes, double &accuracyLimit, double &ecefX, double &ecefY,
                              double &ecefZ)
 {
     bool ret = sendOkCommand("PQTMCFGSVIN", ",R");
@@ -914,6 +914,16 @@ bool LG290P::getSurveyInMode(int &mode, int &positionTimes, double &accuracyLimi
         ecefZ = atof(packet[7].c_str());
     }
     return ret;
+}
+
+uint8_t LG290P::getSurveyInMode()
+{
+    if (sendOkCommand("PQTMCFGSVIN", ",R"))
+    {
+        auto packet = getCommandResponse();
+        return (uint8_t)atoi(packet[2].c_str());
+    }
+    return SURVEYDISABLED;
 }
 
 bool LG290P::setSurveyInMode(int positionTimes, double accuracyLimit /* = 0 */, bool resetAfter /* = true */)
@@ -935,6 +945,15 @@ bool LG290P::setSurveyFixedMode(double ecefX, double ecefY, double ecefZ, bool r
         ok = ok && save() && reset();
     return ok;
 }
+
+bool LG290P::disableSurveyInMode(bool resetAfter /* = true */)
+{
+    bool ok = sendOkCommand("PQTMCFGSVIN", ",W,0,0,0,0,0,0");
+    if (resetAfter)
+        ok = ok && save() && reset();
+    return ok;
+}
+
 
 // Main handler and RAM inits
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-

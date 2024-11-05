@@ -89,9 +89,11 @@ getSatellitesInViewCount	KEYWORD2
 getSatellitesUsedCount	KEYWORD2
 getFixType	KEYWORD2
 
+getSurveyInDetails	KEYWORD2
 getSurveyInMode	KEYWORD2
 setSurveyInMode	KEYWORD2
 setSurveyFixedMode	KEYWORD2
+disableSurveyIn	KEYWORD2
 
 isNewSnapshotAvailable KEYWORD2
 getLatitude	KEYWORD2
