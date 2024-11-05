@@ -49,6 +49,9 @@ getMode	KEYWORD2
 setPortBaudrate	KEYWORD2
 setBaudrate	KEYWORD2
 getPortInfo	KEYWORD2
+setPortInputProtocols	KEYWORD2
+setPortOutputProtocols	KEYWORD2
+getPortProtocols	KEYWORD2
 setPPS	KEYWORD2
 disablePPS	KEYWORD2
 getPPS	KEYWORD2

@@ -463,6 +463,43 @@ bool LG290P::getPortInfo(int port, uint32_t &newBaud, uint8_t &databits, uint8_t
     return ret;
 }
 
+bool LG290P::setPortInputProtocols(int port, uint8_t newFlags)
+{
+    uint8_t inputFlags, outputFlags;
+    if (!getPortProtocols(port, inputFlags, outputFlags))
+        return false;
+
+    char parms[50];
+    snprintf(parms, sizeof parms, ",W,1,%d,%d,%d", port, newFlags, outputFlags);
+    return sendOkCommand("PQTMCFGPROT", parms);
+}
+
+bool LG290P::setPortOutputProtocols(int port, uint8_t newFlags)
+{
+    uint8_t inputFlags, outputFlags;
+    if (!getPortProtocols(port, inputFlags, outputFlags))
+        return false;
+
+    char parms[50];
+    snprintf(parms, sizeof parms, ",W,1,%d,%d,%d", port, inputFlags, newFlags);
+    return sendOkCommand("PQTMCFGPROT", parms);
+}
+
+bool LG290P::getPortProtocols(int port, uint8_t &inputFlags, uint8_t &outputFlags)
+{
+    char parms[50];
+    snprintf(parms, sizeof parms, ",R,1,%d", port);
+    bool ok = sendOkCommand("PQTMCFGPROT", parms);
+    if (ok)
+    {
+        auto packet = getCommandResponse();
+        ok = packet[2] == "1";
+        inputFlags = atoi(packet[4].c_str());
+        outputFlags = atoi(packet[5].c_str());
+    }
+    return ok;
+}
+
 bool LG290P::setPPS(uint16_t duration, bool alwaysOutput, bool positivePolarity)
 {
     char parms[50];
