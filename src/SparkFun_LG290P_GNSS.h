@@ -616,14 +616,14 @@ class LG290P
      * @param ecefZ Reference to a double for the ECEF Z coordinate.
      * @return true if the mode settings were successfully retrieved, false otherwise.
      */
-    bool getSurveyInDetails(int &mode, int &positionTimes, double &accuracyLimit, double &ecefX, double &ecefY, double &ecefZ);
+    bool getSurveyDetails(int &mode, int &positionTimes, double &accuracyLimit, double &ecefX, double &ecefY, double &ecefZ);
 
     /**
      * @brief Gets the current survey mode.
      * @details Uses PQTMCFGSVIN command
      * @return the Survey In mode: 0 = Disabled, 1 = Survey In, 2 = Fixed
      */
-    uint8_t getSurveyInMode();
+    uint8_t getSurveyMode();
 
     /**
      * @brief Sets the device to "Survey-In" mode.
@@ -890,12 +890,46 @@ class LG290P
      */
     double getProtLevelTime() { ensurePlEnabled(); return plDomain.protectionLevelTime; }
 
+    /**
+     * @brief Returns the Validity field from PQTMSVINSTATUS
+     * @return Validity
+     */
     int getSurveyInStatus() { ensureSvinStatusEnabled(); return svinStatusDomain.validity; }
+
+    /**
+     * @brief Returns the Observations field from PQTMSVINSTATUS
+     * @return Observations
+     */
     int getSurveyInObservations() { ensureSvinStatusEnabled(); return svinStatusDomain.observations; }
+
+    /**
+     * @brief Returns the CfgDur field from PQTMSVINSTATUS
+     * @return CfgDur
+     */
     int getSurveyInCfgDuration() { ensureSvinStatusEnabled(); return svinStatusDomain.cfgDur; }
+
+    /**
+     * @brief Returns the MeanX field from PQTMSVINSTATUS
+     * @return MeanX
+     */
     double getSurveyInMeanX() { ensureSvinStatusEnabled(); return svinStatusDomain.meanX; }
+
+    /**
+     * @brief Returns the MeanY field from PQTMSVINSTATUS
+     * @return MeanY
+     */
     double getSurveyInMeanY() { ensureSvinStatusEnabled(); return svinStatusDomain.meanY; }
+
+    /**
+     * @brief Returns the MeanZ field from PQTMSVINSTATUS
+     * @return MeanZ
+     */
     double getSurveyInMeanZ() { ensureSvinStatusEnabled(); return svinStatusDomain.meanZ; }
+
+    /**
+     * @brief Returns the MeanAcc field from PQTMSVINSTATUS
+     * @return MeanAcc
+     */
     double getSurveyInMeanAccuracy() { ensureSvinStatusEnabled(); return svinStatusDomain.meanAcc; }
 
   #if false // TODO

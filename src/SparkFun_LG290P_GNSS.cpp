@@ -899,7 +899,7 @@ std::list<LG290P::satinfo> LG290P::getVisibleSats(const char *talker /* = nullpt
     return ret;
 }
 
-bool LG290P::getSurveyInDetails(int &mode, int &positionTimes, double &accuracyLimit, double &ecefX, double &ecefY,
+bool LG290P::getSurveyDetails(int &mode, int &positionTimes, double &accuracyLimit, double &ecefX, double &ecefY,
                              double &ecefZ)
 {
     bool ret = sendOkCommand("PQTMCFGSVIN", ",R");
@@ -916,7 +916,7 @@ bool LG290P::getSurveyInDetails(int &mode, int &positionTimes, double &accuracyL
     return ret;
 }
 
-uint8_t LG290P::getSurveyInMode()
+uint8_t LG290P::getSurveyMode()
 {
     if (sendOkCommand("PQTMCFGSVIN", ",R"))
     {

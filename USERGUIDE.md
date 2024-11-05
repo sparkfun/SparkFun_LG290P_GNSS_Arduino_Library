@@ -238,11 +238,11 @@ This library provides an interface for controlling and configuring an LG290P GNS
 
 ## Survey Mode
 
-- **`bool getSurveyInDetails(int &mode, int &positionTimes, double &accuracyLimit, double &ecefX, double &ecefY, double &ecefZ);`**  
+- **`bool getSurveyDetails(int &mode, int &positionTimes, double &accuracyLimit, double &ecefX, double &ecefY, double &ecefZ);`**  
   Retrieves the current survey mode settings, including position times and accuracy limit.
 
-- **`uint8_t getSurveyInMode();`**  
-  Retrieves the current Survey In mode.
+- **`uint8_t getSurveyMode();`**  
+  Retrieves the current Survey mode.
 
 - **`bool setSurveyInMode(int positionTimes, double accuracyLimit = 0);`**  
   Sets the device to Survey-In mode with a specified number of position times and accuracy limit.
