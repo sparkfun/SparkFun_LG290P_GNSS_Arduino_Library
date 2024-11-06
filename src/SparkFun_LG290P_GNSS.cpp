@@ -1004,7 +1004,7 @@ void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
     std::string sentence = (const char *)parse->buffer;
     if (sentence.length() >= 2 && sentence.substr(sentence.length() - 2) == "\r\n")
         // if (sentence.ends_with("\r\n"))
-        sentence.erase(sentence.size() - 2);
+        sentence.erase(sentence.length() - 2);
 
     NmeaPacket nmea = NmeaPacket::FromString(sentence);
     auto id = nmea.SentenceId();
