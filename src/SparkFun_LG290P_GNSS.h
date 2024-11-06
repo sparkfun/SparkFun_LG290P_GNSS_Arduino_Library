@@ -959,6 +959,15 @@ class LG290P
      */
     double getSurveyInMeanAccuracy() { ensureSvinStatusEnabled(); return svinStatusDomain.meanAcc; }
 
+    // Convert LLH (geodetic) to ECEF
+    // From: https://stackoverflow.com/questions/19478200/convert-latitude-and-longitude-to-ecef-coordinates-system
+    static void geodeticToEcef(double lat, double lon, double alt, double &xOut, double &yOut, double &zOut);
+
+    // Convert ECEF to LLH (geodetic)
+    // From: https://danceswithcode.net/engineeringnotes/geodetic_to_ecef/geodetic_to_ecef.html
+    static void ecefToGeodetic(double x, double y, double z, double &latOut, double &lonOut, double &altOut);
+
+
   #if false // TODO
 
     float getLatitudeDeviation();

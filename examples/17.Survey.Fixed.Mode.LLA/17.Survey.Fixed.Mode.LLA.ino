@@ -6,7 +6,7 @@
   License: MIT. Please see LICENSE.md for more information.
 
   This example shows how enable the fixed survey mode, where you define the BASE station's
-  location by supplying setSurveyFixedMode with some ECEF coordinates.
+  location by supplying setSurveyFixedMode with Latitude/Longitude/Altitude coordinates.
 
   These examples are targeted for an ESP32 platform but any platform that has multiple
   serial UARTs should be compatible.
@@ -59,9 +59,15 @@ void setup()
   Serial.println("Setting base station mode");
   verify(myGNSS.setModeBase(false)); // don't reset, because setSurveyInMode() is going to do it
   
+  double eiffelLat = 48.8584, eiffelLong = 2.2945, eiffelAlt = 365;
+  double ecefX, ecefY, ecefZ;
+
+  // Convert Eiffel Tower lat/long/alt to ECEF coordinates
+  LG290P::geodeticToEcef(eiffelLat, eiffelLong, eiffelAlt, ecefX, ecefY, ecefZ);
+
   Serial.println("Setting 'Survey' Mode fixed to top of Eiffel Tower");
-  double eiffelEcefX = 4201152.7587, eiffelEcefY = 168331.7945, eiffelEcefZ = 4780461.5607;
-  verify(myGNSS.setSurveyFixedMode(eiffelEcefX, eiffelEcefY, eiffelEcefZ));
+  Serial.printf("(%.3f,%.3f,%.3f)\r\n", ecefX, ecefY, ecefZ);
+  verify(myGNSS.setSurveyFixedMode(ecefX, ecefY, ecefZ));
   if (!myGNSS.isConnected())
   {
     Serial.println("reconnection failed; halting");

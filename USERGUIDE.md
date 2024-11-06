@@ -335,6 +335,12 @@ This library provides an interface for controlling and configuring an LG290P GNS
 - **`uint32_t getEcefAgeMs();`**  
   Retrieves the age of the last RTCM 1005 report in milliseconds.
 
+- **`void geodeticToEcef(double lat, double lon, double alt, double &xOut, double &yOut, double &zOut)`**
+  Converts the geodetic position coordinate given by (lat/long/altitude) into an ECEF format coordinate
+
+- **`void ecefToGeodetic(double x, double y, double z, double &latOut, double &lonOut, double &altOut);`**  
+  Converts the ECEF position coordinate given by (x, y, z) into a geodetic (lat/long/altitude) format
+
 ## EPE Error Domain
 
 - **`double getNorthError();`**  

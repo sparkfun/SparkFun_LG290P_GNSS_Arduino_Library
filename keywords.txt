@@ -127,6 +127,8 @@ getEcefZ    KEYWORD2
 
 getGeodeticAgeMs	KEYWORD2
 getEcefAgeMs	KEYWORD2
+geodeticToEcef	KEYWORD2
+ecefToGeodetic	KEYWORD2
 
 getNorthError	KEYWORD2
 getEastError	KEYWORD2
