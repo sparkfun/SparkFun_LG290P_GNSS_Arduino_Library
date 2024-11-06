@@ -1002,7 +1002,7 @@ void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
 {
     // Is this a command response?
     std::string sentence = (const char *)parse->buffer;
-    if (sentence.substr(sentence.length() - 2) == "\r\n")
+    if (sentence.length() >= 2 && sentence.substr(sentence.length() - 2) == "\r\n")
         // if (sentence.ends_with("\r\n"))
         sentence.erase(sentence.size() - 2);
 
