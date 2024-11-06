@@ -614,21 +614,32 @@ class LG290P
      * @details Information gleaned from GGA sentence.
      * @return The number of satellites used.
      */
-    uint16_t getSatellitesUsedCount();
+    uint16_t getSatellitesUsedCount() { ensurePvtEnabled(); return pvtDomain.satellitesUsed; }
 
     /**
      * @brief Gets the fix type 0+
      * @details Information gleaned from GGA sentence.
+     * @details 0 = Fix not available or invalid.
+     * @details 1 = GPS SPS Mode, fix valid.
+     * @details 2 = Differential GPS, SPS Mode, or Satellite Based Augmentation. System (SBAS), fix valid.
+     * @details 3 = GPS PPS Mode, fix valid.
+     * @details 4 = Real Time Kinematic (RTK) System used in RTK mode with fixed integers.
+     * @details 5 = Float RTK. Satellite system used in RTK mode, floating integers.
+     * @details Note: this function is unique in using the "quality" field from GGA rather than PQTMPVT.
+     * @details PQTMPVT has a more limited response: only 0-3.
      * @return The fix type.
      */
-    uint8_t getFixQuality();
+    uint8_t getFixQuality() { ensureGgaEnabled(); return pvtDomain.quality - '0'; } // Convert ASCII to uint8_t
+
 
     /**
      * @brief Gets the fix status (RMC 'A' or 'V')
      * @details Information gleaned from RMC sentence.
+     * @details 'V' = Fix not available or invalid (void).
+     * @details 'A' = Fix available
      * @return The fix status ('A' or 'V' for void).
      */
-    char getFixStatus();
+    char getFixStatus() { ensureRmcEnabled(); return pvtDomain.fixStatus; }
 
     /** Survey Mode **/
 
@@ -693,91 +704,94 @@ class LG290P
      * @brief Gets the latitude of the current position.
      * @return The latitude in degrees.
      */
-    double getLatitude();
+    double getLatitude() { ensurePvtEnabled(); return pvtDomain.latitude; }
+
 
     /**
      * @brief Gets the longitude of the current position.
      * @return The longitude in degrees.
      */
-    double getLongitude();
+    double getLongitude() { ensurePvtEnabled(); return pvtDomain.longitude; }
 
     /**
      * @brief Gets the altitude of the current position.
      * @return The altitude in meters.
      */
-    double getAltitude();
+    double getAltitude() { ensurePvtEnabled(); return pvtDomain.altitude; }
 
     /**
      * @brief Gets the horizontal speed of the device.
      * @return The horizontal speed in meters per second.
      */
-    double getHorizontalSpeed();
+    double getHorizontalSpeed() { ensurePvtEnabled(); return pvtDomain.groundSpeed; }
 
     /** 
      * @brief Gets the year.
      * @return Year as a 16-bit unsigned integer.
      */
-    uint16_t getYear();
+    uint16_t getYear() { ensurePvtEnabled(); return pvtDomain.year; }
+
 
     /** 
      * @brief Gets the month.
      * @return Month as an 8-bit unsigned integer.
      */
-    uint8_t getMonth();
+    uint8_t getMonth() { ensurePvtEnabled(); return pvtDomain.month; }
 
     /** 
      * @brief Gets the day.
      * @return Day as an 8-bit unsigned integer.
      */
-    uint8_t getDay();
+    uint8_t getDay() { ensurePvtEnabled(); return pvtDomain.day; }
 
     /** 
      * @brief Gets the hour.
      * @return Hour as an 8-bit unsigned integer.
      */
-    uint8_t getHour();
+    uint8_t getHour() { ensurePvtEnabled(); return pvtDomain.hour; }
 
     /** 
      * @brief Gets the minute.
      * @return Minute as an 8-bit unsigned integer.
      */
-    uint8_t getMinute();
+    uint8_t getMinute() { ensurePvtEnabled(); return pvtDomain.minute; }
 
     /** 
      * @brief Gets the second.
      * @return Second as an 8-bit unsigned integer.
      */
-    uint8_t getSecond();
+    uint8_t getSecond() { ensurePvtEnabled(); return pvtDomain.second; }
 
     /** 
      * @brief Gets the millisecond.
      * @return Millisecond as a 16-bit unsigned integer.
      */
-    uint16_t getMillisecond();
+    uint16_t getMillisecond() { ensurePvtEnabled(); return (uint16_t)(pvtDomain.nanosecond / 1000000); }
+
 
     /** 
      * @brief Gets the leap second.
      * @return Leap second as a 16-bit unsigned integer.
      */
-    uint16_t getLeapSeconds();
+    uint16_t getLeapSeconds() { ensurePvtEnabled(); return pvtDomain.leapSeconds; }
 
     /**
      * @brief Gets course/heading in degrees
      * @return Course/heading in degrees
      */
-    double getCourse();
+    double getCourse() { ensurePvtEnabled(); return pvtDomain.course; }
   
     /**
      * @brief Gets Horizontal Dilution of Precision
      * @return HDOP
      */
-    double getHdop();
+    double getHdop() { ensurePvtEnabled(); return pvtDomain.hdop; }
 
     /**
      * @brief Gets Position Dilution of Precision
      * @return PDOP
      */
-    double getPdop();
+    double getPdop() { ensurePvtEnabled(); return pvtDomain.pdop; }
 
     /**
      * @brief Gets time of week
@@ -813,31 +827,7 @@ class LG290P
      * @brief Gets the age of the latest NMEA geodetic report in milliseconds.
      * @return Number of milliseconds since the last report (GGA or RMC)
      */
-    uint32_t getGeodeticAgeMs();
-
-    /** 
-     * @brief Gets the age of the latest RTCM ECEF report in milliseconds.
-     * @return Number of milliseconds since the last report (RTCM 1005)
-     */
-    uint32_t getEcefAgeMs();
-
-    /**
-     * @brief Gets the ECEF X coordinate of the current position.
-     * @return X in meters
-     */
-    double getEcefX();
-
-    /**
-     * @brief Gets the ECEF Y coordinate of the current position.
-     * @return Y in meters
-     */
-    double getEcefY();
-
-    /**
-     * @brief Gets the ECEF Z coordinate of the current position.
-     * @return Z in meters
-     */
-    double getEcefZ();
+    uint32_t getPVTDomainAgeMs();
 
     /**
      * @brief Returns the Estimated North Positioning Error

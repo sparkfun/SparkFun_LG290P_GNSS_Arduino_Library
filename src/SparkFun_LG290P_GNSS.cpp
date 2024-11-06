@@ -1261,45 +1261,6 @@ bool LG290P::isNewSatelliteInfoAvailable()
     return r;
 }
 
-double LG290P::getLatitude()
-{
-    ensurePvtEnabled();
-    return pvtDomain.latitude;
-}
-
-double LG290P::getLongitude()
-{
-    ensurePvtEnabled();
-    return pvtDomain.longitude;
-}
-
-double LG290P::getAltitude()
-{
-    ensurePvtEnabled();
-    return pvtDomain.altitude;
-}
-
-double LG290P::getHorizontalSpeed()
-{
-    ensurePvtEnabled();
-    return pvtDomain.groundSpeed;
-}
-
-double LG290P::getEcefX()
-{
-    return rtcmDomain.ecefX;
-}
-
-double LG290P::getEcefY()
-{
-    return rtcmDomain.ecefY;
-}
-
-double LG290P::getEcefZ()
-{
-    return rtcmDomain.ecefZ;
-}
-
 uint16_t LG290P::getSatellitesInViewCount()
 {
     uint16_t count = 0;
@@ -1308,36 +1269,8 @@ uint16_t LG290P::getSatellitesInViewCount()
     return count;
 }
 
-uint16_t LG290P::getSatellitesUsedCount()
-{
-    ensurePvtEnabled();
-    return pvtDomain.satellitesUsed;
-}
-
-// 0 = Fix not available or invalid.
-// 1 = GPS SPS Mode, fix valid.
-// 2 = Differential GPS, SPS Mode, or Satellite Based Augmentation. System (SBAS), fix valid.
-// 3 = GPS PPS Mode, fix valid.
-// 4 = Real Time Kinematic (RTK) System used in RTK mode with fixed integers.
-// 5 = Float RTK. Satellite system used in RTK mode, floating integers.
-// Note: this function is unique in using the "quality" field from GGA rather than PQTMPVT.
-// PQTMPVT has a more limited response: only 0-3.
-uint8_t LG290P::getFixQuality()
-{
-    ensureGgaEnabled();
-    return pvtDomain.quality - '0'; // Convert ASCII to uint8_t
-}
-
-// 'V' = Fix not available or invalid (void).
-// 'A' = Fix available
-char LG290P::getFixStatus()
-{
-    ensureRmcEnabled();
-    return pvtDomain.fixStatus;
-}
-
 // Return the number of millis since last update
-uint32_t LG290P::getGeodeticAgeMs()
+uint32_t LG290P::getPVTDomainAgeMs()
 {
     return millis() - lastUpdatePvtDomain;
 }
@@ -1420,72 +1353,6 @@ void LG290P::ecefToGeodetic(double x, double y, double z, double &latOut, double
 
     latOut *= RAD_TO_DEG; // Convert to degrees
     lonOut *= RAD_TO_DEG;
-}
-
-uint16_t LG290P::getYear()
-{
-    ensurePvtEnabled();
-    return pvtDomain.year;
-}
-
-uint8_t LG290P::getMonth()
-{
-    ensurePvtEnabled();
-    return pvtDomain.month;
-}
-
-uint8_t LG290P::getDay()
-{
-    ensurePvtEnabled();
-    return pvtDomain.day;
-}
-
-uint8_t LG290P::getHour()
-{
-    ensurePvtEnabled();
-    return pvtDomain.hour;
-}
-
-uint8_t LG290P::getMinute()
-{
-    ensurePvtEnabled();
-    return pvtDomain.minute;
-}
-
-uint8_t LG290P::getSecond()
-{
-    ensurePvtEnabled();
-    return pvtDomain.second;
-}
-
-uint16_t LG290P::getMillisecond()
-{
-    ensurePvtEnabled();
-    return (uint16_t)(pvtDomain.nanosecond / 1000000);
-}
-
-uint16_t LG290P::getLeapSeconds()
-{
-    ensurePvtEnabled();
-    return pvtDomain.leapSeconds;
-}
-
-double LG290P::getCourse()
-{
-    ensurePvtEnabled();
-    return pvtDomain.course;
-}
-
-double LG290P::getHdop()
-{
-    ensurePvtEnabled();
-    return pvtDomain.hdop;
-}
-
-double LG290P::getPdop()
-{
-    ensurePvtEnabled();
-    return pvtDomain.pdop;
 }
 
 NmeaPacket NmeaPacket::FromString(const std::string &str)
