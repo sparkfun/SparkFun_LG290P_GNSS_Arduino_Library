@@ -54,6 +54,7 @@ HardwareSerial SerialGNSS(1); // Use UART1 on the ESP32
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 long lastReceivedRTCM_ms = 0;
 int maxTimeBeforeHangup_ms = 10000; // If we fail to get a complete RTCM frame after 10s, then disconnect from caster
+std::string ggaSentence;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 void setup()
@@ -76,6 +77,8 @@ void setup()
     while (true);
   }
   Serial.println("LG290P detected!");
+
+  myGNSS.nmeaSubscribe("GGA", myGgaCallback);
 
   Serial.print(F("Connecting to local WiFi"));
   WiFi.begin(ssid, password);
@@ -197,7 +200,7 @@ void beginClient()
   // Main processing loop
   while (ntripClient.connected() && !Serial.available())
   {
-    // Is there any RTCM data to process?
+    // Is there any RTCM data to that should be sent to the LG290P?
     size_t bytesToWrite = ntripClient.available();
     if (bytesToWrite)
     {
@@ -219,6 +222,13 @@ void beginClient()
 
     // Make sure to keep handling any incoming sentences from the LG290P
     myGNSS.update();
+
+    // Has a new GGA sentence appeared? If so, send it back to the server
+    if (ggaSentence.length() > 0)
+    {
+      ntripClient.write(ggaSentence.c_str(), ggaSentence.length());
+      ggaSentence = "";
+    }
 
     // Time to display some data?
     static unsigned long lastUpdate = 0;
@@ -295,4 +305,9 @@ void displayHeader()
     Serial.printf("%s%s", dashes.c_str(), i == items - 1 ? "" : "-");
   }
   Serial.println();
+}
+
+void myGgaCallback(NmeaPacket &gga)
+{
+  ggaSentence = gga.ToString() + "\r\n";
 }
