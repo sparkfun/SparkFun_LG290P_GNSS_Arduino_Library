@@ -407,7 +407,7 @@ class LG290P
      * @brief Enables or sets the rate for a specific message.
      * @details Use 0 to disable the message or N for 1 message every N fixes.
      * @details Uses the PQTMCFGMSGRATE command to set message rate.
-     * @param msgName The name of the message, e.g. "GGA", "RMCM3-1005", "RTCM2-107X".
+     * @param msgName The name of the message, e.g. "GGA", "RTCM3-1005", "RTCM2-107X".
      * @param rate The rate at which to send the message.
      * @param msgver (Optional) The message version for PQTM messages, default is -1.
      * @return true if successful, false otherwise.
