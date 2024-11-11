@@ -44,7 +44,7 @@ typedef enum
     LG290P_RESULT_CONFIG_PRESENT,
 } LG290PResult;
 
-enum { COM_TYPE_NMEA = 1, COM_TYPE_RTCM3 = 4 };
+enum { LG290P_COM_TYPE_NMEA = 1, LG290P_COM_TYPE_RTCM3 = 4 };
 
 class LG290P
 {
@@ -294,7 +294,7 @@ class LG290P
   /** 
    * @brief Enable or disable the protocols available for input on the specified port
    * @param port the LG290P port to be configured (1, 2, or 3)
-   * @param newFlags a bitfield: some combination of COM_TYPE_NMEA and COM_TYPE_RTCM3. 0 for disable all.
+   * @param newFlags a bitfield: some combination of LG290P_COM_TYPE_NMEA and LG290P_COM_TYPE_RTCM3. 0 for disable all.
    * @return true if the new input protocols were enabled/disabled
    */
   bool setPortInputProtocols(int port, uint8_t newFlags);
@@ -302,7 +302,7 @@ class LG290P
   /** 
    * @brief Enable or disable the protocols available for output on the specified port
    * @param port the LG290P port to be configured (1, 2, or 3)
-   * @param newFlags a bitfield: some combination of COM_TYPE_NMEA and COM_TYPE_RTCM3. 0 for disable all.
+   * @param newFlags a bitfield: some combination of LG290P_COM_TYPE_NMEA and LG290P_COM_TYPE_RTCM3. 0 for disable all.
    * @return true if the new output protocols were enabled/disabled
    */
   bool setPortOutputProtocols(int port, uint8_t newFlags);
@@ -310,8 +310,8 @@ class LG290P
   /** 
    * @brief Get the current protocol enable/disable status for the specified port
    * @param port the LG290P port to be configured (1, 2, or 3)
-   * @param inputFlags a reference to a bitfield: returns some combination of COM_TYPE_NMEA and COM_TYPE_RTCM3. 0 for all disabled
-   * @param outputFlags a reference to a bitfield: returns some combination of COM_TYPE_NMEA and COM_TYPE_RTCM3. 0 for all disabled
+   * @param inputFlags a reference to a bitfield: returns some combination of LG290P_COM_TYPE_NMEA and LG290P_COM_TYPE_RTCM3. 0 for all disabled
+   * @param outputFlags a reference to a bitfield: returns some combination of LG290P_COM_TYPE_NMEA and LG290P_COM_TYPE_RTCM3. 0 for all disabled
    * @return true if the new protocol flags were successfully acquired
    */
   bool getPortProtocols(int port, uint8_t &inputFlags, uint8_t &outputFlags);
