@@ -1227,9 +1227,9 @@ void LG290P::rtcmHandler(SEMP_PARSE_STATE *parse)
 
         if (packet.type == 1005)
         {
-            rtcmDomain.ecefX = packet.extract_38bit_signed(34) / 10000.0;
-            rtcmDomain.ecefY = packet.extract_38bit_signed(74) / 10000.0;
-            rtcmDomain.ecefZ = packet.extract_38bit_signed(114) / 10000.0;
+            rtcmDomain.ecefX = packet.getEcefX();
+            rtcmDomain.ecefY = packet.getEcefY();
+            rtcmDomain.ecefZ = packet.getEcefZ();
             lastUpdateEcef = millis();
         }
 

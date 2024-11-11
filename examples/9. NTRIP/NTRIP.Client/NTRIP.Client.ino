@@ -88,6 +88,9 @@ void setup()
   Serial.print(F("WiFi connected with IP: "));
   Serial.println(WiFi.localIP());
 
+  Serial.println("Ensuring ROVER mode");
+  myGNSS.ensureModeRover();
+
   while (Serial.available()) Serial.read();
   Serial.println(F("Press any key to start NTRIP Client."));
 }
@@ -173,7 +176,7 @@ void beginClient()
   // Check reply
   char response[512] = {0};
   bool connectionSuccess = false;
-  size_t bytesToRead = std::min(sizeof response, (size_t)ntripClient.available());
+  size_t bytesToRead = std::min(sizeof response - 1, (size_t)ntripClient.available());
   size_t bytesRead = ntripClient.readBytes(response, bytesToRead);
   if (strstr(response, "200") != nullptr) // Look for 'ICY 200 OK'
     connectionSuccess = true;

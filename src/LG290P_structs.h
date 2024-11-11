@@ -265,8 +265,15 @@ struct RtcmPacket
     uint16_t payloadLen;
     uint16_t type;
 
-    int64_t extract_38bit_signed(int bit_offset);
+    // Extract ECEF components from RTCM 1005 packets
+    double getEcefX() { return type == 1005 ? extract_38bit_signed(34) / 10000.0 : 0.0; }
+    double getEcefY() { return type == 1005 ? extract_38bit_signed(74) / 10000.0 : 0.0; }
+    double getEcefZ() { return type == 1005 ? extract_38bit_signed(114) / 10000.0 : 0.0; }
+
     static bool FromBuffer(uint8_t *buffer, size_t bufferLen, RtcmPacket &result);
+
+private:
+    int64_t extract_38bit_signed(int bit_offset);
 };
 
 
