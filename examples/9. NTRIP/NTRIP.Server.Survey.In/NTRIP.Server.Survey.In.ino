@@ -1,10 +1,12 @@
 /*
-  Use ESP32 WiFi to push RTCM data to RTK2Go (Caster) as a Server
+  Use ESP32 WiFi to push RTCM data to RTK2Go (Caster) as a Server, using Survey In to calculate base location
   By: SparkFun Electronics / Nathan Seidle and Mikal Hart
   Date: November 10, 2024
   License: MIT. See license file for more information.
 
   This example shows how to gather RTCM data over Serial and push it to a casting service over WiFi.
+  The base location is calculated using the "Survey In" technique.
+
   Here, the Arduino/ESP32 is acting as a 'server' to a 'caster'. In this case we will
   use RTK2Go.com as our caster because it is free. A rover (car, surveyor stick, etc)
   can then connect to RTK2Go as a 'client' and get the RTCM data it needs.
@@ -55,7 +57,7 @@ void setup()
     Serial.begin(115200); // You may need to increase this for high navigation rates!
     delay(250);
     Serial.println();
-    Serial.println("SparkFun NTRIP Server example");
+    Serial.println("SparkFun NTRIP Server Survey In example");
     Serial.println("Initializing device...");
 
     // We must start the serial port before using it in the library
@@ -129,18 +131,34 @@ void setup()
         // will be very confused and fail to generate correction data because, well, you aren't at SparkFun...
         // See this tutorial on getting PPP coordinates: https://learn.sparkfun.com/tutorials/how-to-build-a-diy-gnss-reference-station/all
         //
-        Serial.print("Setting fixed survey mode... "); Serial.flush();
-        response = myGNSS.setSurveyFixedMode(-1280208.308, -4716803.847, 4086665.811);
+        Serial.print("Setting 'survey in' mode... "); Serial.flush();
+        response = myGNSS.setSurveyInMode(60);
         if (response)
-            Serial.println(F("static position set."));
+            Serial.println(F("'survey in' mode set."));
         else
-            Serial.println(F("failed to enter static position."));
+            Serial.println(F("failed to set 'survey in' mode."));
     }
 
+    if (response)
+    {
+        int v = -1, c = -1;
+        Serial.println("Waiting for status = VALID");
+        while (true)
+        {
+            myGNSS.update();
+            int validity = myGNSS.getSurveyInStatus();
+            int count = myGNSS.getSurveyInObservations();
+            if (v != validity || c != count)
+            {
+                Serial.printf("Status: %s, Count: %d/60\r\n", validity == 0 ? "INVALID" : validity == 1 ? "IN-PROGRESS" : "VALID", count);
+                c = count;
+                v = validity;
+                if (validity >= 2)
+                    break;
+            }
+        }
+    }
 
-    // Alternatively to setting a static position, you could do a survey-in
-    // but it takes much longer to start generating RTCM data.
-    // myGNSS.setSurveyInMode(60);
 
     if (response)
     {

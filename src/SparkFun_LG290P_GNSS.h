@@ -908,13 +908,13 @@ class LG290P
     double getProtLevelTime() { ensurePlEnabled(); return plDomain.protectionLevelTime; }
 
     /**
-     * @brief Returns the Validity field from PQTMSVINSTATUS
+     * @brief Returns the Validity field from PQTMSVINSTATUS (0=Invalid, 1=In-progress, 2=Valid)
      * @return Validity
      */
     int getSurveyInStatus() { ensureSvinStatusEnabled(); return svinStatusDomain.validity; }
 
     /**
-     * @brief Returns the Observations field from PQTMSVINSTATUS
+     * @brief Returns the Observations field from PQTMSVINSTATUS (count between 0 and CfgDur)
      * @return Observations
      */
     int getSurveyInObservations() { ensureSvinStatusEnabled(); return svinStatusDomain.observations; }
