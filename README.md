@@ -1,6 +1,7 @@
 SparkFun LG290P GNSS Arduino Library
 ===========================================================
 
+[![SparkFun Quadband GNSS RTK Breakout - LG290P (GPS-26620)](https://cdn.sparkfun.com//assets/parts/2/7/6/3/7/26620-LG290P-Quadband-GNSS-Breakout-Feature.jpg)](https://www.sparkfun.com/products/26620)
 
 [*SparkFun Quadband GNSS RTK Breakout - LG290P (GPS-26620)*](https://www.sparkfun.com/products/26620)
 
