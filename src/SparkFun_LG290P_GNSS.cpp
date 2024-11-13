@@ -128,15 +128,33 @@ bool LG290P::begin(HardwareSerial &serialPort, Print *parserDebug, Print *parser
     ok = ok && getMode(devState.mode);
     ok = ok && scanForMsgsEnabled();
 
-    debugPrintf("Starting with %s mode, GGA %d RMC %d EPE %d PVT %d PL %d SVIN %d GSV %d", 
-        devState.mode == BASEMODE ? "BASE" : "ROVER", devState.ggaRate, devState.rmcRate, devState.epeRate, 
-        devState.pvtRate, devState.plRate, devState.svinstatusRate, devState.gsvRate);
-    if (!ok)
+    if (ok)
     {
+        debugPrintf("Starting with %s mode, GGA %d RMC %d EPE %d PVT %d PL %d SVIN %d GSV %d", 
+            devState.mode == BASEMODE ? "BASE" : "ROVER", devState.ggaRate, devState.rmcRate, devState.epeRate, 
+            devState.pvtRate, devState.plRate, devState.svinstatusRate, devState.gsvRate);
+    }
+    else
+    {
+        debugPrintf("begin() failed.");
         sempStopParser(&_sempParse);
     }
     
     return ok;
+}
+
+bool LG290P::beginAutoBaudDetect(HardwareSerial &serialPort, int rxPin, int txPin, Print *parserDebug /* = nullptr */, Print *parserError /* = &Serial */)
+{
+    serialPort.setRxBufferSize(4096);
+
+    for (int baud: {460800, 921600, 230400, 115200, 9600})
+    {
+        debugPrintf("Trying baud rate %d...", baud);
+        serialPort.begin(baud, SERIAL_8N1, rxPin, txPin);
+        if (begin(serialPort, parserDebug, parserError))
+            return true;
+    }
+    return false;
 }
 
 // Query the device with 'UNIQID', expect OK response

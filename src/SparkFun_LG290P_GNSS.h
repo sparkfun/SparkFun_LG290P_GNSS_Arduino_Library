@@ -73,6 +73,17 @@ class LG290P
   bool begin(HardwareSerial &serialPort, Print *parserDebug = nullptr, Print *parserError = &Serial);
 
   /** 
+   * @brief Starts the LG290P engine. Does not require open serial port. Tests various likely baud rates
+   * @param serialPort a port that is connected to the LG290P module
+   * @param rxPin the pin that receives data from the LG290P
+   * @param txPin the pin that sends data to the LG290P
+   * @param parserDebug if provided, show debugging for the parser
+   * @param parserError if provided, show error messages for the parser
+   * @return true if the initialization succeeded
+   */
+  bool beginAutoBaudDetect(HardwareSerial &serialPort, int rxPin, int txPin, Print *parserDebug = nullptr, Print *parserError = &Serial);
+
+  /** 
    * @brief Poll the device with the PQTMUNIQID command to see if it is responding
    * @return true if the device responds within 10 seconds
    */

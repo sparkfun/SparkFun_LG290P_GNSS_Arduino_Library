@@ -24,6 +24,9 @@ This library provides an interface for controlling and configuring an LG290P GNS
 - **`bool begin(HardwareSerial &serialPort, Print *parserDebug = nullptr, Print *parserError = &Serial);`**  
   Initialize communication with the GNSS module using a serial port. Optional debugging and error printing can be specified.
 
+- **`bool beginAutoBaudDetect(HardwareSerial &serialPort, int rxPin, int txPin, Print *parserDebug = nullptr, Print *parserError = &Serial);`**  
+  Auto-detect which baud rate the port is connected at. Repeatedly calls 'begin()' above, trying all the various baud rates that the LG290P supports, starting with the default, 480600. Optional debugging and error printing can be specified.
+
 - **`bool isConnected();`**  
   Check if the GNSS module is connected.
 
