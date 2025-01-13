@@ -628,6 +628,30 @@ bool LG290P::setMessageRate(const char *msgName, int rate, int msgVer)
     return ret;
 }
 
+// Set a message on a given port. Available in v4 and above.
+// $PQTMCFGMSGRATE,W,1,2,GGA,1* - <PortType>,<PortID>,<MsgName>,<Rate>[,MsgVersion/Offset]
+// Set port type (1 = UART), UART number (2 = UART2), message, rate
+bool LG290P::setMessageRateOnPort(const char *msgName, int rate, int portNumber, int msgVer)
+{
+    char parms[50];
+    snprintf(parms, sizeof parms, msgVer == -1 ? ",W,1,%d,%s,%d" : ",W,1,%d,%s,%d,%d", portNumber, msgName, rate, msgVer);
+    bool ret = sendOkCommand("PQTMCFGMSGRATE", parms);
+
+    // We internally track whether certain important sentences are enabled
+    if (ret)
+    {
+        std::string str = msgName;
+        if (str == "GGA") devState.ggaRate = rate;
+        else if (str == "RMC") devState.rmcRate = rate;
+        else if (str == "PQTMPVT") devState.pvtRate = rate;
+        else if (str == "PQTMPL") devState.plRate = rate;
+        else if (str == "PQTMSVINSTATUS") devState.svinstatusRate = rate;
+        else if (str == "PQTMEPE") devState.epeRate = rate;
+        else if (str == "GSV") devState.gsvRate = rate;
+    }
+    return ret;
+}
+
 bool LG290P::getMessageRate(const char *msgName, int &rate, int msgVer)
 {
     char parms[50];
@@ -1380,7 +1404,7 @@ NmeaPacket NmeaPacket::FromString(const std::string &str)
     size_t start = 0;
     size_t delimiterPos = str.find_first_of(",*");
     unsigned long calculatedChksum = 0;
-    log_d("Parsing sentence %s", str.c_str());
+    //log_d("Parsing sentence %s", str.c_str());
 
     while (true)
     {

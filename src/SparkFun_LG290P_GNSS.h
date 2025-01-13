@@ -426,6 +426,18 @@ class LG290P
     bool setMessageRate(const char *msgName, int rate, int msgver = -1);
 
     /**
+     * @brief Enables or sets the rate for a specific message on a specific port.
+     * @details Use 0 to disable the message or N for 1 message every N fixes.
+     * @details Uses the PQTMCFGMSGRATE command to set message rate.
+     * @param msgName The name of the message, e.g. "GGA", "RTCM3-1005", "RTCM2-107X".
+     * @param rate The rate at which to send the message.
+     * @param portNumber The port on which to send the message (UART 1/2/3).
+     * @param msgver (Optional) The message version for PQTM messages, default is -1.
+     * @return true if successful, false otherwise.
+     */
+    bool setMessageRateOnPort(const char *msgName, int rate, int portNumber, int msgver = -1);
+
+    /**
      * @brief Queries the broadcast rate for the specific message.
      * @details Returns rate of 0 to indicated a disabled message or N for 1 message every N fixes.
      * @details Uses the PQTMCFGMSGRATE command to get the message rate.
