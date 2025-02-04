@@ -1417,7 +1417,7 @@ NmeaPacket NmeaPacket::FromString(const std::string &str)
         if (delimiterPos == std::string::npos)
         {
             s.hasChecksum = s.checksumValid = false;
-            log_d("Doesn't have any * checksum");
+            // log_d("Doesn't have any * checksum");
             break;
         }
 
@@ -1428,8 +1428,8 @@ NmeaPacket NmeaPacket::FromString(const std::string &str)
             if (token.find_first_not_of("0123456789ABCDEFabcdef") != std::string::npos)
             {
                 s.hasChecksum = s.checksumValid = false;
-                log_e("Bad format checksum: '%s'", token.c_str());
-                log_e("Sentence was '%s'", str.c_str());
+                // log_e("Bad format checksum: '%s'", token.c_str());
+                // log_e("Sentence was '%s'", str.c_str());
             }
             else
             {
