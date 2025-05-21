@@ -705,6 +705,27 @@ bool LG290P::getCNR(float &cnr)
     return ret;
 }
 
+// Configures the max differential age of RTK fix before the device will drop back to RTK float.
+// Note: We assume Auto mode and Absolute mode when setting the timeout.
+bool LG290P::setRtkDifferentialAge(uint16_t timeout)
+{
+    char parms[50];
+    snprintf(parms, sizeof parms, ",W,1,1,%d", timeout);
+    return sendOkCommand("PQTMCFGRTK", parms) && hotStart();
+}
+
+bool LG290P::getRtkDifferentialAge(uint16_t &timeout)
+{
+    bool ret = sendCommand("PQTMCFGRTK", ",R");
+    if (ret)
+    {
+        auto packet = getCommandResponse();
+        ret = packet[1] == "OK";
+        timeout = atoi(packet[4].c_str());
+    }
+    return ret;
+}
+
 bool LG290P::scanForMsgsEnabled()
 {
     bool ok = getMessageRate("GGA", devState.ggaRate);

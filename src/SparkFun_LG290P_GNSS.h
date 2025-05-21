@@ -439,6 +439,22 @@ class LG290P
     bool getCNR(float &cnr);
 
     /**
+     * @brief Sets the max differential age of RTK fix.
+     * @details Uses the PQTMCFGRTK command. Use a value between 1 and 600. Default is 120 seconds.
+     * @param timeout The new RTK differential timeout for the position engine.
+     * @return true if successful, false otherwise.
+     */
+    bool setRtkDifferentialAge(uint16_t timeout);
+
+    /**
+     * @brief Gets the max differential age of RTK fix.
+     * @details Uses the PQTMCFGRTK command.
+     * @param timeout Reference to a uint16_t where the timeout value will be stored.
+     * @return true if successful, false otherwise.
+     */
+    bool getRtkDifferentialAge(uint16_t &timeout);
+
+    /**
      * @brief Sets a new elevation threshold for position engine.
      * @details Uses the PQTMCFGELETHD command. Use a value between -90 and 90
      * @param fixInterval The new fix interval to set.

@@ -150,6 +150,8 @@ setElevationAngle	KEYWORD2
 getElevationAngle	KEYWORD2
 setCNR	KEYWORD2
 getCNR	KEYWORD2
+setRtkDifferentialAge	KEYWORD2
+getRtkDifferentialAge	KEYWORD2
 
 #######################################
 # Constants (LITERAL1)
