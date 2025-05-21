@@ -665,6 +665,46 @@ bool LG290P::getMessageRate(const char *msgName, int &rate, int msgVer)
     return ret;
 }
 
+// Configures the elevation threshold for position engine. Available in v5 and above.
+bool LG290P::setElevationAngle(int elevationAngle)
+{
+    char parms[50];
+    snprintf(parms, sizeof parms, ",W,%d", elevationAngle);
+    return sendOkCommand("PQTMCFGELETHD", parms) && hotStart();
+}
+
+bool LG290P::getElevationAngle(int &elevationAngle)
+{
+    bool ret = sendCommand("PQTMCFGELETHD", ",R");
+    if (ret)
+    {
+        auto packet = getCommandResponse();
+        ret = packet[1] == "OK";
+        elevationAngle = atoi(packet[2].c_str());
+    }
+    return ret;
+}
+
+// Configures the CNR threshold for position engine. Available in v5 and above.
+bool LG290P::setCNR(float cnr)
+{
+    char parms[50];
+    snprintf(parms, sizeof parms, ",W,%0.2f", cnr);
+    return sendOkCommand("PQTMCFGCNRTHD", parms) && hotStart();
+}
+
+bool LG290P::getCNR(float &cnr)
+{
+    bool ret = sendCommand("PQTMCFGCNRTHD", ",R");
+    if (ret)
+    {
+        auto packet = getCommandResponse();
+        ret = packet[1] == "OK";
+        cnr = atof(packet[2].c_str());
+    }
+    return ret;
+}
+
 bool LG290P::scanForMsgsEnabled()
 {
     bool ok = getMessageRate("GGA", devState.ggaRate);

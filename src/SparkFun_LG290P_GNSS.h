@@ -407,8 +407,40 @@ class LG290P
     bool getFixInterval(uint16_t &fixInterval);
 
     /**
-     * @brief Sets a new fix interval.
-     * @details Uses the PQTMCFGFIXRATE command. Use a value between 25 and 1000
+     * @brief Sets a new elevation threshold for position engine.
+     * @details Uses the PQTMCFGELETHD command. Use a value between -90 and 90. Default is 5 degrees.
+     * @param elevationAngle The new elevation threshold for the position engine.
+     * @return true if successful, false otherwise.
+     */
+    bool setElevationAngle(int elevationAngle);
+
+        /**
+     * @brief Gets the elevation threshold for position engine.
+     * @details Uses the PQTMCFGELETHD command.
+     * @param elevationAngle Reference to a int where the elevation angle (degrees) will be stored.
+     * @return true if successful, false otherwise.
+     */
+    bool getElevationAngle(int &elevationAngle);
+
+        /**
+     * @brief Sets the CNR threshold for position engine.
+     * @details Uses the PQTMCFGCNRTHD command. Use a value between 0.0 and 99.0. Default is 10.0 dBHz.
+     * @param cnr The new CNR threshold for the position engine.
+     * @return true if successful, false otherwise.
+     */
+    bool setCNR(float cnr);
+
+        /**
+     * @brief Gets the CNR threshold for position engine.
+     * @details Uses the PQTMCFGCNRTHD command.
+     * @param cnr Reference to a float where the CNR value will be stored.
+     * @return true if successful, false otherwise.
+     */
+    bool getCNR(float &cnr);
+
+    /**
+     * @brief Sets a new elevation threshold for position engine.
+     * @details Uses the PQTMCFGELETHD command. Use a value between -90 and 90
      * @param fixInterval The new fix interval to set.
      * @return true if successful, false otherwise.
      */

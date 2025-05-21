@@ -146,6 +146,11 @@ getProtLevelEastVelocity	KEYWORD2
 getProtLevelDownVelocity	KEYWORD2
 getProtLevelTime	KEYWORD2
 
+setElevationAngle	KEYWORD2
+getElevationAngle	KEYWORD2
+setCNR	KEYWORD2
+getCNR	KEYWORD2
+
 #######################################
 # Constants (LITERAL1)
 #######################################
