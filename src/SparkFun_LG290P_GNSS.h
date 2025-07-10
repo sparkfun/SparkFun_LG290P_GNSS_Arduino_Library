@@ -1086,7 +1086,7 @@ class LG290P
 
     /**
      * @brief Returns the Estimated 2D Positioning Error
-     * @note This is based on what SWMaps displays - the greater of the lat and lon errors
+     * @note This is based on what SWMaps displays - the greater of the lat and lon errors as delta-H
      * @return Error in meters
      */
     double get2DError()
@@ -1107,7 +1107,7 @@ class LG290P
 
     /**
      * @brief Returns the Estimated 3D Positioning Error
-     * @note This is based on what SWMaps displays - the height error
+     * @note This is based on what SWMaps displays - the height error as delta-V
      * @return Error in meters
      */
     double get3DError()
