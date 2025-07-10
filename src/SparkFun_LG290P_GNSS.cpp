@@ -127,12 +127,14 @@ bool LG290P::begin(HardwareSerial &serialPort, Print *parserDebug, Print *parser
     bool ok = isConnected();
     ok = ok && getMode(devState.mode);
     ok = ok && scanForMsgsEnabled();
+    ok = ok && getFirmwareVersion(firmwareVersion);
 
     if (ok)
     {
-        debugPrintf("Starting with %s mode, GGA %d RMC %d EPE %d PVT %d PL %d SVIN %d GSV %d", 
+        debugPrintf("Firmware version is %02d%s", firmwareVersion, firmwareVersion == 0 ? " (Unknown)" : "");
+        debugPrintf("Starting with %s mode, GGA %d RMC %d EPE %d PVT %d PL %d SVIN %d GSV %d GST %d", 
             devState.mode == BASEMODE ? "BASE" : "ROVER", devState.ggaRate, devState.rmcRate, devState.epeRate, 
-            devState.pvtRate, devState.plRate, devState.svinstatusRate, devState.gsvRate);
+            devState.pvtRate, devState.plRate, devState.svinstatusRate, devState.gsvRate, devState.gstRate);
     }
     else
     {
@@ -450,7 +452,7 @@ bool LG290P::getMode(int &mode)
 bool LG290P::setPortBaudrate(int port, uint32_t newBaud)
 {
     char parms[50];
-    snprintf(parms, sizeof parms, ",W,%d,%d", port, newBaud);
+    snprintf(parms, sizeof parms, ",W,%d,%d", port, (int)newBaud);
     return sendOkCommand("PQTMCFGUART", parms);
 }
 
@@ -458,7 +460,7 @@ bool LG290P::setPortBaudrate(int port, uint32_t newBaud)
 bool LG290P::setBaudrate(uint32_t newBaud)
 {
     char parms[50];
-    snprintf(parms, sizeof parms, ",W,%d", newBaud);
+    snprintf(parms, sizeof parms, ",W,%d", (int)newBaud);
     return sendOkCommand("PQTMCFGUART", parms);
 }
 
@@ -588,6 +590,26 @@ bool LG290P::getVersionInfo(std::string &version, std::string &buildDate, std::s
     return ret;
 }
 
+bool LG290P::getFirmwareVersion(int &version)
+{
+    version = 0; // Unknown
+
+    std::string ver, buildDate, buildTime;
+    bool ret = getVersionInfo(ver, buildDate, buildTime);
+    if (ret && (ver.length() > strlen(firmwareVersionPrefix)))
+    {
+        char *spot = strstr(ver.c_str(), firmwareVersionPrefix);
+        if (spot != NULL)
+        {
+            spot += strlen(firmwareVersionPrefix);
+            version = atoi(spot);
+            return (version > 0);
+        }
+    }
+
+    return false;
+}
+
 bool LG290P::getFixInterval(uint16_t &fixInterval)
 {
     bool ret = sendCommand("PQTMCFGFIXRATE", ",R");
@@ -624,6 +646,7 @@ bool LG290P::setMessageRate(const char *msgName, int rate, int msgVer)
         else if (str == "PQTMSVINSTATUS") devState.svinstatusRate = rate;
         else if (str == "PQTMEPE") devState.epeRate = rate;
         else if (str == "GSV") devState.gsvRate = rate;
+        else if (str == "GST") devState.gstRate = rate;
     }
     return ret;
 }
@@ -648,6 +671,7 @@ bool LG290P::setMessageRateOnPort(const char *msgName, int rate, int portNumber,
         else if (str == "PQTMSVINSTATUS") devState.svinstatusRate = rate;
         else if (str == "PQTMEPE") devState.epeRate = rate;
         else if (str == "GSV") devState.gsvRate = rate;
+        else if (str == "GST") devState.gstRate = rate;
     }
     return ret;
 }
@@ -734,6 +758,9 @@ bool LG290P::scanForMsgsEnabled()
     ok = ok && getMessageRate("PQTMPVT", devState.pvtRate, 1);
     ok = ok && getMessageRate("PQTMPL", devState.plRate, 1);
     ok = ok && getMessageRate("GSV", devState.gsvRate);
+
+    // GST is not available on firmware < 4
+    getMessageRate("GST", devState.gstRate);
 
     // this is a special message. getMessageRate might fail if in ROVER mode
     getMessageRate("PQTMSVINSTATUS", devState.svinstatusRate, 1);
@@ -1129,6 +1156,16 @@ void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
                 {
                     lastUpdatePvtDomain = millis(); // Update stale marker
                     nmea.processGGA(ptrLG290P->pvtDomain);
+                }
+
+                else if (id == "GST")
+                {
+                    lastUpdatePvtDomain = millis(); // Update stale marker
+                    PvtDomain &pvt = ptrLG290P->pvtDomain;
+                    pvt.rmsPseudorangeResidual = strtod(nmea[2].c_str(), NULL);
+                    pvt.latitudeError = strtod(nmea[6].c_str(), NULL);
+                    pvt.longitudeError = strtod(nmea[7].c_str(), NULL);
+                    pvt.heightError = strtod(nmea[8].c_str(), NULL);
                 }
 
                 else if (id == "GSV")

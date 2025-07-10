@@ -68,6 +68,7 @@ void loop()
   if (millis() - lastCheck > 1000)
   {
     lastCheck = millis();
+    displayData();
   }
 }
 
