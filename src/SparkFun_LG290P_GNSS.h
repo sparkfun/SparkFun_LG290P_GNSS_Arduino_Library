@@ -66,7 +66,7 @@ class LG290P
     struct
     {
         int mode = -1, ggaRate = -1, rmcRate = -1, pvtRate = -1, plRate = -1, epeRate = -1, svinstatusRate = -1,
-            gsvRate = -1;
+            gsvRate = -1, gstRate = -1;
     } devState;
     enum
     {
@@ -435,6 +435,15 @@ class LG290P
      * @return true if successful, false otherwise.
      */
     bool getVersionInfo(std::string &version, std::string &buildDate, std::string &buildTime);
+
+    /**
+     * @brief Gets the firmware version of the device.
+     * @details Uses the PQTMVERNO command
+     * @param version Reference to an int where the version will be stored.
+     * @return true if successful, false otherwise.
+     * @note version will be set to 0 if the get fails.
+     */
+    bool getFirmwareVersion(int &version);
 
     /**
      * @brief Gets the current fix interval.
@@ -1081,8 +1090,19 @@ class LG290P
      */
     double get2DError()
     {
-        ensureEpeEnabled();
-        return epeDomain.error2D;
+        if (firmwareVersion >= 4)
+        {
+            ensureGstEnabled();
+            double rms = std::pow(pvtDomain.latitudeError, 2.0);
+            rms = rms + std::pow(pvtDomain.longitudeError, 2.0);
+            rms = std::sqrt(rms);
+            return rms;
+        }
+        else
+        {
+            ensureEpeEnabled();
+            return epeDomain.error2D;
+        }
     }
 
     /**
@@ -1091,8 +1111,20 @@ class LG290P
      */
     double get3DError()
     {
-        ensureEpeEnabled();
-        return epeDomain.error3D;
+        if (firmwareVersion >= 4)
+        {
+            ensureGstEnabled();
+            double rms = std::pow(pvtDomain.latitudeError, 2.0);
+            rms = rms + std::pow(pvtDomain.longitudeError, 2.0);
+            rms = rms + std::pow(pvtDomain.heightError, 2.0);
+            rms = std::sqrt(rms);
+            return rms;
+        }
+        else
+        {
+            ensureEpeEnabled();
+            return epeDomain.error3D;
+        }
     }
 
     /**
@@ -1287,6 +1319,10 @@ class LG290P
 #endif
 
   private:
+    // Firmware version
+    int firmwareVersion = 0;
+    const char *firmwareVersionPrefix = "LG290P03AANR01A";
+
     // Update times
     unsigned long lastUpdatePvtDomain = 0;
     unsigned long lastUpdateEcef = 0;
@@ -1335,6 +1371,11 @@ class LG290P
     void ensureGsvEnabled()
     {
         ensureMsgEnabled(devState.gsvRate > 0, "GSV");
+    }
+    void ensureGstEnabled()
+    {
+        if (firmwareVersion >= 4)
+            ensureMsgEnabled(devState.gstRate > 0, "GST");
     }
     void clearAll();
     bool genericReset(const char *resetCmd);
