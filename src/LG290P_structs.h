@@ -33,7 +33,8 @@ struct PvtDomain
     double groundSpeed = 0;
     double heading = 0;
 
-    double latitudeError = 0; // GST
+    double rmsPseudorangeResidual = 0; // GST
+    double latitudeError = 0;
     double longitudeError = 0;
     double heightError = 0;
 

@@ -1162,6 +1162,7 @@ void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
                 {
                     lastUpdatePvtDomain = millis(); // Update stale marker
                     PvtDomain &pvt = ptrLG290P->pvtDomain;
+                    pvt.rmsPseudorangeResidual = strtod(nmea[2].c_str(), NULL);
                     pvt.latitudeError = strtod(nmea[6].c_str(), NULL);
                     pvt.longitudeError = strtod(nmea[7].c_str(), NULL);
                     pvt.heightError = strtod(nmea[8].c_str(), NULL);
