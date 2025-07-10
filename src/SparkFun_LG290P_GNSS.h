@@ -1086,6 +1086,7 @@ class LG290P
 
     /**
      * @brief Returns the Estimated 2D Positioning Error
+     * @note This is based on what SWMaps displays - the greater of the lat and lon errors
      * @return Error in meters
      */
     double get2DError()
@@ -1093,10 +1094,9 @@ class LG290P
         if (firmwareVersion >= 4)
         {
             ensureGstEnabled();
-            double rms = std::pow(pvtDomain.latitudeError, 2.0);
-            rms = rms + std::pow(pvtDomain.longitudeError, 2.0);
-            rms = std::sqrt(rms);
-            return rms;
+            if (pvtDomain.latitudeError > pvtDomain.longitudeError)
+                return pvtDomain.latitudeError;
+            return pvtDomain.longitudeError;
         }
         else
         {
@@ -1107,6 +1107,7 @@ class LG290P
 
     /**
      * @brief Returns the Estimated 3D Positioning Error
+     * @note This is based on what SWMaps displays - the height error
      * @return Error in meters
      */
     double get3DError()
@@ -1114,11 +1115,7 @@ class LG290P
         if (firmwareVersion >= 4)
         {
             ensureGstEnabled();
-            double rms = std::pow(pvtDomain.latitudeError, 2.0);
-            rms = rms + std::pow(pvtDomain.longitudeError, 2.0);
-            rms = rms + std::pow(pvtDomain.heightError, 2.0);
-            rms = std::sqrt(rms);
-            return rms;
+            return pvtDomain.heightError;
         }
         else
         {
