@@ -314,14 +314,14 @@ class LG290P
      * @param newBaud the new baud rate of the port
      * @return true if the new baud rate was set correctly
      */
-    bool setPortBaudrate(int port, uint32_t newBaud);
+    bool setPortBaudrate(int port, uint32_t newBaud, uint16_t maxWaitMs = 1500);
 
     /**
      * @brief Set the baud rate of the current port
      * @param newBaud the new baud rate of the port
      * @return true if the new baud rate was set correctly
      */
-    bool setBaudrate(uint32_t newBaud);
+    bool setBaudrate(uint32_t newBaud, uint16_t maxWaitMs = 1500);
 
     /**
      * @brief Get information about the designated UART
@@ -334,7 +334,7 @@ class LG290P
      * @return true if the port info was acquired without problem
      */
     bool getPortInfo(int port, uint32_t &newBaud, uint8_t &dataBits, uint8_t &parity, uint8_t &stop,
-                     uint8_t &flowControl);
+                     uint8_t &flowControl, uint16_t maxWaitMs = 1500);
 
     /**
      * @brief Enable or disable the protocols available for input on the specified port

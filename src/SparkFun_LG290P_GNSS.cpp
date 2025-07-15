@@ -449,27 +449,27 @@ bool LG290P::getMode(int &mode)
     return ret;
 }
 
-bool LG290P::setPortBaudrate(int port, uint32_t newBaud)
+bool LG290P::setPortBaudrate(int port, uint32_t newBaud, uint16_t maxWaitMs)
 {
     char parms[50];
     snprintf(parms, sizeof parms, ",W,%d,%d", port, (int)newBaud);
-    return sendOkCommand("PQTMCFGUART", parms);
+    return sendOkCommand("PQTMCFGUART", parms, maxWaitMs);
 }
 
 // Set baud rate on current port
-bool LG290P::setBaudrate(uint32_t newBaud)
+bool LG290P::setBaudrate(uint32_t newBaud, uint16_t maxWaitMs)
 {
     char parms[50];
     snprintf(parms, sizeof parms, ",W,%d", (int)newBaud);
-    return sendOkCommand("PQTMCFGUART", parms);
+    return sendOkCommand("PQTMCFGUART", parms, maxWaitMs);
 }
 
 bool LG290P::getPortInfo(int port, uint32_t &newBaud, uint8_t &databits, uint8_t &parity, uint8_t &stop,
-                         uint8_t &flowControl)
+                         uint8_t &flowControl, uint16_t maxWaitMs)
 {
     char parms[50];
     snprintf(parms, sizeof parms, ",R,%d", port);
-    bool ret = sendCommand("PQTMCFGUART", parms);
+    bool ret = sendCommand("PQTMCFGUART", parms, maxWaitMs);
     if (ret)
     {
         auto packet = getCommandResponse();
