@@ -86,23 +86,36 @@ class LG290P
     /**
      * @brief Starts the LG290P engine. Required at the beginning of each session
      * @param serialPort the open port that is connected to the LG290P module
+     * @param parserName a zero-terminated name string describing the parser name
+     * @param errorOutput if provided, address of a routine to output an error character
      * @param parserDebug if provided, show debugging for the parser
-     * @param parserError if provided, show error messages for the parser
+     * @param debugOutput if provided, address of a routine to output a debug character
      * @return true if the initialization succeeded
      */
-    bool begin(HardwareSerial &serialPort, Print *parserDebug = nullptr, Print *parserError = &Serial);
+    bool begin(HardwareSerial &serialPort,
+               const char * parserName,
+               SEMP_OUTPUT errorOutput = nullptr,
+               Print *parserDebug = nullptr,
+               SEMP_OUTPUT debugOutput = nullptr);
 
     /**
      * @brief Starts the LG290P engine. Does not require open serial port. Tests various likely baud rates
      * @param serialPort a port that is connected to the LG290P module
      * @param rxPin the pin that receives data from the LG290P
      * @param txPin the pin that sends data to the LG290P
+     * @param parserName a zero-terminated name string describing the parser name
+     * @param errorOutput if provided, address of a routine to output an error character
      * @param parserDebug if provided, show debugging for the parser
-     * @param parserError if provided, show error messages for the parser
+     * @param debugOutput if provided, address of a routine to output a debug character
      * @return true if the initialization succeeded
      */
-    bool beginAutoBaudDetect(HardwareSerial &serialPort, int rxPin, int txPin, Print *parserDebug = nullptr,
-                             Print *parserError = &Serial);
+    bool beginAutoBaudDetect(HardwareSerial &serialPort,
+                             int rxPin,
+                             int txPin,
+                             const char * parserName,
+                             SEMP_OUTPUT errorOutput = nullptr,
+                             Print *parserError = &Serial,
+                             SEMP_OUTPUT debugOutput = nullptr);
 
     /**
      * @brief Poll the device with the PQTMUNIQID command to see if it is responding
@@ -155,7 +168,7 @@ class LG290P
     /**
      * @brief Define the stream that handles parser debug and turn on parser debugging
      */
-    void enableParserDebug(Print *print = &Serial);
+    void enableParserDebug(SEMP_OUTPUT debugOutput);
 
     /**
      * @brief Turn off parser debugging
@@ -165,7 +178,7 @@ class LG290P
     /**
      * @brief Define the stream that handles parser error debug and turn on parser error debugging
      */
-    void enableParserErrors(Print *print = &Serial);
+    void enableParserErrors(SEMP_OUTPUT errorOutput);
 
     /**
      * @brief Turn off parser error debugging
@@ -215,9 +228,9 @@ class LG290P
 
     /**
      * @brief Display the current parser configuration
-     * @param print the stream to send the configuration information to
+     * @param output address of a routine to print a character
      */
-    void printParserConfiguration(Print *print = &Serial);
+    void printParserConfiguration(SEMP_OUTPUT output = nullptr);
 
     /**
      * @brief Dump an arbitrary buffer to the debug stream

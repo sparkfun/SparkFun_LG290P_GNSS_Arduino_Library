@@ -22,17 +22,12 @@
 #define LG290P_RTCM_PARSER_INDEX 1
 
 // Build the table listing all of the parsers
-SEMP_PARSE_ROUTINE const parserTable[] = {
-    sempNmeaPreamble,
-    sempRtcmPreamble,
+static const SEMP_PARSER_DESCRIPTION * lg290pParserTable[] =
+{
+    &sempNmeaParserDescription,
+    &sempRtcmParserDescription,
 };
-const int parserCount = sizeof(parserTable) / sizeof(parserTable[0]);
-
-const char *const parserNames[] = {
-    "LG290P NMEA Parser",
-    "LG290P RTCM Parser",
-};
-const int parserNameCount = sizeof(parserNames) / sizeof(parserNames[0]);
+static const int lg290pParserCount = sizeof(lg290pParserTable) / sizeof(lg290pParserTable[0]);
 
 // Account for the largest message
 #define BUFFER_LENGTH 3000
@@ -62,42 +57,37 @@ void LG290P::disablePrintBadChecksums()
 // Translate the state value into an ASCII state name
 const char *LG290PGetStateName(SEMP_PARSE_STATE *parse)
 {
-    const char *name;
-    if ((name = sempNmeaGetStateName(parse)) != nullptr)
-        return name;
-    if ((name = sempRtcmGetStateName(parse)) != nullptr)
-        return name;
     return sempGetStateName(parse);
 }
 
 // Disable debug output from the parser
 void LG290P::disableParserDebug()
 {
-    sempDisableDebugOutput(_sempParse);
+    sempDebugOutputDisable(_sempParse);
 }
 
 // Enable debug output from the parser
-void LG290P::enableParserDebug(Print *print)
+void LG290P::enableParserDebug(SEMP_OUTPUT output)
 {
-    sempEnableDebugOutput(_sempParse, print);
+    sempDebugOutputEnable(_sempParse, output);
 }
 
 // Disable debug output from the parser
 void LG290P::disableParserErrors()
 {
-    sempDisableDebugOutput(_sempParse);
+    sempErrorOutputDisable(_sempParse);
 }
 
 // Enable debug output from the parser
-void LG290P::enableParserErrors(Print *print)
+void LG290P::enableParserErrors(SEMP_OUTPUT output)
 {
-    sempEnableErrorOutput(_sempParse, print);
+    sempErrorOutputEnable(_sempParse, output);
 }
 
 // Print the LG290P parser configuration
-void LG290P::printParserConfiguration(Print *print)
+void LG290P::printParserConfiguration(SEMP_OUTPUT output)
 {
-    sempPrintParserConfiguration(_sempParse, print);
+    sempPrintParserConfiguration(_sempParse, output);
 }
 
 bool LG290P::badNmeaChecksum(SEMP_PARSE_STATE *parse)
@@ -109,15 +99,23 @@ bool LG290P::badNmeaChecksum(SEMP_PARSE_STATE *parse)
 // LG290P support routines
 //----------------------------------------
 
-bool LG290P::begin(HardwareSerial &serialPort, Print *parserDebug, Print *parserError)
+bool LG290P::begin(HardwareSerial &serialPort,
+                   const char * parserName,
+                   SEMP_OUTPUT errorOutput /* = nullptr */,
+                   Print *parserDebug /* = nullptr */,
+                   SEMP_OUTPUT debugOutput /* = nullptr */)
 {
     ptrLG290P = this;
     _hwSerialPort = &serialPort;
+    _debugPort = parserDebug;
 
     // Initialize the parser
+    size_t bufferLength = sempGetBufferLength(lg290pParserTable, lg290pParserCount, BUFFER_LENGTH);
+    uint8_t * buffer = (uint8_t *)malloc(bufferLength);
     _sempParse =
-        sempBeginParser(parserTable, parserCount, parserNames, parserNameCount, 0, BUFFER_LENGTH, LG290PProcessMessage,
-                        "SFE_LG290P_GNSS_Library", parserError, parserDebug, badNmeaChecksum);
+        sempBeginParser(parserName, lg290pParserTable, lg290pParserCount,
+                        buffer, bufferLength, LG290PProcessMessage,
+                        errorOutput, debugOutput, badNmeaChecksum);
     if (!_sempParse)
     {
         debugPrintf("LG290P Lib: Failed to initialize the parser!");
@@ -137,28 +135,36 @@ bool LG290P::begin(HardwareSerial &serialPort, Print *parserDebug, Print *parser
     if (ok)
     {
         debugPrintf("Firmware version is %d.%d %s", firmwareVersionMajor, firmwareVersionMinor, firmwareVersionInt == 0 ? " (Unknown)" : "");
-        debugPrintf("Starting with %s mode, GGA %d RMC %d EPE %d PVT %d PL %d SVIN %d GSV %d GST %d", 
-            devState.mode == BASEMODE ? "BASE" : "ROVER", devState.ggaRate, devState.rmcRate, devState.epeRate, 
+        debugPrintf("Starting with %s mode, GGA %d RMC %d EPE %d PVT %d PL %d SVIN %d GSV %d GST %d",
+            devState.mode == BASEMODE ? "BASE" : "ROVER", devState.ggaRate, devState.rmcRate, devState.epeRate,
             devState.pvtRate, devState.plRate, devState.svinstatusRate, devState.gsvRate, devState.gstRate);
     }
     else
     {
         debugPrintf("begin() failed.");
-        sempStopParser(&_sempParse);
+        _sempParse = nullptr;
+        free(buffer);
     }
-    
+
     return ok;
 }
 
-bool LG290P::beginAutoBaudDetect(HardwareSerial &serialPort, int rxPin, int txPin, Print *parserDebug /* = nullptr */, Print *parserError /* = &Serial */)
+bool LG290P::beginAutoBaudDetect(HardwareSerial &serialPort,
+                                 int rxPin,
+                                 int txPin,
+                                 const char * parserName,
+                                 SEMP_OUTPUT errorOutput /* = nullptr */,
+                                 Print *parserDebug /* = nullptr */,
+                                 SEMP_OUTPUT debugOutput /* = nullptr */)
 {
     serialPort.setRxBufferSize(4096);
+    _debugPort = parserDebug;
 
     for (int baud: {460800, 921600, 230400, 115200, 9600})
     {
         debugPrintf("Trying baud rate %d...", baud);
         serialPort.begin(baud, SERIAL_8N1, rxPin, txPin);
-        if (begin(serialPort, parserDebug, parserError))
+        if (begin(serialPort, parserName, errorOutput, parserDebug, debugOutput))
             return true;
     }
     return false;
@@ -895,7 +901,7 @@ bool LG290P::setConstellations(bool enableGPS, bool enableGLONASS, bool enableGa
                                bool enableNavIC)
 {
     char parms[50];
-    snprintf(parms, sizeof parms, ",W,%d,%d,%d,%d,%d,%d", enableGPS, enableGLONASS, 
+    snprintf(parms, sizeof parms, ",W,%d,%d,%d,%d,%d,%d", enableGPS, enableGLONASS,
         enableGalileo, enableBDS, enableQZSS, enableNavIC);
     return sendOkCommand("PQTMCFGCNST", parms) && save() && hotStart();
 }
@@ -1105,7 +1111,7 @@ std::list<LG290P::satinfo> LG290P::getVisibleSats(const char *talker /* = nullpt
     }
 
     // ... or just the ones from a specific Talker?
-    else 
+    else
     {
         auto item = satelliteDomain.find(talker);
         if (item != satelliteDomain.end())
@@ -1199,7 +1205,7 @@ void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
                     lastUpdatePvtDomain = millis(); // Update stale marker
                     nmea.processRMC(ptrLG290P->pvtDomain);
                 }
-                
+
                 else if (id == "GGA")
                 {
                     lastUpdatePvtDomain = millis(); // Update stale marker
@@ -1232,7 +1238,7 @@ void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
                         thisSet.clear();
                         satelliteUpdateTime[talker] = now;
                     }
-                    
+
                     // log_d("GSV: count: %d no: %d in view: %d", msgCount, msgNo, svsInView);
                     for (int i = 0; i < 4 && 4 * (msgNo - 1) + i < svsInView; ++i)
                     {
@@ -1270,7 +1276,7 @@ void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
         }
 
         else if (id == "PQTMPVT")
-        {   
+        {
             lastUpdatePvtDomain = millis(); // Update stale marker
             PvtDomain &pvt = ptrLG290P->pvtDomain;
             pvt.timeOfWeek = atoi(nmea[2].c_str());
@@ -1620,7 +1626,7 @@ std::string NmeaPacket::SentenceId() const
     if (!IsValid() || fields[0].empty() || fields[0][0] != '$')
         return "";
 
-    // The Sentence Id is everything after the Talker Id, unless it's a PQTM 
+    // The Sentence Id is everything after the Talker Id, unless it's a PQTM
     return fields[0].substr(0, 5) == "$PQTM" ? fields[0].substr(1) : fields[0].length() >= 3 ? fields[0].substr(3) : "";
 }
 
