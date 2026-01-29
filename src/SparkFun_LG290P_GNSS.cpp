@@ -127,11 +127,16 @@ bool LG290P::begin(HardwareSerial &serialPort, Print *parserDebug, Print *parser
     bool ok = isConnected();
     ok = ok && getMode(devState.mode);
     ok = ok && scanForMsgsEnabled();
-    ok = ok && getFirmwareVersion(firmwareVersion);
+
+    int firmwareVersionMajor = 0;
+    int firmwareVersionMinor = 0;
+    ok = ok && getFirmwareVersionMajor(firmwareVersionMajor);
+    ok = ok && getFirmwareVersionMinor(firmwareVersionMinor);
+    firmwareVersionInt = (firmwareVersionMajor * 100) + firmwareVersionMinor; //v2.16 becomes 216
 
     if (ok)
     {
-        debugPrintf("Firmware version is %02d%s", firmwareVersion, firmwareVersion == 0 ? " (Unknown)" : "");
+        debugPrintf("Firmware version is %d.%d %s", firmwareVersionMajor, firmwareVersionMinor, firmwareVersionInt == 0 ? " (Unknown)" : "");
         debugPrintf("Starting with %s mode, GGA %d RMC %d EPE %d PVT %d PL %d SVIN %d GSV %d GST %d", 
             devState.mode == BASEMODE ? "BASE" : "ROVER", devState.ggaRate, devState.rmcRate, devState.epeRate, 
             devState.pvtRate, devState.plRate, devState.svinstatusRate, devState.gsvRate, devState.gstRate);
@@ -597,12 +602,13 @@ bool LG290P::getFirmwareVersion(int &version)
 
     std::string ver, buildDate, buildTime;
     bool ret = getVersionInfo(ver, buildDate, buildTime);
-    if (ret && (ver.length() > strlen(firmwareVersionPrefixMinor)))
+    if (ret && (ver.length() > strlen(firmwareVersionPrefix)))
     {
-        char *spot = strstr(ver.c_str(), firmwareVersionPrefixMinor);
+        char *spot = strstr(ver.c_str(), firmwareVersionPrefix);
         if (spot != NULL)
         {
-            spot += strlen(firmwareVersionPrefixMinor);
+            // LG290P03AANR##A?? - move 3 more than the prefix to get to the minor version after 'A'
+            spot += (strlen(firmwareVersionPrefix) + 3);
             version = atoi(spot);
             return (version > 0);
         }
@@ -617,12 +623,12 @@ bool LG290P::getFirmwareVersionMajor(int &majorVersion)
 
     std::string ver, buildDate, buildTime;
     bool ret = getVersionInfo(ver, buildDate, buildTime);
-    if (ret && (ver.length() > strlen(firmwareVersionPrefixMajor)))
+    if (ret && (ver.length() > strlen(firmwareVersionPrefix)))
     {
-        char *spot = strstr(ver.c_str(), firmwareVersionPrefixMajor);
+        char *spot = strstr(ver.c_str(), firmwareVersionPrefix);
         if (spot != NULL)
         {
-            spot += strlen(firmwareVersionPrefixMajor);
+            spot += strlen(firmwareVersionPrefix);
             majorVersion = atoi(spot);
             return (majorVersion > 0);
         }
@@ -637,12 +643,13 @@ bool LG290P::getFirmwareVersionMinor(int &minorVersion)
 
     std::string ver, buildDate, buildTime;
     bool ret = getVersionInfo(ver, buildDate, buildTime);
-    if (ret && (ver.length() > strlen(firmwareVersionPrefixMinor)))
+    if (ret && (ver.length() > strlen(firmwareVersionPrefix)))
     {
-        char *spot = strstr(ver.c_str(), firmwareVersionPrefixMinor);
+        char *spot = strstr(ver.c_str(), firmwareVersionPrefix);
         if (spot != NULL)
         {
-            spot += strlen(firmwareVersionPrefixMinor);
+            // LG290P03AANR##A?? - move 3 more than the prefix to get to the minor version after 'A'
+            spot += (strlen(firmwareVersionPrefix) + 3);
             minorVersion = atoi(spot);
             return (minorVersion > 0);
         }
@@ -692,7 +699,7 @@ bool LG290P::setMessageRate(const char *msgName, int rate, int msgVer)
     return ret;
 }
 
-// Set a message on a given port. Available in v4 and above.
+// Set a message on a given port. Available in v1.4 and above.
 // $PQTMCFGMSGRATE,W,1,2,GGA,1* - <PortType>,<PortID>,<MsgName>,<Rate>[,MsgVersion/Offset]
 // Set port type (1 = UART), UART number (2 = UART2), message, rate
 bool LG290P::setMessageRateOnPort(const char *msgName, int rate, int portNumber, int msgVer)
@@ -730,7 +737,7 @@ bool LG290P::getMessageRate(const char *msgName, int &rate, int msgVer)
     return ret;
 }
 
-// Configures the elevation threshold for position engine. Available in v5 and above.
+// Configures the elevation threshold for position engine. Available in v1.5 and above.
 bool LG290P::setElevationAngle(int elevationAngle)
 {
     char parms[50];
@@ -750,7 +757,7 @@ bool LG290P::getElevationAngle(int &elevationAngle)
     return ret;
 }
 
-// Configures the CNR threshold for position engine. Available in v5 and above.
+// Configures the CNR threshold for position engine. Available in v1.5 and above.
 bool LG290P::setCNR(float cnr)
 {
     char parms[50];

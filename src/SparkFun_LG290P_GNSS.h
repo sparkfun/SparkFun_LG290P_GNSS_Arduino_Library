@@ -1109,7 +1109,7 @@ class LG290P
      */
     double get2DError()
     {
-        if (firmwareVersion >= 4)
+        if (firmwareVersionInt >= 104)
         {
             ensureGstEnabled();
             if (pvtDomain.latitudeError > pvtDomain.longitudeError)
@@ -1130,7 +1130,7 @@ class LG290P
      */
     double get3DError()
     {
-        if (firmwareVersion >= 4)
+        if (firmwareVersionInt >= 104)
         {
             ensureGstEnabled();
             return pvtDomain.heightError;
@@ -1335,9 +1335,8 @@ class LG290P
 
   private:
     // Firmware version
-    int firmwareVersion = 0;
-    const char *firmwareVersionPrefixMinor = "LG290P03AANR01A";
-    const char *firmwareVersionPrefixMajor = "LG290P03AANR";
+    int firmwareVersionInt = 0;
+    const char *firmwareVersionPrefix = "LG290P03AANR";
 
     // Update times
     unsigned long lastUpdatePvtDomain = 0;
@@ -1390,7 +1389,7 @@ class LG290P
     }
     void ensureGstEnabled()
     {
-        if (firmwareVersion >= 4)
+        if (firmwareVersionInt >= 104)
             ensureMsgEnabled(devState.gstRate > 0, "GST");
     }
     void clearAll();
