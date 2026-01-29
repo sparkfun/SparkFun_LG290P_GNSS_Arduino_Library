@@ -590,20 +590,61 @@ bool LG290P::getVersionInfo(std::string &version, std::string &buildDate, std::s
     return ret;
 }
 
+// Deprecated - Use Major/Minor
 bool LG290P::getFirmwareVersion(int &version)
 {
     version = 0; // Unknown
 
     std::string ver, buildDate, buildTime;
     bool ret = getVersionInfo(ver, buildDate, buildTime);
-    if (ret && (ver.length() > strlen(firmwareVersionPrefix)))
+    if (ret && (ver.length() > strlen(firmwareVersionPrefixMinor)))
     {
-        char *spot = strstr(ver.c_str(), firmwareVersionPrefix);
+        char *spot = strstr(ver.c_str(), firmwareVersionPrefixMinor);
         if (spot != NULL)
         {
-            spot += strlen(firmwareVersionPrefix);
+            spot += strlen(firmwareVersionPrefixMinor);
             version = atoi(spot);
             return (version > 0);
+        }
+    }
+
+    return false;
+}
+
+bool LG290P::getFirmwareVersionMajor(int &majorVersion)
+{
+    majorVersion = 0; // Unknown
+
+    std::string ver, buildDate, buildTime;
+    bool ret = getVersionInfo(ver, buildDate, buildTime);
+    if (ret && (ver.length() > strlen(firmwareVersionPrefixMajor)))
+    {
+        char *spot = strstr(ver.c_str(), firmwareVersionPrefixMajor);
+        if (spot != NULL)
+        {
+            spot += strlen(firmwareVersionPrefixMajor);
+            majorVersion = atoi(spot);
+            return (majorVersion > 0);
+        }
+    }
+
+    return false;
+}
+
+bool LG290P::getFirmwareVersionMinor(int &minorVersion)
+{
+    minorVersion = 0; // Unknown
+
+    std::string ver, buildDate, buildTime;
+    bool ret = getVersionInfo(ver, buildDate, buildTime);
+    if (ret && (ver.length() > strlen(firmwareVersionPrefixMinor)))
+    {
+        char *spot = strstr(ver.c_str(), firmwareVersionPrefixMinor);
+        if (spot != NULL)
+        {
+            spot += strlen(firmwareVersionPrefixMinor);
+            minorVersion = atoi(spot);
+            return (minorVersion > 0);
         }
     }
 

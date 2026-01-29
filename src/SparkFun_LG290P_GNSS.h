@@ -437,13 +437,31 @@ class LG290P
     bool getVersionInfo(std::string &version, std::string &buildDate, std::string &buildTime);
 
     /**
-     * @brief Gets the firmware version of the device.
+     * @brief Gets the minor firmware version (16 of 2.16)  of the device.
      * @details Uses the PQTMVERNO command
      * @param version Reference to an int where the version will be stored.
      * @return true if successful, false otherwise.
      * @note version will be set to 0 if the get fails.
      */
     bool getFirmwareVersion(int &version);
+
+    /**
+     * @brief Gets the major firmware version (2 of 2.16) of the device.
+     * @details Uses the PQTMVERNO command
+     * @param version Reference to an int where the version will be stored.
+     * @return true if successful, false otherwise.
+     * @note version will be set to 0 if the get fails.
+     */
+    bool getFirmwareVersionMajor(int &versionMajor);
+
+    /**
+     * @brief Gets the minor firmware version (16 of 2.16) of the device.
+     * @details Uses the PQTMVERNO command
+     * @param version Reference to an int where the version will be stored.
+     * @return true if successful, false otherwise.
+     * @note version will be set to 0 if the get fails.
+     */
+    bool getFirmwareVersionMinor(int &versionMinor);
 
     /**
      * @brief Gets the current fix interval.
@@ -1318,7 +1336,8 @@ class LG290P
   private:
     // Firmware version
     int firmwareVersion = 0;
-    const char *firmwareVersionPrefix = "LG290P03AANR01A";
+    const char *firmwareVersionPrefixMinor = "LG290P03AANR01A";
+    const char *firmwareVersionPrefixMajor = "LG290P03AANR";
 
     // Update times
     unsigned long lastUpdatePvtDomain = 0;

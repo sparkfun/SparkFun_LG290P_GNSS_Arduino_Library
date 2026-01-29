@@ -153,6 +153,10 @@ getCNR	KEYWORD2
 setRtkDifferentialAge	KEYWORD2
 getRtkDifferentialAge	KEYWORD2
 
+getFirmwareVersion	KEYWORD2
+getFirmwareVersionMajor	KEYWORD2
+getFirmwareVersionMinor	KEYWORD2
+
 #######################################
 # Constants (LITERAL1)
 #######################################
