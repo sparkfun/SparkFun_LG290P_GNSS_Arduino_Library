@@ -133,7 +133,7 @@ bool LG290P::begin(HardwareSerial &serialPort, Print *parserDebug, Print *parser
     ok = ok && getFirmwareVersionMajor(firmwareVersionMajor);
     ok = ok && getFirmwareVersionMinor(firmwareVersionMinor);
     firmwareVersionInt = (firmwareVersionMajor * 100) + firmwareVersionMinor; //v2.16 becomes 216
-
+    
     if (ok)
     {
         debugPrintf("Firmware version is %d.%d %s", firmwareVersionMajor, firmwareVersionMinor, firmwareVersionInt == 0 ? " (Unknown)" : "");
@@ -595,26 +595,17 @@ bool LG290P::getVersionInfo(std::string &version, std::string &buildDate, std::s
     return ret;
 }
 
-// Deprecated - Use Major/Minor
 bool LG290P::getFirmwareVersion(int &version)
 {
-    version = 0; // Unknown
+    bool ok = true;
+    int firmwareVersionMajor = 0;
+    int firmwareVersionMinor = 0;
+    ok &= getFirmwareVersionMajor(firmwareVersionMajor);
+    ok &= getFirmwareVersionMinor(firmwareVersionMinor);
+    
+    version = (firmwareVersionMajor * 100) + firmwareVersionMinor; //v2.16 becomes 216
 
-    std::string ver, buildDate, buildTime;
-    bool ret = getVersionInfo(ver, buildDate, buildTime);
-    if (ret && (ver.length() > strlen(firmwareVersionPrefix)))
-    {
-        char *spot = strstr(ver.c_str(), firmwareVersionPrefix);
-        if (spot != NULL)
-        {
-            // LG290P03AANR##A?? - move 3 more than the prefix to get to the minor version after 'A'
-            spot += (strlen(firmwareVersionPrefix) + 3);
-            version = atoi(spot);
-            return (version > 0);
-        }
-    }
-
-    return false;
+    return (ok);
 }
 
 bool LG290P::getFirmwareVersionMajor(int &majorVersion)
