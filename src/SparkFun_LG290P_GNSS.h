@@ -54,6 +54,7 @@ class LG290P
 {
     typedef void (*nmeaCallback)(NmeaPacket &nmea);
     typedef void (*rtcmCallback)(RtcmPacket &rtcm);
+
     struct satinfo
     {
         int elev, azimuth, prn, snr;
@@ -63,16 +64,27 @@ class LG290P
             return prn < other.prn;
         }
     };
+
     struct
     {
-        int mode = -1, ggaRate = -1, rmcRate = -1, pvtRate = -1, plRate = -1, epeRate = -1, svinstatusRate = -1,
-            gsvRate = -1, gstRate = -1;
+        int mode = -1,
+            ggaRate = -1,
+            rmcRate = -1,
+            pvtRate = -1,
+            plRate = -1,
+            epeRate = -1,
+            svinstatusRate = -1,
+            gsvRate = -1,
+            gstRate = -1,
+            pppnavRate = -1;
     } devState;
+
     enum
     {
         ROVERMODE = 1,
         BASEMODE = 2
     };
+
     enum
     {
         SURVEYDISABLED = 0,
@@ -80,7 +92,7 @@ class LG290P
         SURVEYFIXED = 2
     };
 
-  public:
+public:
     /** Handshaking and Client interface **/
 
     /**
@@ -1143,6 +1155,68 @@ class LG290P
     }
 
     /**
+     * @brief Returns the Datum ID from PPPNAV
+     * @return 1 = WGS84, 2 = PPP Original (default), 3 = CGCS2000
+     */
+    int getDatumId()
+    {
+        ensurePppNavEnabled();
+        return pppNavDomain.datumId;
+    }
+
+    /**
+     * @brief Returns the Solution Type from PPPNAV
+     * @return 0 = Not fixed, 1 = Single, 2 = Differential, 3 = Fixed or Survey In, 5 = Pseudorange Differential, 6 = PPP converging, 7 = PPP converged, 8 = RTK Float, 12 = RTK Fixed
+     */
+    int getPppSolutionType()
+    {
+        ensurePppNavEnabled();
+        return pppNavDomain.solType;
+    }
+
+    /**
+     * @brief Returns the DiffID from PPPNAV
+     * @return 0 to 9999: The differential reference station ID for the PPP result based on B2b PPP is 9001. The differential reference station ID for the PPP result based on E6 HAS is 9002.
+     */
+    int getPppDifferentialId()
+    {
+        ensurePppNavEnabled();
+        return pppNavDomain.diffId;
+    }
+
+    /**
+     * @brief Returns the DiffAge from PPPNAV
+     * @return Number of seconds since last differential correction was received.
+     */
+    int getPppDifferentialAge()
+    {
+        ensurePppNavEnabled();
+        return pppNavDomain.diffAge;
+    }
+
+    /**
+     * @brief Enable HAS or B2b high accuracy service for PPP.
+     * @param mode High accuracy service mode: 0 = Disable, 1 = HAS, 2 = B2b PPP, 0xFF = Auto
+     * @param datum Datum ID: 1 = WGS84, 2 = PPP Original, 3 = CGCS2000
+     * @param timeout Differential timeout in seconds (90 to 180).
+     * @param horstd Horizontal standard deviation in meters (0 to 5.0).
+     * @param verstd Vertical standard deviation in meters (0 to 5.0).
+     * @return True if successful.
+     */
+    bool setHighAccuracyService(int mode, int datum = 1, int timeout = 120, float horstd = 0.1, float verstd = 0.15);
+
+        /**
+     * @brief Get the current HAS or B2b high accuracy service settings.
+     * @param mode High accuracy service mode: 0 = Disable, 1 = HAS, 2 = B2b PPP, 0xFF = Auto
+     * @param datum Datum ID: 1 = WGS84, 2 = PPP Original, 3 = CGCS2000
+     * @param timeout Differential timeout in seconds (90 to 180).
+     * @param horstd Horizontal standard deviation in meters (0 to 5.0).
+     * @param verstd Vertical standard deviation in meters (0 to 5.0).
+     * @return True if successful.
+     */
+    bool getHighAccuracyService(int &mode, int &datum, int &timeout, float &horstd, float &verstd);
+
+    /**
      * @brief Returns the Probability of Uncertainty Level per Epoch from PQTMPL
      * @return Probability in %
      */
@@ -1333,7 +1407,7 @@ class LG290P
     char *getCompileTime();
 #endif
 
-  private:
+private:
     // Firmware version
     int firmwareVersionInt = 0;
     const char *firmwareVersionPrefix = "LG290P03AANR";
@@ -1374,6 +1448,10 @@ class LG290P
     void ensurePlEnabled()
     {
         ensureMsgEnabled(devState.plRate > 0, "PQTMPL", 1);
+    }
+    void ensurePppNavEnabled()
+    {
+        ensureMsgEnabled(devState.pppnavRate > 0, "PQTMPPPNAV", 1);
     }
     void ensureEpeEnabled()
     {
@@ -1418,6 +1496,7 @@ class LG290P
     RtcmDomain rtcmDomain;
     EpeDomain epeDomain;
     PlDomain plDomain;
+    PppNavDomain pppNavDomain;
     SvinStatusDomain svinStatusDomain;
 
     // Serial port utilities
