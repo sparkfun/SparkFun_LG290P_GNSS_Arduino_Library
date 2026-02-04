@@ -72,6 +72,16 @@ struct PlDomain
     void clear() { *this = PlDomain(); }
 };
 
+struct PppNavDomain
+{
+    int datumId = 0;
+    int solType = 0;
+    int diffId = 0;
+    int diffAge = 0;
+
+    void clear() { *this = PppNavDomain(); }
+};
+
 struct SvinStatusDomain
 {
     int validity = 0;

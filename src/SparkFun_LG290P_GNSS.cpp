@@ -137,9 +137,9 @@ bool LG290P::begin(HardwareSerial &serialPort, Print *parserDebug, Print *parser
     if (ok)
     {
         debugPrintf("Firmware version is %d.%d %s", firmwareVersionMajor, firmwareVersionMinor, firmwareVersionInt == 0 ? " (Unknown)" : "");
-        debugPrintf("Starting with %s mode, GGA %d RMC %d EPE %d PVT %d PL %d SVIN %d GSV %d GST %d", 
+        debugPrintf("Starting with %s mode, GGA %d RMC %d EPE %d PVT %d PL %d SVIN %d GSV %d GST %d PPPNAV %d", 
             devState.mode == BASEMODE ? "BASE" : "ROVER", devState.ggaRate, devState.rmcRate, devState.epeRate, 
-            devState.pvtRate, devState.plRate, devState.svinstatusRate, devState.gsvRate, devState.gstRate);
+            devState.pvtRate, devState.plRate, devState.svinstatusRate, devState.gsvRate, devState.gstRate, devState.pppnavRate);
     }
     else
     {
@@ -686,6 +686,7 @@ bool LG290P::setMessageRate(const char *msgName, int rate, int msgVer)
         else if (str == "PQTMEPE") devState.epeRate = rate;
         else if (str == "GSV") devState.gsvRate = rate;
         else if (str == "GST") devState.gstRate = rate;
+        else if (str == "PQTMPPPNAV") devState.pppnavRate = rate;
     }
     return ret;
 }
@@ -711,6 +712,7 @@ bool LG290P::setMessageRateOnPort(const char *msgName, int rate, int portNumber,
         else if (str == "PQTMEPE") devState.epeRate = rate;
         else if (str == "GSV") devState.gsvRate = rate;
         else if (str == "GST") devState.gstRate = rate;
+        else if (str == "PQTMPPPNAV") devState.pppnavRate = rate;
     }
     return ret;
 }
@@ -789,6 +791,40 @@ bool LG290P::getRtkDifferentialAge(uint16_t &timeout)
     return ret;
 }
 
+bool LG290P::setHighAccuracyService(int mode, int datum, int timeout, float horstd, float verstd)
+{
+    //CFGPPP does not require reset to take effect
+    bool ret = true;
+    if(mode == 0)
+        ret = sendOkCommand("PQTMCFGPPP", ",W,0"); // $PQTMCFGPPP,W,0,0,0* throws error if other params sent
+    else
+    {
+        char parms[100];
+        snprintf(parms, sizeof parms, ",W,%d,%d,%d,%0.2f,%0.2f", mode, datum, timeout, horstd, verstd);
+        ret = sendOkCommand("PQTMCFGPPP", parms);
+    }
+    return ret;
+}
+
+bool LG290P::getHighAccuracyService(int &mode, int &datum, int &timeout, float &horstd, float &verstd)
+{
+    bool ret = sendCommand("PQTMCFGPPP", ",R");
+    if (ret)
+    {
+        auto packet = getCommandResponse();
+        ret = packet[1] == "OK";
+        if (ret)
+        {
+            mode = atoi(packet[2].c_str());
+            datum = atoi(packet[3].c_str());
+            timeout = atoi(packet[4].c_str());
+            horstd = atof(packet[5].c_str());
+            verstd = atof(packet[6].c_str());
+        }
+    }
+    return ret;
+}
+
 bool LG290P::scanForMsgsEnabled()
 {
     bool ok = getMessageRate("GGA", devState.ggaRate);
@@ -797,6 +833,7 @@ bool LG290P::scanForMsgsEnabled()
     ok = ok && getMessageRate("PQTMPVT", devState.pvtRate, 1);
     ok = ok && getMessageRate("PQTMPL", devState.plRate, 1);
     ok = ok && getMessageRate("GSV", devState.gsvRate);
+    ok = ok && getMessageRate("PQTMPPPNAV", devState.pppnavRate, 1);
 
     // GST is not available on firmware < 4
     getMessageRate("GST", devState.gstRate);
@@ -1320,6 +1357,14 @@ void LG290P::nmeaHandler(SEMP_PARSE_STATE *parse)
             plDomain.protectionLevelEastVelocity = atof(nmea[10].c_str());
             plDomain.protectionLevelDownVelocity = atof(nmea[11].c_str());
             plDomain.protectionLevelTime = atof(nmea[14].c_str());
+        }
+
+        else if (id == "PQTMPPPNAV")
+        {
+            pppNavDomain.datumId = atoi(nmea[9].c_str());
+            pppNavDomain.solType = atoi(nmea[11].c_str());
+            pppNavDomain.diffId = atoi(nmea[24].c_str());
+            pppNavDomain.diffAge = atoi(nmea[25].c_str());
         }
 
 #if false

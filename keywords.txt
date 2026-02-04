@@ -157,6 +157,13 @@ getFirmwareVersion	KEYWORD2
 getFirmwareVersionMajor	KEYWORD2
 getFirmwareVersionMinor	KEYWORD2
 
+getDatumId	KEYWORD2
+getPppSolutionType	KEYWORD2
+getPppDifferentialId	KEYWORD2
+getPppDifferentialAge	KEYWORD2
+setHighAccuracyService	KEYWORD2
+getHighAccuracyService	KEYWORD2
+
 #######################################
 # Constants (LITERAL1)
 #######################################
