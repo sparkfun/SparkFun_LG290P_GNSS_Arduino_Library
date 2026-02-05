@@ -1203,7 +1203,7 @@ public:
      * @param verstd Vertical standard deviation in meters (0 to 5.0).
      * @return True if successful.
      */
-    bool setHighAccuracyService(int mode, int datum = 1, int timeout = 120, float horstd = 0.1, float verstd = 0.15);
+    bool setPppSettings(int mode, int datum = 1, int timeout = 120, float horstd = 0.1, float verstd = 0.15);
 
         /**
      * @brief Get the current HAS or B2b high accuracy service settings.
@@ -1214,7 +1214,7 @@ public:
      * @param verstd Vertical standard deviation in meters (0 to 5.0).
      * @return True if successful.
      */
-    bool getHighAccuracyService(int &mode, int &datum, int &timeout, float &horstd, float &verstd);
+    bool getPppSettings(int &mode, int &datum, int &timeout, float &horstd, float &verstd);
 
     /**
      * @brief Returns the Probability of Uncertainty Level per Epoch from PQTMPL

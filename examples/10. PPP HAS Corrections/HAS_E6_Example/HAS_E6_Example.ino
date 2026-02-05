@@ -40,10 +40,10 @@ void setup()
 
   // Increase buffer size to handle high baud rate streams
   // SerialGNSS.setRxBufferSize(1024 * 4);
- 
+
   SerialGNSS.begin(gnss_baud, SERIAL_8N1, pin_UART1_RX, pin_UART1_TX);
 
-  //myGNSS.enableDebugging(Serial);        // Print all debug to Serial
+  // myGNSS.enableDebugging(Serial);        // Print all debug to Serial
   if (myGNSS.begin(SerialGNSS) == false) // Give the serial port over to the library
   {
     Serial.println("LG290P failed to respond. Check ports and baud rates. Freezing...");
@@ -55,12 +55,12 @@ void setup()
   Serial.println("Ensuring ROVER mode");
   myGNSS.ensureModeRover();
 
-  if (myGNSS.setHighAccuracyService(2, 1) == true) // Enable HAS E6 corrections, use WGS84 datum
+  if (myGNSS.setPppSettings(2, 1) == true) // Enable HAS E6 corrections, use WGS84 datum
     Serial.println("HAS E6 corrections enabled.");
   else
     Serial.println("Failed to enable HAS E6 corrections.");
 
-  delay(2000); // Wait before we read the settings 
+  delay(2000); // Wait before we read the settings
 
   int mode = 0;
   int datum = 0;
@@ -68,9 +68,12 @@ void setup()
   float horstd = 0;
   float verstd = 0;
 
-  if (myGNSS.getHighAccuracyService(mode, datum, timeout, horstd, verstd) == true)
+  // HAS E6 is conceptually the same as the B2b PPP service. Therefore we use the global 'PPP' moniker
+  // in the same way we use 'GNSS' to encapsulate GPS with other constellations.
+
+  if (myGNSS.getPppSettings(mode, datum, timeout, horstd, verstd) == true)
   {
-    Serial.print("HAS Service: mode=");
+    Serial.print("PPP Settings: mode=");
     Serial.print(mode);
     Serial.print(", datum=");
     Serial.print(datum);
@@ -83,7 +86,7 @@ void setup()
   }
   else
   {
-    Serial.println("Failed to get HAS service info.");
+    Serial.println("Failed to get PPP settings info.");
   }
 }
 
@@ -99,17 +102,17 @@ void loop()
       Serial.println("HAS Converged! PPP Solution: PPP Converged");
 
     Serial.printf("DatumID: %d ", myGNSS.getDatumId());
-    if(myGNSS.getDatumId() == 1)
+    if (myGNSS.getDatumId() == 1)
       Serial.println("WGS84");
-    else if(myGNSS.getDatumId() == 2)
+    else if (myGNSS.getDatumId() == 2)
       Serial.println("PPP Original");
-    else if(myGNSS.getDatumId() == 3)
+    else if (myGNSS.getDatumId() == 3)
       Serial.println("CGCS2000");
-    
+
     Serial.printf("Diff ID: %d ", myGNSS.getPppDifferentialId());
-    if(myGNSS.getPppDifferentialId() == 9001)
+    if (myGNSS.getPppDifferentialId() == 9001)
       Serial.println("B2b PPP");
-    else if(myGNSS.getPppDifferentialId() == 9002)
+    else if (myGNSS.getPppDifferentialId() == 9002)
       Serial.println("HAS/E6");
 
     Serial.printf("Diff Age: %d seconds\r\n", myGNSS.getPppDifferentialAge());
@@ -117,21 +120,21 @@ void loop()
   else
   {
     Serial.printf("PPP Solution Type: %d ", myGNSS.getPppSolutionType());
-    if(myGNSS.getPppSolutionType() == 1)
+    if (myGNSS.getPppSolutionType() == 1)
       Serial.println("Single");
-    else if(myGNSS.getPppSolutionType() == 2)
+    else if (myGNSS.getPppSolutionType() == 2)
       Serial.println("Differential (SBAS / DGPS)");
   }
 
   int horizontalPositionalAccuracy = myGNSS.get2DError() * 1000; // Convert meters to mm
   int threeDPositionalAccuracy = myGNSS.get3DError() * 1000;
-  
+
   Serial.printf("2D Error: %dmm 3D Error: %dmm Sats Used: %d Sats in View: %d\r\n",
                 horizontalPositionalAccuracy, threeDPositionalAccuracy, myGNSS.getSatellitesUsedCount(), myGNSS.getSatellitesInViewCount());
 
   Serial.println();
-  
-  // Generally speaking, delaying between checks is a bad idea because the LG290P is outputting so much serial. 
+
+  // Generally speaking, delaying between checks is a bad idea because the LG290P is outputting so much serial.
   // Instead, call myGNSS.update() far more often in order to parse it all.
   // If you must do other things and delay a lot, then increase setRxBufferSize to 4096 before beginning the serial port (see above).
   delay(1000); // A bad delay to demonstrate the parsing issue

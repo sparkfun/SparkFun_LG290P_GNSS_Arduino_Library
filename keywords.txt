@@ -161,8 +161,8 @@ getDatumId	KEYWORD2
 getPppSolutionType	KEYWORD2
 getPppDifferentialId	KEYWORD2
 getPppDifferentialAge	KEYWORD2
-setHighAccuracyService	KEYWORD2
-getHighAccuracyService	KEYWORD2
+setPppSettings	KEYWORD2
+getPppSettings	KEYWORD2
 
 #######################################
 # Constants (LITERAL1)

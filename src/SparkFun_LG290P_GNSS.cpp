@@ -791,7 +791,7 @@ bool LG290P::getRtkDifferentialAge(uint16_t &timeout)
     return ret;
 }
 
-bool LG290P::setHighAccuracyService(int mode, int datum, int timeout, float horstd, float verstd)
+bool LG290P::setPppSettings(int mode, int datum, int timeout, float horstd, float verstd)
 {
     //CFGPPP does not require reset to take effect
     bool ret = true;
@@ -806,7 +806,7 @@ bool LG290P::setHighAccuracyService(int mode, int datum, int timeout, float hors
     return ret;
 }
 
-bool LG290P::getHighAccuracyService(int &mode, int &datum, int &timeout, float &horstd, float &verstd)
+bool LG290P::getPppSettings(int &mode, int &datum, int &timeout, float &horstd, float &verstd)
 {
     bool ret = sendCommand("PQTMCFGPPP", ",R");
     if (ret)
