@@ -1196,7 +1196,7 @@ public:
 
     /**
      * @brief Enable HAS or B2b high accuracy service for PPP.
-     * @param mode High accuracy service mode: 0 = Disable, 1 = HAS, 2 = B2b PPP, 0xFF = Auto
+     * @param mode High accuracy service mode: 0 = Disable, 1 = B2b PPP, 2 = HAS, 0xFF = Auto
      * @param datum Datum ID: 1 = WGS84, 2 = PPP Original, 3 = CGCS2000
      * @param timeout Differential timeout in seconds (90 to 180).
      * @param horstd Horizontal standard deviation in meters (0 to 5.0).
