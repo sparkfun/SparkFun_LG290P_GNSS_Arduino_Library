@@ -833,9 +833,11 @@ bool LG290P::scanForMsgsEnabled()
     ok = ok && getMessageRate("PQTMPVT", devState.pvtRate, 1);
     ok = ok && getMessageRate("PQTMPL", devState.plRate, 1);
     ok = ok && getMessageRate("GSV", devState.gsvRate);
-    ok = ok && getMessageRate("PQTMPPPNAV", devState.pppnavRate, 1);
 
-    // GST is not available on firmware < 4
+    // PPPNAV not available on firmware < 201
+    getMessageRate("PQTMPPPNAV", devState.pppnavRate, 1);
+
+    // GST is not available on firmware < 104
     getMessageRate("GST", devState.gstRate);
 
     // this is a special message. getMessageRate might fail if in ROVER mode
