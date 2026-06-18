@@ -808,6 +808,27 @@ bool LG290P::getRtkDifferentialAge(uint16_t &timeout)
     return ret;
 }
 
+// Configures the RTK differential source type.
+// 0 = Auto, 1 = Normal, 2 = Wide Lane. Default is Auto.
+bool LG290P::setRtkDifferentialSourceType(uint16_t srcType)
+{
+    char parms[50];
+    snprintf(parms, sizeof parms, ",W,%d", srcType);
+    return sendOkCommand("PQTMCFGRTKSRCTYPE", parms) && hotStart();
+}
+
+bool LG290P::getRtkDifferentialSourceType(uint16_t &srcType)
+{
+    bool ret = sendCommand("PQTMCFGRTKSRCTYPE", ",R");
+    if (ret)
+    {
+        auto packet = getCommandResponse();
+        ret = packet[1] == "OK";
+        srcType = atoi(packet[2].c_str());
+    }
+    return ret;
+}
+
 bool LG290P::setPppSettings(int mode, int datum, int timeout, float horstd, float verstd)
 {
     // CFGPPP does not require reset to take effect
@@ -1812,4 +1833,546 @@ void NmeaPacket::parseHdop(const std::string &term, double &hdop)
 void NmeaPacket::parseAltitude(const std::string &term, double &altitude)
 {
     altitude = parseDecimal(term) / 100.0;
+}
+
+//----------------------------------------
+// Firmware Update Support
+//----------------------------------------
+
+const uint32_t LG290P::_fwCrc32Table[256] = {
+    0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f, 0xe963a535, 0x9e6495a3, 0x0edb8832,
+    0x79dcb8a4, 0xe0d5e91e, 0x97d2d988, 0x09b64c2b, 0x7eb17cbd, 0xe7b82d07, 0x90bf1d91, 0x1db71064, 0x6ab020f2,
+    0xf3b97148, 0x84be41de, 0x1adad47d, 0x6ddde4eb, 0xf4d4b551, 0x83d385c7, 0x136c9856, 0x646ba8c0, 0xfd62f97a,
+    0x8a65c9ec, 0x14015c4f, 0x63066cd9, 0xfa0f3d63, 0x8d080df5, 0x3b6e20c8, 0x4c69105e, 0xd56041e4, 0xa2677172,
+    0x3c03e4d1, 0x4b04d447, 0xd20d85fd, 0xa50ab56b, 0x35b5a8fa, 0x42b2986c, 0xdbbbc9d6, 0xacbcf940, 0x32d86ce3,
+    0x45df5c75, 0xdcd60dcf, 0xabd13d59, 0x26d930ac, 0x51de003a, 0xc8d75180, 0xbfd06116, 0x21b4f4b5, 0x56b3c423,
+    0xcfba9599, 0xb8bda50f, 0x2802b89e, 0x5f058808, 0xc60cd9b2, 0xb10be924, 0x2f6f7c87, 0x58684c11, 0xc1611dab,
+    0xb6662d3d, 0x76dc4190, 0x01db7106, 0x98d220bc, 0xefd5102a, 0x71b18589, 0x06b6b51f, 0x9fbfe4a5, 0xe8b8d433,
+    0x7807c9a2, 0x0f00f934, 0x9609a88e, 0xe10e9818, 0x7f6a0dbb, 0x086d3d2d, 0x91646c97, 0xe6635c01, 0x6b6b51f4,
+    0x1c6c6162, 0x856530d8, 0xf262004e, 0x6c0695ed, 0x1b01a57b, 0x8208f4c1, 0xf50fc457, 0x65b0d9c6, 0x12b7e950,
+    0x8bbeb8ea, 0xfcb9887c, 0x62dd1ddf, 0x15da2d49, 0x8cd37cf3, 0xfbd44c65, 0x4db26158, 0x3ab551ce, 0xa3bc0074,
+    0xd4bb30e2, 0x4adfa541, 0x3dd895d7, 0xa4d1c46d, 0xd3d6f4fb, 0x4369e96a, 0x346ed9fc, 0xad678846, 0xda60b8d0,
+    0x44042d73, 0x33031de5, 0xaa0a4c5f, 0xdd0d7cc9, 0x5005713c, 0x270241aa, 0xbe0b1010, 0xc90c2086, 0x5768b525,
+    0x206f85b3, 0xb966d409, 0xce61e49f, 0x5edef90e, 0x29d9c998, 0xb0d09822, 0xc7d7a8b4, 0x59b33d17, 0x2eb40d81,
+    0xb7bd5c3b, 0xc0ba6cad, 0xedb88320, 0x9abfb3b6, 0x03b6e20c, 0x74b1d29a, 0xead54739, 0x9dd277af, 0x04db2615,
+    0x73dc1683, 0xe3630b12, 0x94643b84, 0x0d6d6a3e, 0x7a6a5aa8, 0xe40ecf0b, 0x9309ff9d, 0x0a00ae27, 0x7d079eb1,
+    0xf00f9344, 0x8708a3d2, 0x1e01f268, 0x6906c2fe, 0xf762575d, 0x806567cb, 0x196c3671, 0x6e6b06e7, 0xfed41b76,
+    0x89d32be0, 0x10da7a5a, 0x67dd4acc, 0xf9b9df6f, 0x8ebeeff9, 0x17b7be43, 0x60b08ed5, 0xd6d6a3e8, 0xa1d1937e,
+    0x38d8c2c4, 0x4fdff252, 0xd1bb67f1, 0xa6bc5767, 0x3fb506dd, 0x48b2364b, 0xd80d2bda, 0xaf0a1b4c, 0x36034af6,
+    0x41047a60, 0xdf60efc3, 0xa867df55, 0x316e8eef, 0x4669be79, 0xcb61b38c, 0xbc66831a, 0x256fd2a0, 0x5268e236,
+    0xcc0c7795, 0xbb0b4703, 0x220216b9, 0x5505262f, 0xc5ba3bbe, 0xb2bd0b28, 0x2bb45a92, 0x5cb36a04, 0xc2d7ffa7,
+    0xb5d0cf31, 0x2cd99e8b, 0x5bdeae1d, 0x9b64c2b0, 0xec63f226, 0x756aa39c, 0x026d930a, 0x9c0906a9, 0xeb0e363f,
+    0x72076785, 0x05005713, 0x95bf4a82, 0xe2b87a14, 0x7bb12bae, 0x0cb61b38, 0x92d28e9b, 0xe5d5be0d, 0x7cdcefb7,
+    0x0bdbdf21, 0x86d3d2d4, 0xf1d4e242, 0x68ddb3f8, 0x1fda836e, 0x81be16cd, 0xf6b9265b, 0x6fb077e1, 0x18b74777,
+    0x88085ae6, 0xff0f6a70, 0x66063bca, 0x11010b5c, 0x8f659eff, 0xf862ae69, 0x616bffd3, 0x166ccf45, 0xa00ae278,
+    0xd70dd2ee, 0x4e048354, 0x3903b3c2, 0xa7672661, 0xd06016f7, 0x4969474d, 0x3e6e77db, 0xaed16a4a, 0xd9d65adc,
+    0x40df0b66, 0x37d83bf0, 0xa9bcae53, 0xdebb9ec5, 0x47b2cf7f, 0x30b5ffe9, 0xbdbdf21c, 0xcabac28a, 0x53b39330,
+    0x24b4a3a6, 0xbad03605, 0xcdd70693, 0x54de5729, 0x23d967bf, 0xb3667a2e, 0xc4614ab8, 0x5d681b02, 0x2a6f2b94,
+    0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d,
+};
+
+// Seed a CRC32 computation with the 4-byte little-endian firmware size prefix required by the bootloader protocol
+uint32_t LG290P::initFirmwareCrc32(uint32_t firmwareSize)
+{
+    uint8_t buf[4] = {(uint8_t)firmwareSize, (uint8_t)(firmwareSize >> 8), (uint8_t)(firmwareSize >> 16),
+                      (uint8_t)(firmwareSize >> 24)};
+    return computeFirmwareCrc32(0, buf, 4);
+}
+
+// Chainable CRC32; pass previous result as prev to continue over more data, or 0 to start fresh
+uint32_t LG290P::computeFirmwareCrc32(uint32_t prev, const uint8_t *data, size_t length)
+{
+    uint32_t crc = prev ^ 0xffffffffUL;
+    while (length--)
+        crc = _fwCrc32Table[(crc ^ *data++) & 0xFF] ^ (crc >> 8);
+    return crc ^ 0xffffffffUL;
+}
+
+// Free heap buffers allocated for an active firmware update and zero all update state
+void LG290P::fwCleanup()
+{
+    if (_fw.accumBuf)
+    {
+        free(_fw.accumBuf);
+        _fw.accumBuf = nullptr;
+    }
+    if (_fw.response)
+    {
+        free(_fw.response);
+        _fw.response = nullptr;
+    }
+    _fw.firmwareSize = 0;
+    _fw.firmwareCrc = 0;
+    _fw.packetNumber = 0;
+    _fw.packetCount = 0;
+    _fw.accumLen = 0;
+    _fw.responseLen = 0;
+    _fw.cmdResponseLen = 0;
+    _fw.peekAvail = false;
+    _fw.peekByte = 0;
+}
+
+// Block up to timeoutMs waiting for one byte; returns 1 on success, 0 on timeout
+int LG290P::fwSerialWaitByte(uint8_t *b, uint32_t timeoutMs)
+{
+    uint32_t start = millis();
+    while (millis() - start < timeoutMs)
+    {
+        if (serialAvailable())
+        {
+            *b = serialRead();
+            return 1;
+        }
+    }
+    return 0;
+}
+
+// Read one byte, consuming the peek-back buffer first if it holds a byte
+int LG290P::fwReadByte(uint8_t *b)
+{
+    if (_fw.peekAvail)
+    {
+        _fw.peekAvail = false;
+        *b = _fw.peekByte;
+        return 1;
+    }
+    return fwSerialWaitByte(b, 250);
+}
+
+// Push one byte back so the next fwReadByte() returns it without hitting the serial port
+void LG290P::fwPushBack(uint8_t b)
+{
+    _fw.peekAvail = true;
+    _fw.peekByte = b;
+}
+
+// Accumulate bytes until a complete 0xAA...0x55 bootloader packet is received.
+bool LG290P::fwGetResponse(uint32_t timeoutMs)
+{
+    _fw.responseLen = 0;
+    uint32_t deadline = millis() + timeoutMs;
+
+    while (millis() < deadline)
+    {
+        uint8_t b;
+        uint32_t remaining = deadline - millis();
+        if (remaining == 0)
+            break;
+        if (fwSerialWaitByte(&b, remaining < 250 ? remaining : 250) <= 0)
+            continue;
+
+        if (_fw.responseLen == 0 && b != 0xAA)
+            continue;
+
+        _fw.response[_fw.responseLen++] = b;
+
+        if (_fw.responseLen < 5)
+            continue;
+
+        uint16_t payloadLen = (((uint16_t)_fw.response[3]) << 8) | _fw.response[4];
+        size_t messageBytes = 1 + 1 + 1 + payloadLen + 4;
+
+        if (_fw.responseLen <= messageBytes)
+            continue;
+
+        if (_fw.response[_fw.responseLen - 1] == 0x55)
+        {
+            _fw.cmdResponseLen = _fw.responseLen;
+            _fw.responseLen = 0;
+            return true;
+        }
+
+        if (_fw.responseLen >= 256)
+            _fw.responseLen = 0; // safety reset
+    }
+    return false;
+}
+
+// Extract the 2-byte big-endian status field from a response payload; 0 = success
+uint16_t LG290P::fwGetCommandStatus(const uint8_t *data)
+{
+    return (((uint16_t)data[0]) << 8) | data[1];
+}
+
+// Write a 32-bit value big-endian into a 4-byte buffer
+void LG290P::fwInsertBigEndian(uint32_t val, uint8_t *buf)
+{
+    buf[0] = (val >> 24) & 0xff;
+    buf[1] = (val >> 16) & 0xff;
+    buf[2] = (val >> 8) & 0xff;
+    buf[3] = val & 0xff;
+}
+
+// Send bootloader version query (class 0x02, msg 0x71)
+int LG290P::fwSendGetVersion()
+{
+    uint8_t cmd[10];
+    cmd[0] = 0xAA;
+    cmd[1] = 0x02;
+    cmd[2] = 0x71;
+    cmd[3] = 0;
+    cmd[4] = 0;
+    cmd[9] = 0x55;
+    uint32_t crc = computeFirmwareCrc32(0, &cmd[1], 4);
+    fwInsertBigEndian(crc, &cmd[5]);
+    _hwSerialPort->write(cmd, 10);
+    return 0;
+}
+
+// Send firmware metadata — total length and CRC32 — so the device can validate after upload (class 0x02, msg 0x02)
+int LG290P::fwSendFirmwareInfo()
+{
+    uint8_t cmd[26];
+    cmd[0] = 0xAA;
+    cmd[1] = 0x02;
+    cmd[2] = 0x02;
+    cmd[3] = 0;
+    cmd[4] = 0x10;
+    cmd[25] = 0x55;
+    fwInsertBigEndian((uint32_t)_fw.firmwareSize, &cmd[5]);
+    fwInsertBigEndian(_fw.firmwareCrc, &cmd[9]);
+    fwInsertBigEndian(0, &cmd[13]);
+    fwInsertBigEndian(0, &cmd[17]);
+    uint32_t crc = computeFirmwareCrc32(0, &cmd[1], sizeof(cmd) - 1 - 4 - 1);
+    fwInsertBigEndian(crc, &cmd[21]);
+    _hwSerialPort->write(cmd, sizeof(cmd));
+    return 0;
+}
+
+// Send flash erase command (class 0x02, msg 0x03); device may take up to 30 s to respond
+int LG290P::fwSendErase()
+{
+    uint8_t cmd[10];
+    cmd[0] = 0xAA;
+    cmd[1] = 0x02;
+    cmd[2] = 0x03;
+    cmd[3] = 0;
+    cmd[4] = 0;
+    cmd[9] = 0x55;
+    uint32_t crc = computeFirmwareCrc32(0, &cmd[1], 4);
+    fwInsertBigEndian(crc, &cmd[5]);
+    _hwSerialPort->write(cmd, 10);
+    return 0;
+}
+
+// Send a firmware data packet; CRC computed in two chained passes to avoid a large stack buffer.
+int LG290P::fwSendPacket(const uint8_t *data, size_t len, int32_t packetNum)
+{
+    size_t lengthPayload = 4 + len;
+    //size_t commandLength = 1 + 1 + 1 + 2 + lengthPayload + 4 + 1;
+
+    // Build 9-byte frame header: header + class + id + length[2] + packetNum[4]
+    uint8_t frame[9];
+    frame[0] = 0xAA;
+    frame[1] = 0x02;
+    frame[2] = 0x04;
+    frame[3] = (uint8_t)(lengthPayload >> 8);
+    frame[4] = (uint8_t)(lengthPayload & 0xff);
+    fwInsertBigEndian((uint32_t)packetNum, &frame[5]);
+
+    // CRC covers: class + id + length[2] + packetNum[4] + data[len] (= commandLength - 6)
+    uint32_t crc = computeFirmwareCrc32(0, &frame[1], 8);
+    crc = computeFirmwareCrc32(crc, data, len);
+
+    uint8_t trailer[5];
+    fwInsertBigEndian(crc, trailer);
+    trailer[4] = 0x55;
+
+    _hwSerialPort->write(frame, 9);
+    _hwSerialPort->write(data, len);
+    _hwSerialPort->write(trailer, 5);
+    return 0;
+}
+
+// Send reset command to boot into the newly flashed firmware (class 0x02, msg 0x31)
+int LG290P::fwSendReset()
+{
+    uint8_t cmd[10];
+    cmd[0] = 0xAA;
+    cmd[1] = 0x02;
+    cmd[2] = 0x31;
+    cmd[3] = 0;
+    cmd[4] = 0;
+    cmd[9] = 0x55;
+    uint32_t crc = computeFirmwareCrc32(0, &cmd[1], 4);
+    fwInsertBigEndian(crc, &cmd[5]);
+    _hwSerialPort->write(cmd, 10);
+    return 0;
+}
+
+// Reboot module into bootloader mode, negotiate sync words, validate bootloader version,
+// send firmware metadata, and erase flash; returns true when device is ready for data packets
+bool LG290P::updateFirmwareBegin(size_t firmwareSize, uint32_t firmwareCrc32, bool skipSoftwareReset)
+{
+    fwCleanup();
+
+    _fw.accumBuf = (uint8_t *)malloc(4096);
+    _fw.response = (uint8_t *)malloc(256);
+    if (!_fw.accumBuf || !_fw.response)
+    {
+        fwCleanup();
+        return false;
+    }
+
+    _fw.firmwareSize = firmwareSize;
+    _fw.firmwareCrc = firmwareCrc32;
+    _fw.packetCount = (int32_t)((firmwareSize + 4095) / 4096);
+
+    if (!skipSoftwareReset) {
+        // Reboot module into bootloader mode
+        sendCommandNoResponse("PQTMSRR", 0); // Zero maxWaitMs
+        //delay(500); // Extra delay here seems to cause problems?
+
+        // Drain any reboot acknowledgment bytes for 250 ms
+        // Tune and test this carefully!
+        // 250ms is OK for LG290P03AANR01A06S with a PQTMSRR software reset
+        // 250ms is OK for LG290P03AANR02A01S with a PQTMSRR software reset
+        uint32_t drainDeadline = millis() + 250;
+        while (millis() < drainDeadline)
+        {
+            if (serialAvailable())
+                serialRead();
+        }
+    }
+
+    // POWER_ON: send SYNC_WORD1 repeatedly until RSP_WORD1 is received
+    static const uint8_t syncWord1[4] = {0x09, 0x13, 0x4C, 0x51};
+    static const uint8_t rspWord1[4] = {0x4D, 0x3A, 0xFC, 0xAA};
+    bool gotRsp1 = false;
+    for (int attempt = 0; attempt < 8 && !gotRsp1; attempt++)
+    {
+        _hwSerialPort->write(syncWord1, 4);
+        uint8_t matchIdx = 0;
+        uint32_t deadline = millis() + 250;
+        while (millis() < deadline && !gotRsp1)
+        {
+            uint8_t b;
+            if (fwSerialWaitByte(&b, 10) <= 0)
+                continue;
+            if (b == rspWord1[matchIdx])
+            {
+                if (++matchIdx == 4)
+                    gotRsp1 = true;
+            }
+            else
+            {
+                matchIdx = (b == rspWord1[0]) ? 1 : 0;
+            }
+        }
+    }
+    if (!gotRsp1)
+    {
+        fwCleanup();
+        return false;
+    }
+
+    // SYNC: send SYNC_WORD2, wait for RSP_WORD2
+    static const uint8_t syncWord2[4] = {0x04, 0xA5, 0x03, 0x12};
+    static const uint8_t rspWord2[4] = {0xA0, 0x5B, 0xFD, 0x55};
+    _hwSerialPort->write(syncWord2, 4);
+    {
+        uint8_t matchIdx = 0;
+        bool gotRsp2 = false;
+        uint32_t deadline = millis() + 500;
+        while (millis() < deadline && !gotRsp2)
+        {
+            uint8_t b;
+            if (fwSerialWaitByte(&b, 50) <= 0)
+                continue;
+            if (b == rspWord2[matchIdx])
+            {
+                if (++matchIdx == 4)
+                    gotRsp2 = true;
+            }
+            else
+            {
+                matchIdx = (b == rspWord2[0]) ? 1 : 0;
+            }
+        }
+        if (!gotRsp2)
+        {
+            fwCleanup();
+            return false;
+        }
+    }
+
+    // BOOT_VERSION: query and validate
+    fwSendGetVersion();
+    if (!fwGetResponse(500))
+    {
+        fwCleanup();
+        return false;
+    }
+    {
+        uint8_t *r = _fw.response;
+
+        uint32_t crc = computeFirmwareCrc32(0, &r[1], _fw.cmdResponseLen - 1 - 4 - 1);
+        uint32_t rxCrc = ((uint32_t)r[12] << 24) | ((uint32_t)r[13] << 16) | ((uint32_t)r[14] << 8) | r[15];
+        if (r[0] != 0xAA || 
+            r[1] != 2 || 
+            r[2] != 0 || 
+            r[3] != 0 || 
+            r[4] != 7 || 
+            r[5] != 2 || 
+            r[6] != 0x71 ||
+            rxCrc != crc || 
+            r[16] != 0x55)
+        {
+            fwCleanup();
+            return false;
+        }
+        if (fwGetCommandStatus(&r[7]) != 0)
+        {
+            fwCleanup();
+            return false;
+        }
+    }
+
+    // FIRMWARE_INFO: send metadata, validate ACK
+    fwSendFirmwareInfo();
+    if (!fwGetResponse(500))
+    {
+        fwCleanup();
+        return false;
+    }
+    {
+        uint8_t *r = _fw.response;
+        uint32_t crc = computeFirmwareCrc32(0, &r[1], _fw.cmdResponseLen - 1 - 4 - 1);
+        uint32_t rxCrc = ((uint32_t)r[9] << 24) | ((uint32_t)r[10] << 16) | ((uint32_t)r[11] << 8) | r[12];
+        if (r[0] != 0xAA || r[1] != 0x02 || r[2] != 0 || r[3] != 0 || r[4] != 4 || r[5] != 2 ||
+            (r[6] != 2 && r[6] != 0) || rxCrc != crc || r[13] != 0x55)
+        {
+            fwCleanup();
+            return false;
+        }
+        if (fwGetCommandStatus(&r[7]) != 0)
+        {
+            fwCleanup();
+            return false;
+        }
+    }
+
+    // FIRMWARE_ERASE: erase flash, wait up to 30 s
+    fwSendErase();
+    if (!fwGetResponse(30000))
+    {
+        fwCleanup();
+        return false;
+    }
+    {
+        uint8_t *r = _fw.response;
+        uint32_t crc = computeFirmwareCrc32(0, &r[1], _fw.cmdResponseLen - 1 - 4 - 1);
+        uint32_t rxCrc = ((uint32_t)r[9] << 24) | ((uint32_t)r[10] << 16) | ((uint32_t)r[11] << 8) | r[12];
+        if (r[0] != 0xAA || r[1] != 0x02 || r[2] != 0 || r[3] != 0 || r[4] != 4 || r[5] != 2 ||
+            (r[6] != 3 && r[6] != 0) || rxCrc != crc || r[13] != 0x55)
+        {
+            fwCleanup();
+            return false;
+        }
+        if (fwGetCommandStatus(&r[7]) != 0)
+        {
+            fwCleanup();
+            return false;
+        }
+    }
+
+    return true;
+}
+
+// Accept a chunk of firmware bytes; accumulates into 4096-byte packets and sends each with ACK
+bool LG290P::updateFirmware(const uint8_t *data, size_t bytesToWrite)
+{
+    if (!_fw.accumBuf || !_fw.response)
+        return false;
+
+    size_t dataIdx = 0;
+    while (dataIdx < bytesToWrite)
+    {
+        size_t space = 4096 - _fw.accumLen;
+        size_t copyLen = bytesToWrite - dataIdx;
+        if (copyLen > space)
+            copyLen = space;
+
+        memcpy(_fw.accumBuf + _fw.accumLen, data + dataIdx, copyLen);
+        _fw.accumLen += copyLen;
+        dataIdx += copyLen;
+
+        if (_fw.accumLen == 4096)
+        {
+            fwSendPacket(_fw.accumBuf, 4096, _fw.packetNumber);
+            if (!fwGetResponse(500))
+                return false;
+
+            {
+                uint8_t *r = _fw.response;
+                uint32_t crc = computeFirmwareCrc32(0, &r[1], _fw.cmdResponseLen - 1 - 4 - 1);
+                uint32_t rxCrc = ((uint32_t)r[9] << 24) | ((uint32_t)r[10] << 16) | ((uint32_t)r[11] << 8) | r[12];
+                if (r[0] != 0xAA || r[1] != 0x02 || r[2] != 0 || r[3] != 0 || r[4] != 4 || r[5] != 2 ||
+                    (r[6] != 4 && r[6] != 0) || rxCrc != crc || r[13] != 0x55)
+                    return false;
+                if (fwGetCommandStatus(&r[7]) != 0)
+                    return false;
+            }
+            _fw.packetNumber++;
+            _fw.accumLen = 0;
+        }
+    }
+    return true;
+}
+
+// Flush any remaining partial packet, free update buffers; returns true if all bytes were acknowledged
+bool LG290P::updateFirmwareEnd()
+{
+    bool ok = true;
+    if (_fw.accumLen > 0)
+    {
+        fwSendPacket(_fw.accumBuf, _fw.accumLen, _fw.packetNumber);
+
+        // After sending the final packet, the bootloader may take up to 30 s to validate the full firmware and respond
+
+        if (!fwGetResponse(30000))
+        {
+            ok = false;
+        }
+        else
+        {
+            {
+                uint8_t *r = _fw.response;
+                uint32_t crc = computeFirmwareCrc32(0, &r[1], _fw.cmdResponseLen - 1 - 4 - 1);
+                uint32_t rxCrc = ((uint32_t)r[9] << 24) | ((uint32_t)r[10] << 16) | ((uint32_t)r[11] << 8) | r[12];
+                if (r[0] != 0xAA || r[1] != 0x02 || r[2] != 0 || r[3] != 0 || r[4] != 4 || r[5] != 2 ||
+                    (r[6] != 4 && r[6] != 0) || rxCrc != crc || r[13] != 0x55)
+                    ok = false;
+                else if (fwGetCommandStatus(&r[7]) != 0)
+                    ok = false;
+                else
+                    _fw.packetNumber++;
+            }
+        }
+    }
+
+    fwCleanup();
+    return ok;
+}
+
+// Send bootloader reset command then poll for up to 15 s for the new firmware to respond
+bool LG290P::updateFirmwareIsFinished()
+{
+    fwSendReset();
+
+    // Drain serial for 1 s while device reboots
+    uint32_t drainDeadline = millis() + 1000;
+    while (millis() < drainDeadline)
+    {
+        if (serialAvailable())
+            serialRead();
+    }
+
+    // Poll for up to 15 s for the new firmware to answer NMEA commands
+    for (int i = 0; i < 15; i++)
+    {
+        if (sendOkCommand("PQTMUNIQID", "", 1000))
+            return true;
+    }
+    return false;
 }

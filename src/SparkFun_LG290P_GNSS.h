@@ -516,6 +516,7 @@ class LG290P
     /**
      * @brief Sets the max differential age of RTK fix.
      * @details Uses the PQTMCFGRTK command. Use a value between 1 and 600. Default is 120 seconds.
+     * @note The Timeout field was added in Protocol Specification 1.1
      * @param timeout The new RTK differential timeout for the position engine.
      * @return true if successful, false otherwise.
      */
@@ -524,10 +525,31 @@ class LG290P
     /**
      * @brief Gets the max differential age of RTK fix.
      * @details Uses the PQTMCFGRTK command.
+     * @note The Timeout field was added in Protocol Specification 1.1
      * @param timeout Reference to a uint16_t where the timeout value will be stored.
      * @return true if successful, false otherwise.
      */
     bool getRtkDifferentialAge(uint16_t &timeout);
+
+    /**
+     * @brief Sets the RTK differential source type.
+     * @details Uses the PQTMCFGRTKSRCTYPE command.
+     * @details SrcType : 0 = Auto, 1 = Normal, 2 = Wide Lane. Default is Auto.
+     * @note PQTMCFGRTKSRCTYPE was added in Protocol Specification 1.1
+     * @param srcType The RTK differential source type.
+     * @return true if successful, false otherwise.
+     */
+    bool setRtkDifferentialSourceType(uint16_t srcType);
+
+    /**
+     * @brief Gets the RTK differential source type.
+     * @details Uses the PQTMCFGRTKSRCTYPE command.
+     * @details SrcType : 0 = Auto, 1 = Normal, 2 = Wide Lane. Default is Auto.
+     * @note PQTMCFGRTKSRCTYPE was added in Protocol Specification 1.1
+     * @param srcType Reference to a uint16_t where the RTK differential source type will be stored.
+     * @return true if successful, false otherwise.
+     */
+    bool getRtkDifferentialSourceType(uint16_t &srcType);
 
     /**
      * @brief Sets a new elevation threshold for position engine.
@@ -1374,6 +1396,57 @@ class LG290P
     // From: https://danceswithcode.net/engineeringnotes/geodetic_to_ecef/geodetic_to_ecef.html
     static void ecefToGeodetic(double x, double y, double z, double &latOut, double &lonOut, double &altOut);
 
+    /** Firmware update **/
+
+    /**
+     * @brief Initialize a CRC32 computation over the 4-byte little-endian firmware size prefix.
+     * @param firmwareSize total byte length of the firmware file
+     * @return starting CRC value to pass to subsequent computeFirmwareCrc32() calls
+     */
+    static uint32_t initFirmwareCrc32(uint32_t firmwareSize);
+
+    /**
+     * @brief Continue (or start) a firmware CRC32 computation over a data chunk.
+     * @param prev CRC value from the previous call (or from initFirmwareCrc32())
+     * @param data pointer to the data bytes
+     * @param length number of bytes to process
+     * @return updated CRC value
+     */
+    static uint32_t computeFirmwareCrc32(uint32_t prev, const uint8_t *data, size_t length);
+
+    /**
+     * @brief Reboot the module into bootloader mode, negotiate sync, query bootloader version,
+     *        send firmware metadata, and erase flash.
+     * @param firmwareSize total byte length of the firmware file (pre-computed by caller)
+     * @param firmwareCrc32 CRC32 of the firmware file (pre-computed via initFirmwareCrc32 / computeFirmwareCrc32)
+     * @param skipSoftwareReset set to true to skip PQTMSRR if the GNSS has been reset externally
+     * @return true when the device is erased and ready to receive firmware packets
+     */
+    bool updateFirmwareBegin(size_t firmwareSize, uint32_t firmwareCrc32, bool skipSoftwareReset = false);
+
+    /**
+     * @brief Feed the next chunk of firmware bytes to the module.
+     * @details Accumulates bytes into a 4096-byte buffer; sends a complete packet and waits
+     *          for ACK each time the buffer fills.
+     * @param data pointer to firmware bytes
+     * @param bytesToWrite number of bytes in data
+     * @return true on success, false on protocol error
+     */
+    bool updateFirmware(const uint8_t *data, size_t bytesToWrite);
+
+    /**
+     * @brief Flush any remaining buffered bytes as a final (partial) firmware packet.
+     * @return true if the last packet was accepted, false on error
+     */
+    bool updateFirmwareEnd();
+
+    /**
+     * @brief Send the firmware reset command then poll for up to 15 seconds for the module
+     *        to boot into the new firmware.
+     * @return true when the module responds to normal NMEA commands
+     */
+    bool updateFirmwareIsFinished();
+
 #if false // TODO
 
     float getLatitudeDeviation();
@@ -1506,6 +1579,36 @@ class LG290P
     uint8_t serialRead();
     void serialPrintln(const char *command);
     void clearBuffer();
+
+    // Firmware update state (buffers malloc'd only during an active update)
+    struct FwUpdateState
+    {
+        size_t firmwareSize = 0;
+        uint32_t firmwareCrc = 0;
+        int32_t packetNumber = 0;
+        int32_t packetCount = 0;
+        uint8_t *accumBuf = nullptr; // malloc'd 4096 bytes in updateFirmwareBegin()
+        size_t accumLen = 0;
+        uint8_t *response = nullptr; // malloc'd 256 bytes in updateFirmwareBegin()
+        size_t responseLen = 0;
+        size_t cmdResponseLen = 0;
+        bool peekAvail = false;
+        uint8_t peekByte = 0;
+    } _fw;
+
+    static const uint32_t _fwCrc32Table[256];
+    void fwCleanup();
+    int fwSerialWaitByte(uint8_t *b, uint32_t timeoutMs);
+    int fwReadByte(uint8_t *b);
+    void fwPushBack(uint8_t b);
+    bool fwGetResponse(uint32_t timeoutMs);
+    uint16_t fwGetCommandStatus(const uint8_t *data);
+    void fwInsertBigEndian(uint32_t val, uint8_t *buf);
+    int fwSendGetVersion();
+    int fwSendFirmwareInfo();
+    int fwSendErase();
+    int fwSendPacket(const uint8_t *data, size_t len, int32_t packetNum);
+    int fwSendReset();
 
     // Satellite reporting
     std::map<std::string /* talker id */, unsigned long /* millis */> satelliteUpdateTime;
