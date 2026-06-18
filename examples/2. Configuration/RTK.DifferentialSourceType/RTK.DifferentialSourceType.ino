@@ -21,8 +21,8 @@
   SparkFun Quadband GNSS RTK Breakout - LG290P (GPS-26620) https://www.sparkfun.com/products/26620
 
   Hardware Connections:
-  Connect RX3 (green wire) of the LG290P to pin 14 on the ESP32
-  Connect TX3 (orange wire) of the LG290P to pin 13 on the ESP32
+  Connect RX3 (green wire) of the LG290P to pin 17 on the ESP32
+  Connect TX3 (orange wire) of the LG290P to pin 16 on the ESP32
   To make this easier, a 4-pin locking JST cable can be purchased here: https://www.sparkfun.com/products/17240
   Note: Almost any ESP32 pins can be used for serial.
   Connect a multi-band GNSS antenna: https://www.sparkfun.com/products/21801
