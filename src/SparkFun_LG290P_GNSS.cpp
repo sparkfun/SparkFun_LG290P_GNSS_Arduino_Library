@@ -808,6 +808,27 @@ bool LG290P::getRtkDifferentialAge(uint16_t &timeout)
     return ret;
 }
 
+// Configures the RTK differential source type.
+// 0 = Auto, 1 = Normal, 2 = Wide Lane. Default is Auto.
+bool LG290P::setRtkDifferentialSourceType(uint16_t srcType)
+{
+    char parms[50];
+    snprintf(parms, sizeof parms, ",W,%d", srcType);
+    return sendOkCommand("PQTMCFGRTKSRCTYPE", parms) && hotStart();
+}
+
+bool LG290P::getRtkDifferentialSourceType(uint16_t &srcType)
+{
+    bool ret = sendCommand("PQTMCFGRTKSRCTYPE", ",R");
+    if (ret)
+    {
+        auto packet = getCommandResponse();
+        ret = packet[1] == "OK";
+        srcType = atoi(packet[2].c_str());
+    }
+    return ret;
+}
+
 bool LG290P::setPppSettings(int mode, int datum, int timeout, float horstd, float verstd)
 {
     // CFGPPP does not require reset to take effect
