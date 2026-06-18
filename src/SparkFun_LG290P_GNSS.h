@@ -516,6 +516,7 @@ class LG290P
     /**
      * @brief Sets the max differential age of RTK fix.
      * @details Uses the PQTMCFGRTK command. Use a value between 1 and 600. Default is 120 seconds.
+     * @note The Timeout field was added in Protocol Specification 1.1
      * @param timeout The new RTK differential timeout for the position engine.
      * @return true if successful, false otherwise.
      */
@@ -524,10 +525,31 @@ class LG290P
     /**
      * @brief Gets the max differential age of RTK fix.
      * @details Uses the PQTMCFGRTK command.
+     * @note The Timeout field was added in Protocol Specification 1.1
      * @param timeout Reference to a uint16_t where the timeout value will be stored.
      * @return true if successful, false otherwise.
      */
     bool getRtkDifferentialAge(uint16_t &timeout);
+
+    /**
+     * @brief Sets the RTK differential source type.
+     * @details Uses the PQTMCFGRTKSRCTYPE command.
+     * @details SrcType : 0 = Auto, 1 = Normal, 2 = Wide Lane. Default is Auto.
+     * @note PQTMCFGRTKSRCTYPE was added in Protocol Specification 1.1
+     * @param srcType The RTK differential source type.
+     * @return true if successful, false otherwise.
+     */
+    bool setRtkDifferentialSourceType(uint16_t srcType);
+
+    /**
+     * @brief Gets the RTK differential source type.
+     * @details Uses the PQTMCFGRTKSRCTYPE command.
+     * @details SrcType : 0 = Auto, 1 = Normal, 2 = Wide Lane. Default is Auto.
+     * @note PQTMCFGRTKSRCTYPE was added in Protocol Specification 1.1
+     * @param srcType Reference to a uint16_t where the RTK differential source type will be stored.
+     * @return true if successful, false otherwise.
+     */
+    bool getRtkDifferentialSourceType(uint16_t &srcType);
 
     /**
      * @brief Sets a new elevation threshold for position engine.
