@@ -2038,7 +2038,7 @@ int LG290P::fwSendErase()
 int LG290P::fwSendPacket(const uint8_t *data, size_t len, int32_t packetNum)
 {
     size_t lengthPayload = 4 + len;
-    size_t commandLength = 1 + 1 + 1 + 2 + lengthPayload + 4 + 1;
+    //size_t commandLength = 1 + 1 + 1 + 2 + lengthPayload + 4 + 1;
 
     // Build 9-byte frame header: header + class + id + length[2] + packetNum[4]
     uint8_t frame[9];
@@ -2081,7 +2081,7 @@ int LG290P::fwSendReset()
 
 // Reboot module into bootloader mode, negotiate sync words, validate bootloader version,
 // send firmware metadata, and erase flash; returns true when device is ready for data packets
-bool LG290P::updateFirmwareBegin(size_t firmwareSize, uint32_t firmwareCrc32)
+bool LG290P::updateFirmwareBegin(size_t firmwareSize, uint32_t firmwareCrc32, bool skipSoftwareReset)
 {
     fwCleanup();
 
@@ -2097,23 +2097,28 @@ bool LG290P::updateFirmwareBegin(size_t firmwareSize, uint32_t firmwareCrc32)
     _fw.firmwareCrc = firmwareCrc32;
     _fw.packetCount = (int32_t)((firmwareSize + 4095) / 4096);
 
-    // Reboot module into bootloader mode
-    sendCommandNoResponse("PQTMSRR");
-    delay(500);
+    if (!skipSoftwareReset) {
+        // Reboot module into bootloader mode
+        sendCommandNoResponse("PQTMSRR", 0); // Zero maxWaitMs
+        //delay(500); // Extra delay here seems to cause problems?
 
-    // Drain any reboot acknowledgment bytes for 500 ms
-    uint32_t drainDeadline = millis() + 500;
-    while (millis() < drainDeadline)
-    {
-        if (serialAvailable())
-            serialRead();
+        // Drain any reboot acknowledgment bytes for 250 ms
+        // Tune and test this carefully!
+        // 250ms is OK for LG290P03AANR01A06S with a PQTMSRR software reset
+        // 250ms is OK for LG290P03AANR02A01S with a PQTMSRR software reset
+        uint32_t drainDeadline = millis() + 250;
+        while (millis() < drainDeadline)
+        {
+            if (serialAvailable())
+                serialRead();
+        }
     }
 
     // POWER_ON: send SYNC_WORD1 repeatedly until RSP_WORD1 is received
     static const uint8_t syncWord1[4] = {0x09, 0x13, 0x4C, 0x51};
     static const uint8_t rspWord1[4] = {0x4D, 0x3A, 0xFC, 0xAA};
     bool gotRsp1 = false;
-    for (int attempt = 0; attempt < 4 && !gotRsp1; attempt++)
+    for (int attempt = 0; attempt < 8 && !gotRsp1; attempt++)
     {
         _hwSerialPort->write(syncWord1, 4);
         uint8_t matchIdx = 0;

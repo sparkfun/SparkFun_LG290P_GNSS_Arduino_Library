@@ -1397,9 +1397,10 @@ class LG290P
      *        send firmware metadata, and erase flash.
      * @param firmwareSize total byte length of the firmware file (pre-computed by caller)
      * @param firmwareCrc32 CRC32 of the firmware file (pre-computed via initFirmwareCrc32 / computeFirmwareCrc32)
+     * @param skipSoftwareReset set to true to skip PQTMSRR if the GNSS has been reset externally
      * @return true when the device is erased and ready to receive firmware packets
      */
-    bool updateFirmwareBegin(size_t firmwareSize, uint32_t firmwareCrc32);
+    bool updateFirmwareBegin(size_t firmwareSize, uint32_t firmwareCrc32, bool skipSoftwareReset = false);
 
     /**
      * @brief Feed the next chunk of firmware bytes to the module.
