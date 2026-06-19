@@ -2368,11 +2368,12 @@ bool LG290P::updateFirmwareIsFinished(uint8_t maxWaitSeconds)
             serialRead();
     }
 
-    // Poll for up to maxWaitSeconds for the new firmware to answer NMEA commands
-    for (int i = 0; i < maxWaitSeconds; i++)
+    // Poll for up to maxWaitSeconds for the new firmware to answer commands
+    for (unsigned long start = millis(); millis() - start < maxWaitSeconds * 1000UL;)
     {
-        if (sendOkCommand("PQTMUNIQID", "", 1000))
+        if (sendOkCommand("PQTMUNIQID"))
             return true;
     }
+
     return false;
 }
