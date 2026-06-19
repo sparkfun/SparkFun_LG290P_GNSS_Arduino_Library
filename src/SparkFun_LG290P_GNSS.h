@@ -1441,11 +1441,12 @@ class LG290P
     bool updateFirmwareEnd();
 
     /**
-     * @brief Send the firmware reset command then poll for up to 15 seconds for the module
+     * @brief Send the firmware reset command then poll for up to maxWaitSeconds for the module
      *        to boot into the new firmware.
+     * @param maxWaitSeconds maximum number of seconds to wait for the module to respond
      * @return true when the module responds to normal NMEA commands
      */
-    bool updateFirmwareIsFinished();
+    bool updateFirmwareIsFinished(uint8_t maxWaitSeconds = 25);
 
 #if false // TODO
 

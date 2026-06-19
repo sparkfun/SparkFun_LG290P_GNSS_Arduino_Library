@@ -2355,8 +2355,8 @@ bool LG290P::updateFirmwareEnd()
     return ok;
 }
 
-// Send bootloader reset command then poll for up to 15 s for the new firmware to respond
-bool LG290P::updateFirmwareIsFinished()
+// Send bootloader reset command then poll for up to maxWaitSeconds for the new firmware to respond
+bool LG290P::updateFirmwareIsFinished(uint8_t maxWaitSeconds)
 {
     fwSendReset();
 
@@ -2368,8 +2368,8 @@ bool LG290P::updateFirmwareIsFinished()
             serialRead();
     }
 
-    // Poll for up to 15 s for the new firmware to answer NMEA commands
-    for (int i = 0; i < 15; i++)
+    // Poll for up to maxWaitSeconds for the new firmware to answer NMEA commands
+    for (int i = 0; i < maxWaitSeconds; i++)
     {
         if (sendOkCommand("PQTMUNIQID", "", 1000))
             return true;
