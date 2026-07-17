@@ -594,6 +594,32 @@ class LG290P
     bool getMessageRate(const char *msgName, int &rate, int msgver = -1);
 
     /**
+     * @brief Gets the navigation mode
+     * @details Uses the LG290P "PQTMCFGNAVMODE" command to get the navigation mode
+     * @param mode Reference to a uint16_t where the mode will be stored
+     *        0 = Normal mode. (Basic mode applied to most scenarios, for example, driving scenario)
+     *        5 = Dynamic flight mode (applied to Dynamic flight mode with equivalent dynamics range
+     *            and vertical acceleration on different flight phase)
+     *        11 = Mower mode (applied to mower application) (*** Default value on LG290P ***)
+     *        14 = Agriculture mode (applied to agriculture application)
+     * @return true if the mode was acquired
+     */
+    bool getNavMode(uint16_t &mode);
+
+    /**
+     * @brief Sets the navigation mode
+     * @details Uses the LG290P "PQTMCFGNAVMODE" command to set the navigation mode
+     * @param mode 0 = Normal mode. (Basic mode applied to most scenarios, for example, driving scenario)
+     *             5 = Dynamic flight mode (applied to Dynamic flight mode with equivalent dynamics range
+     *                 and vertical acceleration on different flight phase)
+     *             11 = Mower mode (applied to mower application) (*** Default value on LG290P ***)
+     *             14 = Agriculture mode (applied to agriculture application)
+     * @param resetAfter true if device should save new setting and reset to make it 'take'
+     * @return true if the mode was set
+     */
+    bool setNavMode(const uint16_t mode, bool resetAfter = true);
+
+    /**
      * @brief Saves the current configuration.
      * @details Uses the PQTMSAVEPAR command.
      * @return true if successful, false otherwise.
