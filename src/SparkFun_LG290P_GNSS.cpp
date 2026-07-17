@@ -1239,6 +1239,29 @@ bool LG290P::disableSurveyInMode(bool resetAfter /* = true */)
     return ok;
 }
 
+bool LG290P::setNavMode(uint16_t mode, bool resetAfter /* = true */)
+{
+    char parms[50];
+    snprintf(parms, sizeof parms, ",W,%d", mode);
+    bool ret = sendOkCommand("PQTMCFGNAVMODE", parms);
+    if (resetAfter)
+        ret = ret && save() && reset();
+    return ret;
+}
+
+bool LG290P::getNavMode(uint16_t &mode)
+{
+    bool ret = sendCommand("PQTMCFGNAVMODE", ",R");
+    if (ret)
+    {
+        auto packet = getCommandResponse();
+        ret = packet[1] == "OK";
+        if (ret)
+            mode = atoi(packet[2].c_str());
+    }
+    return ret;
+}
+
 // Main handler and RAM inits
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 

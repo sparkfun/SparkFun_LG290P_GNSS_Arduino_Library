@@ -164,6 +164,9 @@ getPppDifferentialAge	KEYWORD2
 setPppSettings	KEYWORD2
 getPppSettings	KEYWORD2
 
+setNavMode	KEYWORD2
+getNavMode	KEYWORD2
+
 #######################################
 # Constants (LITERAL1)
 #######################################
