@@ -553,11 +553,13 @@ class LG290P
 
     /**
      * @brief Sets a new elevation threshold for position engine.
-     * @details Uses the PQTMCFGELETHD command. Use a value between -90 and 90
+     * @details Uses the PQTMCFGFIXRATE command
      * @param fixInterval The new fix interval to set.
+     * @param resetAfter true if device should save new setting and reset to make it 'take'
      * @return true if successful, false otherwise.
+     * @return true if the mode was successfully set, false otherwise.
      */
-    bool setFixInterval(uint16_t fixInterval);
+    bool setFixInterval(uint16_t fixInterval, bool resetAfter = true);
 
     /**
      * @brief Enables or sets the rate for a specific message.

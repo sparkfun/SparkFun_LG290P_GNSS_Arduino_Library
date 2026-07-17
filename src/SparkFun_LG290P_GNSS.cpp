@@ -659,11 +659,14 @@ bool LG290P::getFixInterval(uint16_t &fixInterval)
     return ret;
 }
 
-bool LG290P::setFixInterval(uint16_t fixInterval)
+bool LG290P::setFixInterval(uint16_t fixInterval, bool resetAfter /* = true */)
 {
     char parms[50];
     snprintf(parms, sizeof parms, ",W,%d", fixInterval);
-    return sendOkCommand("PQTMCFGFIXRATE", parms) && hotStart();
+    bool ret = sendOkCommand("PQTMCFGFIXRATE", parms);
+    if (resetAfter)
+        ret = ret && save() && reset(); // Needs reset, not hotStart
+    return ret;
 }
 
 bool LG290P::setMessageRate(const char *msgName, int rate, int msgVer)
