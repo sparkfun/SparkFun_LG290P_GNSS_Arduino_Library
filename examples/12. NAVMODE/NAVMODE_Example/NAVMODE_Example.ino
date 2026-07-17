@@ -135,7 +135,7 @@ void setup()
   myGNSS.getFirmwareVersionMinor(versionMinor);
   myGNSS.getFirmwareVersion(versionCombined); // v2.01 becomes 201
   Serial.printf("Firmware v%d.%d (%d)\r\n", versionMajor, versionMinor, versionCombined);
-  if (versionCombined < 202)
+  if (versionCombined < 201)
     Serial.println("Warning! get/setNavMode requires firmware >= 2.01");
 
   // Get/Set the current navigation mode
