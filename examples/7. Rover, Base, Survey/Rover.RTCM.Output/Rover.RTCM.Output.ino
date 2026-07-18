@@ -195,6 +195,31 @@ void setup()
             Serial.println(F("PQTM message configuration failed!"));
     }
 
+    // Check which constellations are enabled
+    bool gpsEnabled, glonassEnabled, galileoEnabled, bdsEnabled, qzssEnabled, navicEnabled;
+    Serial.print("Constellations: ");
+    if (myGNSS.getConstellations(gpsEnabled, glonassEnabled, galileoEnabled, bdsEnabled, qzssEnabled, navicEnabled))
+    {
+        Serial.printf("GPS: %s, GLONASS: %s, Galileo: %s, Beidou: %s, QZSS: %s, NavIC: %s\r\n",
+            gpsEnabled ? "Yes" : "No", glonassEnabled ? "Yes" : "No", galileoEnabled ? "Yes" : "No",
+            bdsEnabled ? "Yes" : "No", qzssEnabled ? "Yes" : "No", navicEnabled ? "Yes" : "No");
+    }
+    else
+    {
+        Serial.println("Unavailable");
+    }
+
+    // Ensure all constellations are enabled
+    if (response)
+    {
+        response = myGNSS.setConstellations(true, true, true, true, true, true);
+
+        if (response)
+            Serial.println(F("Constellations configured successfully"));
+        else
+            Serial.println(F("Constellation configuration failed!"));
+    }
+
     // Set the Ephemeris interval (EPH_Interval) to (e.g.) 10 seconds
     // The library does not (yet) include a helper method for PQTMCFGRTCM so
     // we need to configure manually with sendOkCommand
