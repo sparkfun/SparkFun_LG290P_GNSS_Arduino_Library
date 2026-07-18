@@ -179,19 +179,21 @@ void setup()
             Serial.println(F("NMEA message configuration failed!"));
     }
 
-    // // Turn on needed PQTM sentences
-    // if (response)
-    // {
-    //     response =
-    //         // setMessageRate(const char *msgName, int rate, int msgVer = -1)
-    //         // if (msgVer == -1) the message version is omitted
-    //         myGNSS.setMessageRate("PQTMPVT", 1, 1);
+    // Turn on needed PQTM sentences
+    // See issue #26. We can't rely on getHour etc. to enable PVT if getHour
+    // is only called from within update(). We need to enable PVT manually.
+    if (response)
+    {
+        response =
+            // setMessageRate(const char *msgName, int rate, int msgVer = -1)
+            // if (msgVer == -1) the message version is omitted
+            myGNSS.setMessageRate("PQTMPVT", 1, 1);
 
-    //     if (response)
-    //         Serial.println(F("PQTM messages were configured successfully"));
-    //     else
-    //         Serial.println(F("PQTM message configuration failed!"));
-    // }
+        if (response)
+            Serial.println(F("PQTM messages were configured successfully"));
+        else
+            Serial.println(F("PQTM message configuration failed!"));
+    }
 
     // Set the Ephemeris interval (EPH_Interval) to (e.g.) 10 seconds
     // The library does not (yet) include a helper method for PQTMCFGRTCM so

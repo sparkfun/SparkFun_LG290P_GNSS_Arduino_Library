@@ -556,8 +556,7 @@ class LG290P
      * @details Uses the PQTMCFGFIXRATE command
      * @param fixInterval The new fix interval to set.
      * @param resetAfter true if device should save new setting and reset to make it 'take'
-     * @return true if successful, false otherwise.
-     * @return true if the mode was successfully set, false otherwise.
+     * @return true if the interval was successfully set, false otherwise.
      */
     bool setFixInterval(uint16_t fixInterval, bool resetAfter = true);
 
@@ -1533,6 +1532,8 @@ class LG290P
     // State management
     SEMP_PARSE_STATE *_sempParse;             // State of the SparkFun Extensible Message Parser
     bool lg290PLibrarySemaphoreBlock = false; // Gets set to true when the Unicore library needs to interact directly
+    // Note: see issue #26. ensureMsgEnabled etc. will fail when called from within update
+    //       because sendCommand exits early because lg290PLibrarySemaphoreBlock is true
     bool scanForMsgsEnabled();
     void ensureMsgEnabled(bool enabled, const char *msg, int msgVer = -1);
     void ensureGgaEnabled()
