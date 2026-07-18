@@ -25,7 +25,7 @@
 // Adjust these values according to your configuration
 //------------------------------------------------------------------------------
 
-// Pre-defined boards:
+// Pre-defined boards - comment / uncomment as needed:
 // #define ESP32_RPI_FLEX
 // #define POSTCARD
 #define ESP32_THING_PLUS_C
