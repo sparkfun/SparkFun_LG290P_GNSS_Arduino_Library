@@ -553,11 +553,12 @@ class LG290P
 
     /**
      * @brief Sets a new elevation threshold for position engine.
-     * @details Uses the PQTMCFGELETHD command. Use a value between -90 and 90
+     * @details Uses the PQTMCFGFIXRATE command
      * @param fixInterval The new fix interval to set.
-     * @return true if successful, false otherwise.
+     * @param resetAfter true if device should save new setting and reset to make it 'take'
+     * @return true if the interval was successfully set, false otherwise.
      */
-    bool setFixInterval(uint16_t fixInterval);
+    bool setFixInterval(uint16_t fixInterval, bool resetAfter = true);
 
     /**
      * @brief Enables or sets the rate for a specific message.
@@ -592,6 +593,32 @@ class LG290P
      * @return true if successful, false otherwise.
      */
     bool getMessageRate(const char *msgName, int &rate, int msgver = -1);
+
+    /**
+     * @brief Gets the navigation mode
+     * @details Uses the LG290P "PQTMCFGNAVMODE" command to get the navigation mode
+     * @param mode Reference to a uint16_t where the mode will be stored
+     *        0 = Normal mode. (Basic mode applied to most scenarios, for example, driving scenario)
+     *        5 = Dynamic flight mode (applied to Dynamic flight mode with equivalent dynamics range
+     *            and vertical acceleration on different flight phase)
+     *        11 = Mower mode (applied to mower application) (*** Default value on LG290P ***)
+     *        14 = Agriculture mode (applied to agriculture application)
+     * @return true if the mode was acquired
+     */
+    bool getNavMode(uint16_t &mode);
+
+    /**
+     * @brief Sets the navigation mode
+     * @details Uses the LG290P "PQTMCFGNAVMODE" command to set the navigation mode
+     * @param mode 0 = Normal mode. (Basic mode applied to most scenarios, for example, driving scenario)
+     *             5 = Dynamic flight mode (applied to Dynamic flight mode with equivalent dynamics range
+     *                 and vertical acceleration on different flight phase)
+     *             11 = Mower mode (applied to mower application) (*** Default value on LG290P ***)
+     *             14 = Agriculture mode (applied to agriculture application)
+     * @param resetAfter true if device should save new setting and reset to make it 'take'
+     * @return true if the mode was set
+     */
+    bool setNavMode(const uint16_t mode, bool resetAfter = true);
 
     /**
      * @brief Saves the current configuration.
@@ -1505,6 +1532,8 @@ class LG290P
     // State management
     SEMP_PARSE_STATE *_sempParse;             // State of the SparkFun Extensible Message Parser
     bool lg290PLibrarySemaphoreBlock = false; // Gets set to true when the Unicore library needs to interact directly
+    // Note: see issue #26. ensureMsgEnabled etc. will fail when called from within update
+    //       because sendCommand exits early because lg290PLibrarySemaphoreBlock is true
     bool scanForMsgsEnabled();
     void ensureMsgEnabled(bool enabled, const char *msg, int msgVer = -1);
     void ensureGgaEnabled()

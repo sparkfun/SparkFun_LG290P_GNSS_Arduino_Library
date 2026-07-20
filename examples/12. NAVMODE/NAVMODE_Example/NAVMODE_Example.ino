@@ -1,19 +1,16 @@
 /*
-  Set device "Fix" speed
-  By: Nathan Seidle + Mikal Hart
-  SparkFun Electronics
-  Date: 29 September 2024
-  License: MIT. Please see LICENSE.md for more information.
+  Set PQTMCFGNAVMODE
+  By: Paul Clark, Nathan Seidle and Mikal Hart
+  Date: July 17, 2026
+  License: Public domain - do whatever you'd like.
 
-  This example shows how to query a LG290P GNSS module for its position and time data.
-  These examples are targeted for an ESP32 platform but any platform that has multiple
-  serial UARTs should be compatible.
-
-  Note: Lat/Lon are doubles and the LG290P outputs 8 digits after the decimal.
+  This example shows how to set/get the navigation mode using PQTMCFGNAVMODE.
+  Note: requires LG290P firmware >= v2.01
 
   Feel like supporting open source hardware?
   Buy a board from SparkFun!
-  SparkFun Quadband GNSS RTK Breakout - LG290P (GPS-26620) https://www.sparkfun.com/products/26620
+  LG290P Breakout: https://www.sparkfun.com/sparkfun-quadband-gnss-rtk-breakout-lg290p-qwiic.html
+  LG290P PiHat: https://www.sparkfun.com/sparkfun-gnss-flex-phat-lg290p.html
 
   Hardware Connections:
   Connect RX3 (green wire) of the LG290P to pin 14 on the ESP32
@@ -27,6 +24,12 @@
 
 // Adjust these values according to your configuration
 //------------------------------------------------------------------------------
+
+// Pre-defined boards - comment / uncomment as needed:
+// #define ESP32_RPI_FLEX
+// #define POSTCARD
+#define ESP32_THING_PLUS_C
+
 // https://www.sparkfun.com/sparkfun-gnss-flex-phat.html
 #ifdef ESP32_RPI_FLEX
 
@@ -61,6 +64,15 @@ int pin_RESET = 33;
 const char * platform = "SparkFun RTK Postcard";
 
 #else   // POSTCARD
+#ifdef ESP32_THING_PLUS_C
+
+// https://www.sparkfun.com/sparkfun-thing-plus-esp32-wroom-usb-c.html
+int pin_UART1_TX = 17;
+int pin_UART1_RX = 16;
+int pin_RESET = 4; // The Free pin
+const char * platform = "SparkFun ESP32 Thing Plus C";
+
+#else   // ESP32_THING_PLUS_C
 
 // ???
 int pin_UART1_TX = 14;
@@ -68,6 +80,7 @@ int pin_UART1_RX = 13;
 int pin_RESET = -1;
 const char * platform = "???";
 
+#endif  // ESP32_THING_PLUS_C
 #endif  // POSTCARD
 #endif  // ESP32_RPI_FLEX
 
@@ -83,9 +96,9 @@ void setup()
   Serial.begin(115200);
   delay(250);
   Serial.println();
-  Serial.println("SparkFun LG290P Fix Rate example");
+  Serial.println("SparkFun LG290P NAVMODE example");
 
-  // Issue the reset
+  // Issue the reset - if pin_RESET is defined
   if (pin_RESET != -1)
   {
     Serial.println("Resetting the LG290P");
@@ -97,57 +110,97 @@ void setup()
 
   Serial.println("Initializing device...");
 
-  // We must start the serial port before using it in the library
   // Increase buffer size to handle high baud rate streams
-  SerialGNSS.setRxBufferSize(1024);
+  // SerialGNSS.setRxBufferSize(1024 * 4);
+
   SerialGNSS.begin(gnss_baud, SERIAL_8N1, pin_UART1_RX, pin_UART1_TX);
 
-  // myGNSS.enableDebugging(Serial); // Print all debug to Serial
-  if (myGNSS.begin(SerialGNSS, "SFE_LG290P_GNSS_Library", output) == false)     // Give the serial port over to the library
+  // myGNSS.enableDebugging(Serial);        // Print all debug to Serial
+  if (myGNSS.begin(SerialGNSS, "SFE_LG290P_GNSS_Library", output) == false) // Give the serial port over to the library
   {
     Serial.println("LG290P failed to respond. Check ports and baud rates. Freezing...");
-    while (true);
+    while (true)
+      ;
   }
   Serial.println("LG290P detected!");
 
-  // Ensure that device is in ROVER mode. (In BASE mode you can't really modify the fix interval.)
+  Serial.println("Ensuring ROVER mode");
   myGNSS.ensureModeRover();
+
+  // Check firmware version and print info
+  int versionMajor;
+  int versionMinor;
+  int versionCombined;
+  myGNSS.getFirmwareVersionMajor(versionMajor);
+  myGNSS.getFirmwareVersionMinor(versionMinor);
+  myGNSS.getFirmwareVersion(versionCombined); // v2.01 becomes 201
+  Serial.printf("Firmware v%d.%d (%d)\r\n", versionMajor, versionMinor, versionCombined);
+  if (versionCombined < 201)
+    Serial.println("Warning! get/setNavMode requires firmware >= 2.01");
+
+  // Get/Set the current navigation mode
+  // 0 = Normal mode. (Basic mode applied to most scenarios, for example, driving scenario)
+  // 5 = Dynamic flight mode (applied to Dynamic flight mode with equivalent dynamics range
+  //     and vertical acceleration on different flight phase)
+  // 11 = Mower mode (applied to mower application) (*** Default value on LG290P ***)
+  // 14 = Agriculture mode (applied to agriculture application)
+
+  uint16_t mode;
+  if (myGNSS.getNavMode(mode) == true)
+    printNavMode(mode);
+  else
+    Serial.println("Failed to get the navigation mode. Is your LG290P firmware >= 2.01?");
+
+  mode = 0;
+  Serial.print("Setting navigation mode to ");
+  Serial.println(mode);
+  if (myGNSS.setNavMode(mode) == true)
+    Serial.println("Set navigation mode: success");
+  else
+    Serial.println("Set navigation mode: failed!");
+
+  if (myGNSS.getNavMode(mode) == true)
+    printNavMode(mode);
+  else
+    Serial.println("Failed to get the navigation mode. Is your LG290P firmware >= 2.01?");
 }
 
 void loop()
 {
-    static bool fast = true;
-    int fixInterval = fast ? 100 : 1000;
-
-    Serial.println();
-    Serial.printf("We'll change the fix rate to '%s' (%dms) and do a hot restart\r\n", fast ? "fast" : "normal", fixInterval);
-    busyWait(2, false);
-
-    Serial.printf("Changing the fix interval to %dms\r\n", fixInterval);
-    Serial.println(myGNSS.setFixInterval(fixInterval, false) ? "Success!" : "Fail"); // No resetAfter
-    busyWait(2, false);
-
-    Serial.printf("Performing hot reset\r\n");
-    if (myGNSS.hotStart())
-        Serial.println("Success!");
-    busyWait(2, false);
-    busyWait(30, true);
-
-    fast = !fast;
+  // Nothing to do here...
 }
 
-// Delay while we poll the receiver for new data
-// Print new data if printinfo is enabled
-void busyWait(int seconds, bool printinfo)
+//----------------------------------------
+// Print the navigation mode
+//
+// Inputs:
+//   mode: Reference to a uint16_t containing the mode
+//----------------------------------------
+void printNavMode(uint16_t &mode)
 {
-    for (unsigned long start = millis(); millis() - start < 1000 * seconds; )
+  if (Serial)
+  {
+    Serial.print("Navigation mode=");
+    Serial.print(mode);
+    switch(mode)
     {
-        if (printinfo && myGNSS.isNewSnapshotAvailable())
-            Serial.printf("%02d:%02d:%02d.%03d Lat/Long=(%.8f,%.8f) Alt=%.2f\r\n",
-            myGNSS.getHour(), myGNSS.getMinute(), myGNSS.getSecond(), myGNSS.getMillisecond(),
-            myGNSS.getLatitude(), myGNSS.getLongitude(), myGNSS.getAltitude());
-        myGNSS.update();
+      default:
+        Serial.println(", Reserved / undefined");
+        break;
+      case 0:
+        Serial.println(", Normal mode");
+        break;
+      case 5:
+        Serial.println(", Dynamic flight mode");
+        break;
+      case 11:
+        Serial.println(", Mower mode (default for LG290P)");
+        break;
+      case 14:
+        Serial.println(", Agriculture mode");
+        break;
     }
+  }
 }
 
 //----------------------------------------

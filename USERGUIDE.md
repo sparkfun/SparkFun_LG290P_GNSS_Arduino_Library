@@ -162,8 +162,14 @@ This library provides an interface for controlling and configuring an LG290P GNS
 - **`bool getFixInterval(uint16_t &fixInterval);`**  
   Get the current fix interval of the GNSS module.
 
-- **`bool setFixInterval(uint16_t fixInterval);`**  
+- **`bool setFixInterval(uint16_t fixInterval, bool resetAfter = true);`**  
   Set the fix interval for the GNSS module.
+
+- **`bool getNavMode(uint16_t &mode);`**  
+  Get the current navigation mode of the GNSS module.
+
+- **`bool setNavMode(const uint16_t mode, bool resetAfter = true);`**  
+  Set the navigation mode for the GNSS module.
 
 - **`bool setMessageRate(const char *msgName, int rate, int msgver = -1);`**  
   Set the message rate for a specific message type.
