@@ -124,7 +124,7 @@ void loop()
     busyWait(2, false);
 
     Serial.printf("Changing the fix interval to %dms\r\n", fixInterval);
-    Serial.println(myGNSS.setFixInterval(fixInterval) ? "Success!" : "Fail");
+    Serial.println(myGNSS.setFixInterval(fixInterval, false) ? "Success!" : "Fail"); // No resetAfter
     busyWait(2, false);
 
     Serial.printf("Performing hot reset\r\n");

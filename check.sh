@@ -100,6 +100,11 @@ make clean
 make   $1
 make clean
 
+cd ../Rover.RTCM.Output
+make clean
+make   $1
+make clean
+
 cd ../../8.\ Resets/Reset.Device
 make clean
 make   $1

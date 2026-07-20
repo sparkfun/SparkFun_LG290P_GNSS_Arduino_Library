@@ -26,7 +26,11 @@
 
 // Adjust these values according to your configuration
 //------------------------------------------------------------------------------
+
+// Pre-defined boards - comment / uncomment as needed:
+// #define POSTCARD
 #define ESP32_THING_PLUS_C
+
 #ifdef  POSTCARD
 
 // https://www.sparkfun.com/sparkfun-rtk-postcard.html
@@ -52,7 +56,7 @@ int pin_POCI = 19; // microSD SDO
 int pin_microSD_CS = 5;
 const char * platform = "SparkFun ESP32 Thing Plus C";
 
-#else
+#else  // ESP32_THING_PLUS_C
 
 // Redboard IoT
 int pin_UART1_TX = 4;

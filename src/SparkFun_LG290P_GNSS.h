@@ -553,11 +553,12 @@ class LG290P
 
     /**
      * @brief Sets a new elevation threshold for position engine.
-     * @details Uses the PQTMCFGELETHD command. Use a value between -90 and 90
+     * @details Uses the PQTMCFGFIXRATE command
      * @param fixInterval The new fix interval to set.
-     * @return true if successful, false otherwise.
+     * @param resetAfter true if device should save new setting and reset to make it 'take'
+     * @return true if the interval was successfully set, false otherwise.
      */
-    bool setFixInterval(uint16_t fixInterval);
+    bool setFixInterval(uint16_t fixInterval, bool resetAfter = true);
 
     /**
      * @brief Enables or sets the rate for a specific message.
@@ -1531,6 +1532,8 @@ class LG290P
     // State management
     SEMP_PARSE_STATE *_sempParse;             // State of the SparkFun Extensible Message Parser
     bool lg290PLibrarySemaphoreBlock = false; // Gets set to true when the Unicore library needs to interact directly
+    // Note: see issue #26. ensureMsgEnabled etc. will fail when called from within update
+    //       because sendCommand exits early because lg290PLibrarySemaphoreBlock is true
     bool scanForMsgsEnabled();
     void ensureMsgEnabled(bool enabled, const char *msg, int msgVer = -1);
     void ensureGgaEnabled()
