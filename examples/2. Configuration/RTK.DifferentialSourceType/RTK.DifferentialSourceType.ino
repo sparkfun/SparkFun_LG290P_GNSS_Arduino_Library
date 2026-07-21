@@ -8,7 +8,7 @@
   This example shows how to configure the RTK differential source type.
   SrcType : 0 = Auto, 1 = Normal, 2 = Wide Lane. Default is Auto.
 
-  The LG290P firmware must be v5 ("LG290P03AANR01A05S") or higher for these commands to work. We recommend using the QGNSS software
+  The LG290P firmware must be v1.05 ("LG290P03AANR01A05S") or higher for these commands to work. We recommend using the QGNSS software
   to update the LG290P firmware.
   Latest Firmware: https://github.com/sparkfun/SparkFun_RTK_Postcard/tree/main/Firmware
   Docs: https://docs.sparkfun.com/SparkFun_LG290P_Quadband_GNSS_RTK_Breakout/software_overview/#qgnss-software
@@ -121,7 +121,7 @@ void setup()
   uint16_t srcType = 3;
   if (myGNSS.getRtkDifferentialSourceType(srcType) == false)
   {
-    Serial.println("Failed to read differential source type. Do you have version 5 or newer of the LG290P firmware installed?");
+    Serial.println("Failed to read differential source type. Do you have version 1.05 or newer of the LG290P firmware installed?");
   }
   else
   {

@@ -1265,6 +1265,29 @@ bool LG290P::getNavMode(uint16_t &mode)
     return ret;
 }
 
+bool LG290P::setRtkReliabilityLevel(uint16_t level, bool resetAfter /* = true */)
+{
+    char parms[50];
+    snprintf(parms, sizeof parms, ",W,%d,0,0,0", level);
+    bool ret = sendOkCommand("PQTMCFGRTKRL", parms);
+    if (resetAfter)
+        ret = ret && save() && reset();
+    return ret;
+}
+
+bool LG290P::getRtkReliabilityLevel(uint16_t &level)
+{
+    bool ret = sendCommand("PQTMCFGRTKRL", ",R");
+    if (ret)
+    {
+        auto packet = getCommandResponse();
+        ret = packet[1] == "OK";
+        if (ret)
+            level = atoi(packet[2].c_str());
+    }
+    return ret;
+}
+
 // Main handler and RAM inits
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
