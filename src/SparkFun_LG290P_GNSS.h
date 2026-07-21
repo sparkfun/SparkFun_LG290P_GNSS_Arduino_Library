@@ -621,6 +621,32 @@ class LG290P
     bool setNavMode(const uint16_t mode, bool resetAfter = true);
 
     /**
+     * @brief Gets the RTK reliability level
+     * @details Uses the LG290P "PQTMCFGRTKRL" command to get the RTK reliability level
+     * @param level Reference to a uint16_t where the reliability level will be stored
+     *              1 = Very relax
+     *              2 = Relax
+     *              3 = Medium
+     *              4 = Strict
+     *              5 = Very strict
+     * @return true if the reliability level was acquired
+     */
+    bool getRtkReliabilityLevel(uint16_t &level);
+
+    /**
+     * @brief Sets the RTK reliability level
+     * @details Uses the LG290P "PQTMCFGRTKRL" command to set the RTK reliability level
+     * @param level 1 = Very relax
+     *              2 = Relax
+     *              3 = Medium
+     *              4 = Strict
+     *              5 = Very strict
+     * @param resetAfter true if device should save new setting and reset to make it 'take'
+     * @return true if the reliability level was set
+     */
+    bool setRtkReliabilityLevel(const uint16_t level, bool resetAfter = true);
+
+    /**
      * @brief Saves the current configuration.
      * @details Uses the PQTMSAVEPAR command.
      * @return true if successful, false otherwise.

@@ -131,7 +131,7 @@ void setup()
   int elevationAngle = 0;
   if (myGNSS.getElevationAngle(elevationAngle) == false)
   {
-    Serial.println("Failed to read elevation angle. Do you have version 1.0.5 or newer of the LG290P firmware installed?");
+    Serial.println("Failed to read elevation angle. Do you have version 1.05 or newer of the LG290P firmware installed?");
   }
   else
   {
@@ -155,7 +155,7 @@ void setup()
   float cnr = 0;
   if (myGNSS.getCNR(cnr) == false)
   {
-    Serial.println("Failed to read CNR. Do you have version 5 or newer of the LG290P firmware installed?");
+    Serial.println("Failed to read CNR. Do you have version 1.05 or newer of the LG290P firmware installed?");
   }
   else
   {
