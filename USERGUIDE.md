@@ -171,6 +171,12 @@ This library provides an interface for controlling and configuring an LG290P GNS
 - **`bool setNavMode(const uint16_t mode, bool resetAfter = true);`**  
   Set the navigation mode for the GNSS module.
 
+- **`bool getRtkReliabilityLevel(uint16_t &level);`**  
+  Get the current RTK reliability level of the GNSS module.
+
+- **`bool setRtkReliabilityLevel(const uint16_t level, bool resetAfter = true);`**  
+  Set the RTK reliability level for the GNSS module.
+
 - **`bool setMessageRate(const char *msgName, int rate, int msgver = -1);`**  
   Set the message rate for a specific message type.
 
