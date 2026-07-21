@@ -40,6 +40,16 @@ make clean
 make   $1
 make clean
 
+cd ../RTK.DifferentialSourceType
+make clean
+make   $1
+make clean
+
+cd ../RTK.ReliabilityLevel
+make clean
+make   $1
+make clean
+
 cd ../SetFixInterval
 make clean
 make   $1
@@ -131,6 +141,14 @@ make   $1
 make clean
 
 cd ../../10.\ PPP HAS Corrections/HAS_E6_Example
+make clean
+make   $1
+make clean
+
+cd ../../12.\ NAVMODE/NAVMODE_Example
+make clean
+make   $1
+make clean
 
 # Return to origin directory
 cd ../../..

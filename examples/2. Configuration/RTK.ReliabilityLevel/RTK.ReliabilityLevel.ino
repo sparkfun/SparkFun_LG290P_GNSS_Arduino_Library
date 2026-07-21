@@ -1,22 +1,14 @@
 /*
-  Configuring the max age of an RTK Fix before the device drops back to RTK Float
-  By: Nathan Seidle + Mikal Hart
+  Configuring the RTK reliability level
+  By: Paul Clark + Nathan Seidle + Mikal Hart
   SparkFun Electronics
-  Date: 21 May 2025
+  Date: 21 July 2026
   License: MIT. Please see LICENSE.md for more information.
 
-  This example shows how to configure the max differential age of RTK Fix used for the position engine.
+  This example shows how to configure the RTK reliability level.
+  1 = Very relax, 2 = Relax, 3 = Medium, 4 = Strict, 5 = Very strict. Default is 3 on LG290P
 
-  If corrections are discontinue while the engine is in RTK Fix mode, it will continue with an RTK Fix for a certain amount
-  of time. This is known as the differential age. By default, the LG290P will maintain an RTK Fix for 120 seconds.alignas
-  Some applications require a lower (or higher) RTK Fix after corrections have been lost.
-
-  It is a known practice to raise the minimum elevation from the default of 5 degrees to 10 or even 15 degrees
-  when in an urban environment to exclude satellites that are too low and may be blocked by structures causing
-  multipath errors. Similarly, increasing the minimum CNR from 10 dBHz to 20 or 25 dBHz can exclude satellites
-  with lower signal strength from being used in the position calculation.
-
-  The LG290P firmware must be v5 ("LG290P03AANR01A05S") or higher for these commands to work. We recommend using the QGNSS software
+  The LG290P firmware must be v1.06 ("LG290P03AANR01A06S") or higher for these commands to work. We recommend using the QGNSS software
   to update the LG290P firmware.
   Latest Firmware: https://github.com/sparkfun/SparkFun_RTK_Postcard/tree/main/Firmware
   Docs: https://docs.sparkfun.com/SparkFun_LG290P_Quadband_GNSS_RTK_Breakout/software_overview/#qgnss-software
@@ -29,8 +21,8 @@
   SparkFun Quadband GNSS RTK Breakout - LG290P (GPS-26620) https://www.sparkfun.com/products/26620
 
   Hardware Connections:
-  Connect RX3 (green wire) of the LG290P to pin 14 on the ESP32
-  Connect TX3 (orange wire) of the LG290P to pin 13 on the ESP32
+  Connect RX3 (green wire) of the LG290P to pin 17 on the ESP32
+  Connect TX3 (orange wire) of the LG290P to pin 16 on the ESP32
   To make this easier, a 4-pin locking JST cable can be purchased here: https://www.sparkfun.com/products/17240
   Note: Almost any ESP32 pins can be used for serial.
   Connect a multi-band GNSS antenna: https://www.sparkfun.com/products/21801
@@ -75,11 +67,13 @@ const char * platform = "SparkFun RTK Postcard";
 
 #else   // POSTCARD
 
-// ???
-int pin_UART1_TX = 14;
-int pin_UART1_RX = 13;
+// SparkFun Thing Plus - ESP32 WROOM (USB-C)
+// https://www.sparkfun.com/sparkfun-thing-plus-esp32-wroom-usb-c.html
+// Board: SparkFun ESP32 Thing Plus C
+int pin_UART1_TX = 17;
+int pin_UART1_RX = 16;
 int pin_RESET = -1;
-const char * platform = "???";
+const char * platform = "SparkFun ESP32 Thing Plus C";
 
 #endif  // POSTCARD
 #endif  // ESP32_RPI_FLEX
@@ -96,7 +90,7 @@ void setup()
   Serial.begin(115200);
   delay(250);
   Serial.println();
-  Serial.println("SparkFun Max Differential Age example");
+  Serial.println("SparkFun RTK reliability level example");
 
   // Issue the reset
   if (pin_RESET != -1)
@@ -123,27 +117,46 @@ void setup()
   }
   Serial.println("LG290P detected!");
 
-  uint16_t differentialAge = 0;
-  if (myGNSS.getRtkDifferentialAge(differentialAge) == false)
+  Serial.println("Ensuring ROVER mode");
+  myGNSS.ensureModeRover();
+
+  // Check firmware version and print info
+  int versionMajor;
+  int versionMinor;
+  int versionCombined;
+  myGNSS.getFirmwareVersionMajor(versionMajor);
+  myGNSS.getFirmwareVersionMinor(versionMinor);
+  myGNSS.getFirmwareVersion(versionCombined); // v1.06 becomes 106
+  Serial.printf("Firmware v%d.%d (%d)\r\n", versionMajor, versionMinor, versionCombined);
+  if (versionCombined < 106)
+    Serial.println("Warning! get/setRtkReliabilityLevel requires firmware >= 1.06");
+
+  // level : 1 = Very relax, 2 = Relax, 3 = Medium, 4 = Strict, 5 = Very strict
+  uint16_t level = 3;
+  if (myGNSS.getRtkReliabilityLevel(level) == false)
   {
-    Serial.println("Failed to read differential age. Do you have version 1.05 or newer of the LG290P firmware installed?");
+    Serial.println("Failed to read reliability level. Do you have version 1.06 or newer of the LG290P firmware installed?");
   }
   else
   {
-    Serial.printf("Successfully checked differential age: %d seconds\r\n", differentialAge);
+    Serial.printf("Successfully checked reliability level: %d (%s)\r\n", level,
+                  level == 1 ? "Very relax" : level == 2 ? "Relax" :
+                  level == 3 ? "Medium" : level == 4 ? "Strict" :
+                  level == 5 ? "Very strict" : "Undefined");
 
-    // 120 seconds is default meaning if the engine has RTK Fix, and no more corrections are provided, RTK Fix will be
-    // maintained for 120 more seconds, befor falling back to RTK Float, then 3D fix.
-    // 1 to 600 is allowed
-    if (myGNSS.setRtkDifferentialAge(10) == false)
-      Serial.println("Failed to set differential age");
+    // Try setting to Relax
+    if (myGNSS.setRtkReliabilityLevel(2) == false)
+      Serial.println("Failed to set reliability level");
     else
     {
-      if (myGNSS.getRtkDifferentialAge(differentialAge) == false)
-        Serial.println("Failed to read differential age.");
+      if (myGNSS.getRtkReliabilityLevel(level) == false)
+        Serial.println("Failed to read reliability level");
       else
       {
-        Serial.printf("Differential age set to %d seconds.\r\n", differentialAge);
+        Serial.printf("Reliability level set to %d (%s)\r\n", level,
+                  level == 1 ? "Very relax" : level == 2 ? "Relax" :
+                  level == 3 ? "Medium" : level == 4 ? "Strict" :
+                  level == 5 ? "Very strict" : "Undefined");
       }
     }
   }
